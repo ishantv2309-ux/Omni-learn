@@ -1,0 +1,26 @@
+=========================================
+                 LECTURE NOTE: INTEGRATION TECHNIQUES
+                =========================================
+                Subject: Calculus / Mathematics
+                Topic: Methods of Integration (Indefinite)
+                
+                1. INTEGRATION BY SUBSTITUTION (U-Substitution)
+                   - If u = g(x), then du = g'(x)dx.
+                   - Integral of f(g(x)) * g'(x) dx = Integral of f(u) du.
+                   - Example: Integral of x * cos(x^2) dx.
+                     Let u = x^2 => du = 2x dx => x dx = du/2.
+                     Res: 1/2 * Integral of cos(u) du = 1/2 * sin(u) + C = 1/2 * sin(x^2) + C.
+                     
+                2. INTEGRATION BY PARTS (IBP)
+                   - Formula: Integral of u dv = u * v - Integral of v du.
+                   - Choice of u is guided by the ILATE rule:
+                     * I : Inverse trigonometric functions
+                     * L : Logarithmic functions
+                     * A : Algebraic functions
+                     * T : Trigonometric functions
+                     * E : Exponential functions
+                   - Example: Integral of ln(x) dx.
+                     Let u = ln(x) => du = 1/x dx.
+                     Let dv = dx => v = x.
+                     Res: ln(x)*x - Integral of x * (1/x) dx = x * ln(x) - x + C.
+                =========================================

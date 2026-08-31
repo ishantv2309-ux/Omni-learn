@@ -1,0 +1,128 @@
+/* OmniLearn Custom Style Overrides */
+body {
+    background: radial-gradient(circle at 50% 0%, #fcfdfd 0%, #f1f5f9 100%) !important;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Premium Card Overrides */
+.bg-white.rounded-xl.shadow-sm {
+    border-radius: 1rem !important; /* rounded-2xl */
+    border-color: #f1f5f9 !important;
+    box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.02), 0 2px 4px -1px rgba(15, 23, 42, 0.01) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.bg-white.rounded-xl.shadow-sm:hover {
+    box-shadow: 0 12px 28px -3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.02) !important;
+    transform: translateY(-2px);
+}
+
+/* Custom Modern Minimalist Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Form Inputs & Select Focus Polish */
+input, select {
+    transition: all 0.2s ease-in-out !important;
+}
+input:focus, select:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Ruled Paper / Handwritten Simulation */
+.ruled-paper {
+    background-color: #fffdf9 !important; /* notebook cream paper bg */
+    background-image: linear-gradient(rgba(147, 197, 253, 0.35) 1px, transparent 1px) !important;
+    background-size: 100% 2.25rem !important;
+    line-height: 2.25rem !important;
+    font-family: 'Architects Daughter', cursive !important;
+    font-size: 1.35rem !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    position: relative !important;
+    padding-left: 4rem !important;
+    padding-right: 1.5rem !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.02),
+        0 2px 4px -1px rgba(0, 0, 0, 0.01),
+        4px 4px 0px 0px #f1f5f9,
+        8px 8px 0px 0px #cbd5e1 !important; /* layered paper shadow stack */
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+}
+
+.ruled-paper::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 3.25rem !important;
+    width: 1px !important;
+    background-color: rgba(239, 68, 68, 0.28) !important; /* red vertical margin line */
+}
+
+/* Immersive Binder Holes Simulation on Note Sheet Left Margin */
+.ruled-paper::after {
+    content: '⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫' !important;
+    position: absolute !important;
+    top: 1rem !important;
+    left: 1rem !important;
+    width: 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3.12rem !important;
+    font-size: 0.5rem !important;
+    color: #94a3b8 !important;
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    line-height: 1 !important;
+}
+
+/* Highlight style overrides for mark tag */
+.ruled-paper mark {
+    background-color: #fef08a !important; /* bright yellow mark */
+    color: #0f172a !important;
+    padding: 0.1rem 0.2rem !important;
+    border-radius: 2px !important;
+}
+
+/* Detailed Breakdown Container */
+#detailedBreakdownContainer {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#detailedBreakdownContainer h3 {
+    letter-spacing: -0.01em;
+}
+
+#detailedBreakdownContainer ul li {
+    position: relative;
+}

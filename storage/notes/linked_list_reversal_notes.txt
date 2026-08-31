@@ -1,0 +1,44 @@
+=========================================
+                 HANDWRITTEN DATA STRUCTURE NOTES: LINKED LISTS
+                =========================================
+                Topic: Singly Linked List Inversion / Reversal
+                Author: Rohit Verma
+                
+                Problem Statement:
+                Given the head pointer of a Singly Linked List, reverse it in-place.
+                
+                1. ITERATIVE METHOD
+                   - We need 3 pointers to perform reversal without losing references:
+                     * prev (tracks reversed part - initial NULL)
+                     * curr (tracks current traversal node - initial head)
+                     * next (stores the next node temporarily)
+                   
+                   Code:
+                   Node* reverse(Node* head) {
+                       Node* prev = NULL;
+                       Node* curr = head;
+                       Node* next = NULL;
+                       while (curr != NULL) {
+                           next = curr->next;  // save next node
+                           curr->next = prev;  // reverse pointer direction
+                           prev = curr;        // advance prev
+                           curr = next;        // advance curr
+                       }
+                       return prev; // new head of reversed list
+                   }
+                   
+                   Time Complexity: O(N) since we visit every node exactly once.
+                   Space Complexity: O(1) auxiliary space (only pointers used).
+                   
+                2. RECURSIVE METHOD
+                   - Solve for rest of list, then make head's next node point back to head.
+                   Code:
+                   Node* reverseRecursive(Node* head) {
+                       if (head == NULL || head->next == NULL) return head;
+                       Node* rest = reverseRecursive(head->next);
+                       head->next->next = head;
+                       head->next = NULL;
+                       return rest;
+                   }
+                   Time Complexity: O(N) | Space Complexity: O(N) for recursion call stack.
+                =========================================
