@@ -1,14 +1,17 @@
 import os
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from backend.database import engine, Base
-from backend.routes import search, notes, pyqs, bookmarks, gemini
+from backend.database import engine, Base, get_db
+from backend.routes import search, notes, pyqs, bookmarks, gemini, ai_notes
+from backend.routes.search import perform_unified_search, unified_search_post, SearchQueryPayload
+from backend.schemas import SearchResponse
 
 # Ensure database tables exist
 Base.metadata.create_all(bind=engine)
@@ -26,7 +29,31 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+@app.post("/api/search")
+@app.post("/api/generate")
+async def search_endpoint(request: Request, db: Session = Depends(get_db)):
+    """Robust search endpoint with JSON error handling."""
+    try:
+        data = {}
+        try:
+            data = await request.json()
+        except Exception:
+            pass
+        if not isinstance(data, dict):
+            data = {}
+        query = data.get("query") or data.get("q") or data.get("topic") or ""
+        if not query.strip():
+            query = request.query_params.get("query") or request.query_params.get("q") or ""
+        if not query.strip():
+            return JSONResponse(status_code=400, content={"error": "Missing query", "overview": "Please provide a valid query."})
+        result = await perform_unified_search(query, db)
+        return JSONResponse(content=result.model_dump(mode='json'))
+    except Exception as e:
+        print(f"Search API Error: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": str(e), "overview": "Failed to fetch AI notes for this query."})
 
 # Include API Routers
 app.include_router(search.router)
@@ -34,6 +61,7 @@ app.include_router(gemini.router)
 app.include_router(notes.router)
 app.include_router(pyqs.router)
 app.include_router(bookmarks.router)
+app.include_router(ai_notes.router)
 
 @app.on_event("startup")
 async def startup_event():

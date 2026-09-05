@@ -55,63 +55,256 @@ input:focus, select:focus {
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
 }
 
-/* Ruled Paper / Handwritten Simulation */
-.ruled-paper {
-    background-color: #fffdf9 !important; /* notebook cream paper bg */
-    background-image: linear-gradient(rgba(147, 197, 253, 0.35) 1px, transparent 1px) !important;
-    background-size: 100% 2.25rem !important;
-    line-height: 2.25rem !important;
-    font-family: 'Architects Daughter', cursive !important;
-    font-size: 1.35rem !important;
-    font-weight: 500 !important;
-    color: #1e293b !important;
-    position: relative !important;
-    padding-left: 4rem !important;
-    padding-right: 1.5rem !important;
-    padding-top: 1.5rem !important;
-    padding-bottom: 3rem !important;
-    box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.02),
-        0 2px 4px -1px rgba(0, 0, 0, 0.01),
-        4px 4px 0px 0px #f1f5f9,
-        8px 8px 0px 0px #cbd5e1 !important; /* layered paper shadow stack */
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
+/* Modern Technical Document Reader Styles */
+.notes-reader-document {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 0.925rem !important;
+    line-height: 1.7 !important;
+    color: #e2e8f0 !important;
+    background-color: transparent !important;
 }
 
-.ruled-paper::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 3.25rem !important;
-    width: 1px !important;
-    background-color: rgba(239, 68, 68, 0.28) !important; /* red vertical margin line */
+.notes-reader-document h1 {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
+    letter-spacing: -0.02em !important;
 }
 
-/* Immersive Binder Holes Simulation on Note Sheet Left Margin */
-.ruled-paper::after {
-    content: '⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫  ⚫' !important;
-    position: absolute !important;
-    top: 1rem !important;
-    left: 1rem !important;
-    width: 1.5rem !important;
+.notes-reader-document h2 {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: #f1f5f9 !important;
+    margin-top: 2rem !important;
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.4rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
     display: flex !important;
-    flex-direction: column !important;
-    gap: 3.12rem !important;
-    font-size: 0.5rem !important;
-    color: #94a3b8 !important;
-    opacity: 0.4 !important;
-    pointer-events: none !important;
-    line-height: 1 !important;
+    align-items: center !important;
+    letter-spacing: -0.01em !important;
 }
 
-/* Highlight style overrides for mark tag */
-.ruled-paper mark {
-    background-color: #fef08a !important; /* bright yellow mark */
-    color: #0f172a !important;
-    padding: 0.1rem 0.2rem !important;
-    border-radius: 2px !important;
+.notes-reader-document h3 {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #a5b4fc !important; /* indigo-300 */
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.notes-reader-document h4 {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+.notes-reader-document p {
+    font-size: 16px !important;
+    line-height: 1.8 !important;
+    margin-bottom: 1rem !important;
+    color: #cbd5e1 !important;
+}
+
+.notes-reader-document ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    space-y: 0.35rem !important;
+}
+
+.notes-reader-document ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.notes-reader-document li {
+    font-size: 16px !important;
+    line-height: 1.8 !important;
+    margin-bottom: 0.5rem !important;
+    color: #cbd5e1 !important;
+}
+
+/* KaTeX Mathematical Typography Styling */
+.notes-reader-document .katex-display {
+    margin: 1.4rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    text-align: center !important;
+}
+
+.notes-reader-document .katex {
+    font-size: 1.15em !important;
+    text-rendering: auto !important;
+    color: #f8fafc !important;
+}
+
+.notes-reader-document .katex-html {
+    white-space: normal !important;
+}
+
+.notes-reader-document blockquote {
+    border-left: 4px solid #818cf8 !important;
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    padding: 0.75rem 1rem !important;
+    margin: 1rem 0 !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    color: #e2e8f0 !important;
+    font-style: italic !important;
+}
+
+.notes-reader-document pre {
+    background-color: #020617 !important;
+    color: #f1f5f9 !important;
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-size: 0.8rem !important;
+    line-height: 1.6 !important;
+    overflow-x: auto !important;
+    margin: 1.25rem 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+.notes-reader-document code {
+    font-family: monospace !important;
+    font-size: 0.85rem !important;
+}
+
+/* Sleek Code Chips (e.g. __iter__(), __next__()) */
+.notes-reader-document code:not(pre code),
+.notes-reader-document p code, 
+.notes-reader-document li code,
+.notes-reader-document td code,
+.notes-reader-document h1 code,
+.notes-reader-document h2 code,
+.notes-reader-document h3 code {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-family: monospace !important;
+    color: #38bdf8 !important;
+    font-size: 0.85em !important;
+}
+
+.notes-reader-document table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-size: 0.825rem !important;
+    margin: 1.25rem 0 !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.notes-reader-document th {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 0.65rem 0.85rem !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+}
+
+.notes-reader-document td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 0.6rem 0.85rem !important;
+    color: #cbd5e1 !important;
+}
+
+.notes-reader-document tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Callout highlights for structured notes */
+.notes-reader-document .callout-box {
+    padding: 1rem 1.25rem !important;
+    border-radius: 0.75rem !important;
+    margin: 1.25rem 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.notes-reader-document .callout-overview {
+    background-color: rgba(139, 92, 246, 0.12) !important;
+    border-left: 4px solid #a78bfa !important;
+}
+
+.notes-reader-document .callout-pitfalls {
+    background-color: rgba(249, 115, 22, 0.12) !important;
+    border-left: 4px solid #fb923c !important;
+}
+
+.notes-reader-document .callout-exam {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    border-left: 4px solid #34d399 !important;
+}
+
+/* Reader Search Highlight Overrides */
+.notes-reader-document mark {
+    background-color: rgba(250, 204, 21, 0.25) !important;
+    color: #fef08a !important;
+    padding: 0.1rem 0.25rem !important;
+    border-radius: 3px !important;
+    border: 1px solid rgba(250, 204, 21, 0.4) !important;
+    font-weight: 600 !important;
+}
+
+/* Table of Contents Item */
+.toc-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+    color: #cbd5e1 !important;
+    border-radius: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.35;
+    border: 1px solid transparent;
+}
+
+.toc-nav-item:hover {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    color: #f8fafc !important;
+    border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+.toc-nav-item.active {
+    background: rgba(99, 102, 241, 0.2) !important;
+    color: #818cf8 !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.15);
+}
+
+.toc-nav-item i {
+    color: #818cf8 !important;
+}
+
+.toc-nav-item.active i {
+    color: #a5b4fc !important;
 }
 
 /* Detailed Breakdown Container */
@@ -126,3 +319,462 @@ input:focus, select:focus {
 #detailedBreakdownContainer ul li {
     position: relative;
 }
+
+/* ==========================================================================
+   OmniLearn Selective Glassmorphism Design System
+   ========================================================================== */
+
+/* 1. Core Glassmorphism Definitions */
+.glassmorphism,
+.glass-panel {
+    background: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+}
+
+.glass-panel-light {
+    background: rgba(255, 255, 255, 0.82);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+}
+
+.glass-panel-dark {
+    background: rgba(15, 23, 42, 0.65);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* 2. Targeted Action Buttons */
+.glass-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 0.75rem;
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    text-decoration: none;
+    user-select: none;
+}
+
+.glass-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(79, 70, 229, 0.25), 0 0 18px rgba(99, 102, 241, 0.35);
+}
+
+.glass-btn:active {
+    transform: translateY(0);
+}
+
+/* Primary Glass Button (e.g. Download TXT, Search submit) */
+.glass-btn-primary {
+    background: rgba(79, 70, 229, 0.88);
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 4px 16px 0 rgba(79, 70, 229, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.glass-btn-primary:hover {
+    background: rgba(67, 56, 202, 0.96);
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 25px -3px rgba(79, 70, 229, 0.4), 0 0 20px rgba(99, 102, 241, 0.45);
+}
+
+/* Secondary Glass Button (e.g. Export PDF) */
+.glass-btn-secondary {
+    background: rgba(255, 255, 255, 0.82);
+    color: #0f172a !important;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.glass-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.98);
+    color: #0f172a !important;
+    border-color: rgba(199, 210, 254, 0.9);
+    box-shadow: 0 10px 24px -2px rgba(15, 23, 42, 0.08), 0 0 16px rgba(224, 231, 255, 0.7);
+}
+
+/* Icon Button (Bookmarks, Modal actions) */
+.glass-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.82);
+    color: #475569;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.04);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.glass-btn-icon:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.98);
+    color: #0f172a;
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.08), 0 0 14px rgba(224, 231, 255, 0.5);
+}
+
+.glass-btn-close:hover {
+    color: #e11d48 !important;
+    background: rgba(255, 241, 242, 0.92) !important;
+    border-color: rgba(254, 205, 211, 0.9) !important;
+    box-shadow: 0 8px 20px 0 rgba(225, 29, 72, 0.16), 0 0 14px rgba(253, 164, 175, 0.4) !important;
+}
+
+/* 3. Targeted Expand/Collapse Triggers */
+.glass-expand-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(238, 242, 255, 0.78);
+    color: #4338ca !important;
+    border: 1px solid rgba(199, 210, 254, 0.8);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    padding: 0.55rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 4px 16px 0 rgba(99, 102, 241, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    user-select: none;
+}
+
+.glass-expand-trigger:hover {
+    transform: translateY(-2px);
+    background: rgba(224, 231, 255, 0.92);
+    color: #3730a3 !important;
+    border-color: rgba(165, 180, 252, 0.9);
+    box-shadow: 0 8px 24px -2px rgba(99, 102, 241, 0.22), 0 0 18px rgba(199, 210, 254, 0.6);
+}
+
+.glass-expand-trigger:active {
+    transform: translateY(0);
+}
+
+/* 4. Targeted Interactive Badges & Pill Tags */
+.glass-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.675rem;
+    font-weight: 700;
+    letter-spacing: 0.015em;
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+}
+
+.glass-badge:hover {
+    transform: translateY(-1px);
+}
+
+.glass-badge-indigo {
+    background: rgba(238, 242, 255, 0.85);
+    color: #3730a3 !important;
+    border: 1px solid rgba(199, 210, 254, 0.85);
+    box-shadow: 0 2px 8px 0 rgba(99, 102, 241, 0.12);
+}
+
+.glass-badge-indigo:hover {
+    box-shadow: 0 4px 12px 0 rgba(99, 102, 241, 0.2), 0 0 10px rgba(199, 210, 254, 0.5);
+}
+
+.glass-badge-emerald {
+    background: rgba(236, 253, 245, 0.88);
+    color: #065f46 !important;
+    border: 1px solid rgba(167, 243, 208, 0.88);
+    box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.12);
+}
+
+.glass-badge-emerald:hover {
+    box-shadow: 0 4px 12px 0 rgba(16, 185, 129, 0.2), 0 0 10px rgba(167, 243, 208, 0.5);
+}
+
+.glass-badge-amber {
+    background: rgba(254, 243, 199, 0.88);
+    color: #92400e !important;
+    border: 1px solid rgba(253, 230, 138, 0.88);
+    box-shadow: 0 2px 8px 0 rgba(245, 158, 11, 0.12);
+}
+
+.glass-badge-amber:hover {
+    box-shadow: 0 4px 12px 0 rgba(245, 158, 11, 0.2), 0 0 10px rgba(253, 230, 138, 0.5);
+}
+
+.glass-badge-rose {
+    background: rgba(255, 241, 242, 0.88);
+    color: #9f1239 !important;
+    border: 1px solid rgba(254, 205, 211, 0.88);
+    box-shadow: 0 2px 8px 0 rgba(244, 63, 94, 0.12);
+}
+
+.glass-badge-rose:hover {
+    box-shadow: 0 4px 12px 0 rgba(244, 63, 94, 0.2), 0 0 10px rgba(254, 205, 211, 0.5);
+}
+
+.glass-badge-purple {
+    background: rgba(250, 245, 255, 0.88);
+    color: #6b21a8 !important;
+    border: 1px solid rgba(233, 213, 255, 0.88);
+    box-shadow: 0 2px 8px 0 rgba(168, 85, 247, 0.12);
+}
+
+.glass-badge-purple:hover {
+    box-shadow: 0 4px 12px 0 rgba(168, 85, 247, 0.2), 0 0 10px rgba(233, 213, 255, 0.5);
+}
+
+/* 5. Targeted Modal Floating Panels */
+.glass-modal-container {
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 24px 64px -8px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.glass-modal-header {
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-modal-sidebar {
+    background: rgba(248, 250, 252, 0.86);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(12px) saturate(180%);
+    border-right: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-drawer {
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border-left: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: -8px 0 32px 0 rgba(15, 23, 42, 0.15);
+}
+
+/* ==========================================================================
+   True Backdrop-Blur Glassmorphism Overlay & Modal Container
+   ========================================================================== */
+
+.modal-overlay,
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.55); /* semi-transparent dark overlay */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    z-index: 999;
+}
+
+.modal-container,
+#noteModalWrapper {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 16px !important;
+    z-index: 1000;
+    position: relative;
+    color: #f8fafc;
+    overflow: hidden;
+}
+
+/* Modal Header Bar Buttons - Modern Glass Badges */
+.modal-glass-badge-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.modal-glass-badge-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.modal-glass-badge-icon {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modal-glass-badge-icon:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Reading Content Typography & Container */
+#noteMainDocumentScroll {
+    background: rgba(30, 41, 59, 0.4) !important;
+    padding: 32px !important;
+    color: #f1f5f9 !important;
+    line-height: 1.7 !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.notes-reader-document {
+    color: #f1f5f9 !important;
+    line-height: 1.7 !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Explicit View File Button Styling & Hit Target */
+.view-file-btn {
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(238, 242, 255, 0.85);
+    border: 1px solid rgba(199, 210, 254, 0.9);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.view-file-btn:hover {
+    background: rgba(224, 231, 255, 1) !important;
+    border-color: rgba(165, 180, 252, 1) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+/* Glass Navbar Buttons (Bookmarks, Settings) */
+.glass-nav-btn {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.glass-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.18), 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   Compact Top Overview & Difficulty Meter Card Alignment
+   ========================================================================== */
+
+.hero-section {
+    display: flex;
+    align-items: flex-start !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100%;
+}
+
+.overview-card {
+    padding: 20px 24px 16px 24px !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start !important;
+}
+
+.overview-card h2,
+.overview-card > p,
+.overview-card p,
+.overview-card #summaryText,
+.overview-card #summaryText p {
+    margin-bottom: 12px !important;
+    line-height: 1.6;
+}
+
+.overview-card #summaryText p:last-child {
+    margin-bottom: 12px !important;
+}
+
+.overview-card .overview-accordion {
+    margin-bottom: 0 !important;
+}
+
+.difficulty-card {
+    min-height: 0 !important;
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start !important;
+}
+
+#difficultyVerdict,
+.difficulty-card #difficultyVerdict {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    line-height: 1.5 !important;
+}
+

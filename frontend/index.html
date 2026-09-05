@@ -8,12 +8,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- favicon icon -->
+    <link rel="icon" type="image/png" href="icons8-graduation-cap-16 (1).png">
     <!-- Google Fonts for Handwritten Notes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js for Client-Side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- KaTeX for LaTeX Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <!-- MathJax 3 Configuration & CDN Script -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        svg: { fontCache: 'global' }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -46,7 +67,7 @@
             
             <!-- Navbar Search Bar (Visible after search is initiated) -->
             <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-8">
-                <form onsubmit="handleSearch(event)" class="relative">
+                <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
                            class="w-full bg-indigo-700 text-white placeholder-indigo-200 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-300 transition border border-indigo-500">
                     <span class="absolute left-3 top-2.5 text-indigo-200">
@@ -56,10 +77,10 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <button onclick="toggleBookmarksSidebar()" class="relative bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                <button onclick="toggleBookmarksSidebar()" class="relative glass-btn glass-nav-btn px-4 py-2 rounded-xl flex items-center space-x-2 shadow-sm" title="Your Saved Bookmarks">
                     <i class="fa-solid fa-bookmark text-yellow-300"></i>
                     <span class="hidden sm:inline">Bookmarks</span>
-                    <span id="bookmarkCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    <span id="bookmarkCount" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">0</span>
                 </button>
             </div>
         </div>
@@ -76,40 +97,41 @@
                 Eliminate tab-switching. Enter any academic topic to aggregate notes, video lectures, exam papers, analytics, and roadmaps instantly.
             </p>
             
-            <form onsubmit="handleSearch(event)" class="relative max-w-xl mx-auto shadow-lg rounded-xl">
+            <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative max-w-xl mx-auto shadow-lg rounded-xl">
                 <input type="text" id="mainSearchInput" placeholder="Search topic (e.g., Newton's Laws of Motion, Linked List Inversion)..." 
                        class="w-full pl-12 pr-28 py-4 rounded-xl text-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner">
                 <span class="absolute left-4 top-5 text-slate-400">
                     <i class="fa-solid fa-magnifying-glass text-xl"></i>
                 </span>
-                <button type="submit" class="absolute right-2 top-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold transition">
+                <button type="submit" class="absolute right-2 top-2 glass-btn glass-btn-primary px-6 py-2.5 rounded-xl font-semibold shadow-md">
                     Search
                 </button>
             </form>
 
             <!-- Quick Suggestions -->
             <div class="mt-8 flex flex-wrap justify-center gap-2">
-                <span class="text-slate-500 self-center mr-2 text-sm">Popular Topics:</span>
-                <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-sm">
+                <span class="text-slate-500 self-center mr-2 text-sm font-medium">Popular Topics:</span>
+                <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
                     ⚡ Newton's Laws
                 </button>
-                <button onclick="fillAndSearch('Linked List Inversion')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-sm">
+                <button onclick="fillAndSearch('Linked List Inversion')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
                     🔗 Linked List Inversion
                 </button>
-                <button onclick="fillAndSearch('Integration Techniques')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-sm">
+                <button onclick="fillAndSearch('Integration Techniques')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
                     ∫ Integration Calculus
                 </button>
-                <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-sm">
+                <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
                     🗺️ Dijkstra's Algorithm
                 </button>
-                <button onclick="fillAndSearch('Quantum Mechanics')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-sm">
+                <button onclick="fillAndSearch('Quantum Mechanics')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
                     ⚛️ Quantum Mechanics
+                </button>
             </div>
 
             <!-- Year-wise Notes Library -->
             <div class="mt-16 text-left max-w-4xl mx-auto">
                 <div class="border-t border-slate-200/80 pt-8 mb-6 text-center">
-                    <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider font-sans">Notes Library</span>
+                    <span class="glass-badge glass-badge-indigo px-3 py-1 text-xs font-bold uppercase tracking-wider font-sans">Notes Library</span>
                     <h2 class="text-2xl font-bold text-slate-800 mt-3 font-sans">Browse Engineering Notes Year-Wise</h2>
                     <p class="text-sm text-slate-500 mt-1 font-sans">Select your academic year to explore core syllabus topics and learning guides.</p>
                 </div>
@@ -120,7 +142,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold text-slate-400">01</span>
-                                <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Foundation</span>
+                                <span class="glass-badge glass-badge-indigo px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Foundation</span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">First Year Notes</h3>
                             <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Common engineering subjects like Physics, Chemistry, Calculus, and Basic Electrical.</p>
@@ -135,7 +157,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold text-slate-400">02</span>
-                                <span class="bg-purple-50 text-purple-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Core Prep</span>
+                                <span class="glass-badge glass-badge-purple px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Core Prep</span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Second Year Notes</h3>
                             <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Core topics including Data Structures, OOPs, Thermodynamics, and Material Science.</p>
@@ -150,7 +172,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold text-slate-400">03</span>
-                                <span class="bg-amber-50 text-amber-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Advanced</span>
+                                <span class="glass-badge glass-badge-amber px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Advanced</span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Third Year Notes</h3>
                             <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Advanced core concepts like DBMS, Operating Systems, Networks, and Algorithms.</p>
@@ -165,7 +187,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold text-slate-400">04</span>
-                                <span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Final Year</span>
+                                <span class="glass-badge glass-badge-emerald px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Final Year</span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Fourth Year Notes</h3>
                             <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Elective courses: Machine Learning, Cloud Computing, and Security.</p>
@@ -202,48 +224,50 @@
         <div id="dashboardScreen" class="hidden flex flex-col space-y-6 animate-fade-in">
             
             <!-- Top Banner: Topic Summary & Difficulty Gauge -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col md:flex-row gap-6 items-start md:items-stretch transition-colors duration-200">
-                <!-- AI Summary -->
-                <div class="flex-1">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center border">
-                                <i class="fa-solid fa-sparkles mr-1 text-indigo-600"></i>AI Real-Time Overview
-                            </span>
-                            <span id="summaryDomainBadge" class="bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                Academic Domain
-                            </span>
-                            <h2 id="summaryTopicTitle" class="text-2xl font-bold text-slate-800 capitalize">Topic Name</h2>
+            <div id="overviewHeroSection" class="hero-section flex flex-col md:flex-row gap-6 items-start w-full transition-colors duration-200" style="align-items: flex-start;">
+                <!-- AI Real-Time Overview (Left Card) -->
+                <div class="overview-card flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col justify-start" style="padding: 20px 24px 16px 24px; height: auto; min-height: 0; margin-bottom: 0;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="flex items-center justify-between" style="margin-bottom: 0;">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="glass-badge glass-badge-indigo">
+                                    <i class="fa-solid fa-sparkles mr-1 text-indigo-600"></i>AI Real-Time Overview
+                                </span>
+                                <span id="summaryDomainBadge" class="glass-badge glass-badge-purple">
+                                    Academic Domain
+                                </span>
+                                <h2 id="summaryTopicTitle" class="text-2xl font-bold text-slate-800 capitalize">Topic Name</h2>
+                            </div>
+                            <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="glass-btn-icon" title="Bookmark this topic">
+                                <i class="fa-regular fa-bookmark text-base"></i>
+                            </button>
                         </div>
-                        <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="text-slate-400 hover:text-yellow-500 transition p-1">
-                            <i class="fa-regular fa-bookmark text-2xl"></i>
-                        </button>
-                    </div>
-                    <div id="summaryText" class="text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none">
-                        Loading summary...
+                        <div id="summaryText" data-alias="overview-text" class="overview-text text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none" style="margin-bottom: 12px;">
+                            <div id="overview-text">Loading summary...</div>
+                        </div>
                     </div>
 
                     <!-- Expandable In-Depth Academic Notes Button & Container -->
-                    <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div class="pt-3 border-t border-slate-100" style="margin-top: 4px;">
                         <button id="toggleDetailBtn" onclick="toggleDetailedBreakdown()" 
-                                class="inline-flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3.5 py-2 rounded-lg text-xs transition duration-200 border border-indigo-100 shadow-2xs group">
+                                class="glass-expand-trigger group">
                             <i class="fa-solid fa-book-open text-indigo-600 text-xs"></i>
                             <span id="toggleDetailBtnText">Expand In-Depth Academic Notes</span>
                             <i id="toggleDetailBtnIcon" class="fa-solid fa-chevron-down text-[10px] text-indigo-500 transition-transform duration-300 ml-1"></i>
                         </button>
                         
-                        <div id="detailedBreakdownContainer" class="hidden mt-3.5 p-5 bg-slate-50/90 rounded-xl border border-slate-200/80 text-sm text-slate-700 leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar prose prose-slate max-w-none shadow-inner animate-fade-in">
+                        <div id="detailedBreakdownContainer" class="hidden mt-3 p-4 bg-slate-50/90 rounded-xl border border-slate-200/80 text-sm text-slate-700 leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar prose prose-slate max-w-none shadow-inner animate-fade-in">
                             <!-- In-depth multi-section notes rendered dynamically -->
                         </div>
                     </div>
                 </div>
                 
-                <!-- Difficulty Meter -->
-                <div class="w-full md:w-72 bg-slate-50 rounded-xl p-4 flex flex-col justify-between border border-slate-100 shadow-inner">
+                <!-- Difficulty Meter (Right Card) -->
+                <div class="difficulty-card w-full md:w-72 bg-white rounded-xl p-5 flex flex-col justify-between border border-slate-100 shadow-sm" style="height: auto; min-height: 0;">
                     <div>
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Difficulty Meter</span>
-                            <span id="difficultyLevelBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">Moderate</span>
+                            <span id="difficultyLevelBadge" class="glass-badge glass-badge-amber text-[10px]">Moderate</span>
                         </div>
                         <div class="flex items-baseline space-x-1 mt-2">
                             <span id="difficultyNumber" class="text-3xl font-extrabold text-slate-800">0.0</span>
@@ -255,11 +279,11 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 pt-3 border-t border-slate-200/80">
+                    <div class="mt-4 pt-3 border-t border-slate-100">
                         <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1 flex items-center">
                             <i class="fa-solid fa-brain mr-1.5 text-indigo-500"></i>AI Evaluation
                         </span>
-                        <p id="difficultyVerdict" class="text-xs text-slate-600 leading-relaxed">
+                        <p id="difficultyVerdict" class="text-xs text-slate-600 leading-relaxed max-h-[220px] overflow-y-auto custom-scrollbar">
                             Loading reasons...
                         </p>
                     </div>
@@ -276,7 +300,7 @@
                             <h3 class="font-bold text-slate-800 flex items-center">
                                 <i class="fa-solid fa-file-invoice text-indigo-500 mr-2"></i>Notes
                             </h3>
-                            <button onclick="openUploadModal()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center">
+                            <button onclick="openUploadModal()" class="glass-btn glass-btn-primary text-xs py-1 px-2.5 rounded-lg font-semibold">
                                 <i class="fa-solid fa-plus mr-1"></i>Upload
                             </button>
                         </div>
@@ -365,7 +389,7 @@
                             <h3 class="font-bold text-slate-800 flex items-center">
                                 <i class="fa-solid fa-route text-purple-500 mr-2"></i>Topic Study Roadmap
                             </h3>
-                            <span id="roadmapProgressBadge" class="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-0.5 rounded-full">
+                            <span id="roadmapProgressBadge" class="glass-badge glass-badge-purple">
                                 0 / 5 Done
                             </span>
                         </div>
@@ -384,12 +408,12 @@
     </footer>
 
     <!-- Bookmarks Sidebar -->
-    <div id="bookmarksSidebar" class="fixed inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-100 transition-colors duration-200">
-        <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-indigo-50">
+    <div id="bookmarksSidebar" class="fixed inset-y-0 right-0 max-w-md w-full glass-drawer z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-200/60">
+        <div class="p-5 border-b border-slate-200/60 flex items-center justify-between glass-modal-header">
             <h3 class="font-bold text-lg text-slate-800 flex items-center">
                 <i class="fa-solid fa-bookmark text-indigo-600 mr-2"></i>Your Bookmarks
             </h3>
-            <button onclick="toggleBookmarksSidebar()" class="text-slate-400 hover:text-slate-600 text-xl">
+            <button onclick="toggleBookmarksSidebar()" class="glass-btn-icon glass-btn-close" title="Close Bookmarks">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -399,50 +423,90 @@
         </div>
     </div>
 
-    <!-- Note Detail View Modal (PDF/OCR) -->
-    <div id="noteDetailModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full h-[90vh] flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 rounded-t-xl">
-                <div>
-                    <h3 id="noteModalTitle" class="font-bold text-lg text-slate-800">Note Title</h3>
-                    <p id="noteModalMeta" class="text-xs text-slate-500">By Admin | Physics</p>
-                </div>
+    <!-- Note Detail View Modal (Modern Technical Document Reader) -->
+    <div id="noteDetailModal" class="modal-overlay hidden flex items-center justify-center p-3 sm:p-6">
+        <div id="noteModalWrapper" class="modal-container rounded-2xl max-w-6xl w-full h-[92vh] flex flex-col" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 16px; overflow: hidden;">
+            <!-- Modal Header with Glassmorphism Badges -->
+            <div class="px-6 py-4 flex items-center justify-between flex-wrap gap-3" style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                 <div class="flex items-center space-x-3">
-                    <!-- Download Note Button -->
-                    <a id="downloadNoteBtn" href="" download class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition" title="Download Notes">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download</span>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-book-open text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 id="noteModalTitle" class="font-extrabold text-lg sm:text-xl text-white tracking-tight">Study Notes</h3>
+                            <span id="noteModalSubjectBadge" class="glass-badge glass-badge-indigo">Academic</span>
+                        </div>
+                        <p id="noteModalMeta" class="text-xs text-slate-400 mt-0.5 flex items-center">
+                            <i class="fa-regular fa-user mr-1 text-slate-400"></i>OmniLearn AI Academic Engine
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- Export & Action Buttons with Semi-Transparent Glass Badges -->
+                    <a id="viewOriginalFileBtn" href="#" target="_blank" class="modal-glass-badge-btn hidden" title="View Original File in Browser">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-indigo-400"></i>
+                        <span>View File</span>
                     </a>
-
-                    <button id="bookmarkNoteBtn" onclick="toggleNoteBookmarkFromModal()" class="text-slate-400 hover:text-yellow-500 transition">
-                        <i class="fa-regular fa-bookmark text-xl"></i>
+                    <button id="downloadTxtBtn" class="modal-glass-badge-btn" title="Download Complete Notes (.txt / Markdown)">
+                        <i class="fa-solid fa-download text-indigo-400"></i>
+                        <span>Download TXT</span>
                     </button>
-                    <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 text-2xl">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button id="exportPdfBtn" class="modal-glass-badge-btn" title="Export as PDF / Print">
+                        <i class="fa-solid fa-file-pdf text-rose-400"></i>
+                        <span>Export PDF</span>
+                    </button>
+                    <button id="bookmarkNoteBtn" onclick="toggleNoteBookmarkFromModal()" class="modal-glass-badge-icon" title="Bookmark this Note">
+                        <i class="fa-regular fa-bookmark text-base"></i>
+                    </button>
+                    <button onclick="closeNoteModal()" class="modal-glass-badge-icon" title="Close Modal">
+                        <i class="fa-solid fa-xmark text-base"></i>
                     </button>
                 </div>
             </div>
             
+            <!-- Split-Pane Body -->
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                <!-- Left half: Simulated Note Document -->
-                <div class="flex-1 bg-slate-100 p-4 overflow-auto border-r border-slate-100 flex flex-col items-center justify-center">
-                    <div id="notepadContainer" class="w-full max-w-xl ruled-paper min-h-[500px] overflow-y-auto select-text whitespace-pre-wrap">
-                        <!-- Simulated handwritten or OCR notebook page -->
-                    </div>
-                </div>
-                
-                <!-- Right half: OCR Text Panel -->
-                <div class="w-full md:w-80 p-5 overflow-y-auto flex flex-col bg-slate-50 custom-scrollbar">
-                    <h4 class="font-semibold text-xs text-slate-500 uppercase tracking-wider mb-2">Searchable Text (OCR Index)</h4>
-                    <div class="relative mb-4">
-                        <input type="text" id="modalTextSearchInput" oninput="highlightModalText()" placeholder="Search terms on page..." 
-                               class="w-full bg-white pl-8 pr-4 py-1.5 rounded-lg text-xs border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <!-- LEFT SIDEBAR: Table of Contents & In-Note Search -->
+                <div id="noteModalSidebar" style="width: 280px; border-right: 1px solid rgba(255,255,255,0.1); padding: 16px; background: rgba(15, 23, 42, 0.85);" class="flex flex-col flex-shrink-0 overflow-hidden">
+                    <!-- In-Note Search Input -->
+                    <div class="relative mb-3">
+                        <input type="text" id="modalTextSearchInput" oninput="highlightModalText()" placeholder="Search terms inside notes..." 
+                               class="w-full bg-slate-800/80 pl-8 pr-3 py-2 rounded-xl text-xs border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
                         <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </span>
                     </div>
-                    <div id="noteModalOcrText" class="text-xs text-slate-600 leading-relaxed flex-1 select-text bg-white p-3 rounded-lg border border-slate-200 overflow-y-auto whitespace-pre-wrap font-mono">
-                        <!-- OCR content with search highlight -->
+
+                    <!-- Reading Stats Badges -->
+                    <div class="flex items-center justify-between px-3 py-2 bg-slate-800/60 rounded-xl border border-slate-700/60 mb-3 text-[11px] text-slate-300 shadow-sm">
+                        <span id="noteReadingTime" class="flex items-center font-medium">
+                            <i class="fa-regular fa-clock mr-1 text-indigo-400"></i> ~4 min read
+                        </span>
+                        <span id="noteWordCount" class="flex items-center font-medium">
+                            <i class="fa-solid fa-file-lines mr-1 text-indigo-400"></i> ~650 words
+                        </span>
+                    </div>
+
+                    <!-- Table of Contents Heading -->
+                    <div class="flex items-center justify-between mb-2 px-1">
+                        <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center">
+                            <i class="fa-solid fa-list-ul text-indigo-400 mr-1.5"></i>Table of Contents
+                        </h4>
+                        <span class="glass-badge glass-badge-indigo text-[10px]">Index</span>
+                    </div>
+
+                    <!-- Dynamic TOC Container -->
+                    <div id="noteModalTOC" class="space-y-1 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                    </div>
+                </div>
+                
+                <!-- RIGHT MAIN DOCUMENT VIEW: Clean Technical Document Reader -->
+                <div id="noteMainDocumentScroll" style="flex: 1; padding: 32px; color: #f1f5f9; line-height: 1.7; font-family: 'Inter', system-ui, sans-serif; background: rgba(30, 41, 59, 0.4); overflow-y: auto;" class="custom-scrollbar flex flex-col">
+                    <div id="noteContentArea" class="notes-reader-document flex-1 select-text max-w-4xl mx-auto w-full p-4 rounded-xl" style="background-color: #0f172a; color: #e2e8f0;">
+                        <div id="modal-markdown-content" class="w-full">
+                            <!-- Fully parsed dynamic Markdown rendered here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -450,11 +514,11 @@
     </div>
 
     <!-- Upload Note Modal -->
-    <div id="uploadModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+    <div id="uploadModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-modal-container rounded-2xl max-w-md w-full p-6 border border-slate-200/80 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-200/70">
                 <h3 class="font-bold text-lg text-slate-800">Upload Study Note</h3>
-                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                <button onclick="closeUploadModal()" class="glass-btn-icon glass-btn-close" title="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -482,10 +546,10 @@
                 </div>
                 
                 <div class="pt-4 flex justify-end space-x-2">
-                    <button type="button" onclick="closeUploadModal()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200">
+                    <button type="button" onclick="closeUploadModal()" class="glass-btn glass-btn-secondary px-4 py-2 text-sm font-medium">
                         Cancel
                     </button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
+                    <button type="submit" class="glass-btn glass-btn-primary px-4 py-2 text-sm font-medium flex items-center">
                         <span id="uploadBtnText">Upload & OCR Index</span>
                         <div id="uploadSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent ml-2"></div>
                     </button>
@@ -494,7 +558,41 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden flex items-center justify-center p-4 z-50">
+        <div class="modal-container rounded-2xl w-full max-w-md p-6 relative">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700/60">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <i class="fa-solid fa-key text-indigo-400 mr-2"></i>Gemini AI Settings
+                </h3>
+                <button onclick="toggleSettingsModal()" class="glass-btn-icon glass-btn-close" title="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 mb-4">
+                Configure your Gemini API key to enable live academic search and comprehensive study notes generation.
+            </p>
+            <form id="settingsForm" onsubmit="saveApiKey(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Google Gemini API Key</label>
+                    <input type="password" id="geminiApiKeyInput" placeholder="Enter your GEMINI_API_KEY..." 
+                           class="w-full bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700 text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-slate-500">
+                    <span id="apiKeyStatusText" class="text-xs text-emerald-400 block mt-1 font-semibold"></span>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="toggleSettingsModal()" class="glass-btn glass-btn-secondary px-4 py-2 text-sm font-medium">
+                        Close
+                    </button>
+                    <button type="submit" class="glass-btn glass-btn-primary px-4 py-2 text-sm font-medium">
+                        Save Key
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Frontend logic javascript -->
     <script src="app.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>

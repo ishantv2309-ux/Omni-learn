@@ -4,6 +4,7 @@ let currentSearchData = null;
 let bookmarks = [];
 let chartInstance = null;
 let currentNote = null;
+let studyNotes = ""; // Current active query generated study notes
 let completedRoadmapSteps = {}; // Map of query -> Set of step indices
 let isSearching = false;
 
@@ -11,7 +12,52 @@ let isSearching = false;
 document.addEventListener("DOMContentLoaded", () => {
     fetchBookmarks();
     initUrlRouting();
+    initSearchInputListeners();
+    // Guarantee all form submissions prevent default page reloads
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            handleSearch(e);
+        });
+    });
 });
+
+function initSearchInputListeners() {
+    const mainInput = document.getElementById("mainSearchInput");
+    const navInput = document.getElementById("navSearchInput");
+    [mainInput, navInput].forEach(input => {
+        if (input) {
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSearch(e, input.value);
+                }
+            });
+        }
+    });
+
+    // Global Escape key listener to close modals
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeNoteModal();
+            closeUploadModal();
+            const settingsModal = document.getElementById("settingsModal");
+            if (settingsModal) settingsModal.classList.add("hidden");
+        }
+    });
+
+    // Delegated click listener for any .view-file-btn
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".view-file-btn");
+        if (btn) {
+            e.preventDefault();
+            const modal = document.getElementById("noteDetailModal");
+            if (modal && modal.classList.contains("hidden")) {
+                openStudyNotesModal();
+            }
+        }
+    });
+}
 
 // Listens to browser navigation (Back / Forward) and initial URL params
 function initUrlRouting() {
@@ -33,15 +79,157 @@ function initUrlRouting() {
     }
 }
 
+function setCardsLoadingState(query) {
+    // Reveal dashboard screen immediately with skeleton UI on all cards
+    showScreen("dashboardScreen");
+    const navSearchContainer = document.getElementById("navSearchContainer");
+    if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+
+    // Title & Badges
+    const titleEl = document.getElementById("summaryTopicTitle");
+    if (titleEl) titleEl.textContent = query;
+
+    const domainBadge = document.getElementById("summaryDomainBadge");
+    if (domainBadge) domainBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1 text-indigo-500"></i> Analyzing Topic...';
+
+    // Summary Skeleton
+    const summaryContainer = document.getElementById("summaryText");
+    if (summaryContainer) {
+        summaryContainer.innerHTML = `
+            <div class="animate-pulse space-y-2.5 my-2">
+                <div class="h-4 bg-slate-200 rounded w-11/12"></div>
+                <div class="h-4 bg-slate-200 rounded w-full"></div>
+                <div class="h-4 bg-slate-200 rounded w-4/5"></div>
+                <div class="h-4 bg-slate-200 rounded w-2/3"></div>
+            </div>`;
+    }
+
+    // Reset expandable breakdown
+    const detailedContainer = document.getElementById("detailedBreakdownContainer");
+    if (detailedContainer) detailedContainer.classList.add("hidden");
+
+    // Difficulty Skeleton
+    const diffNum = document.getElementById("difficultyNumber");
+    if (diffNum) diffNum.innerHTML = '<span class="animate-pulse text-slate-300">--</span>';
+    const diffLevel = document.getElementById("difficultyLevelBadge");
+    if (diffLevel) {
+        diffLevel.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600 animate-pulse";
+        diffLevel.textContent = "Evaluating...";
+    }
+    const diffBar = document.getElementById("difficultyBar");
+    if (diffBar) {
+        diffBar.className = "h-3 rounded-full bg-slate-200 animate-pulse";
+        diffBar.style.width = "25%";
+    }
+    const diffVerdict = document.getElementById("difficultyVerdict");
+    if (diffVerdict) {
+        diffVerdict.innerHTML = '<div class="animate-pulse h-3.5 bg-slate-200 rounded w-5/6 mt-1"></div>';
+    }
+
+    // Careers Skeleton
+    const careersCard = document.getElementById("careersContainerCard");
+    if (careersCard) careersCard.classList.remove("hidden");
+    const careersContainer = document.getElementById("careersContainer");
+    if (careersContainer) {
+        careersContainer.innerHTML = `
+            <div class="animate-pulse space-y-2.5">
+                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="h-12 bg-slate-100 rounded-lg"></div>
+            </div>`;
+    }
+
+    // Video Container Skeleton
+    const videoContainer = document.getElementById("videoContainer");
+    if (videoContainer) {
+        videoContainer.innerHTML = `
+            <div class="space-y-3 animate-pulse">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="w-full sm:w-44 h-24 bg-slate-200 rounded-lg shrink-0"></div>
+                    <div class="flex-1 space-y-2 py-1">
+                        <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="w-full sm:w-44 h-24 bg-slate-200 rounded-lg shrink-0"></div>
+                    <div class="flex-1 space-y-2 py-1">
+                        <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Web Resources Skeleton
+    const resContainer = document.getElementById("resourcesContainer");
+    if (resContainer) {
+        resContainer.innerHTML = `
+            <div class="animate-pulse space-y-2">
+                <div class="h-12 bg-slate-50 rounded-lg border border-slate-100"></div>
+                <div class="h-12 bg-slate-50 rounded-lg border border-slate-100"></div>
+            </div>`;
+    }
+
+    // Fun Fact / Did You Know Skeleton
+    const funFact = document.getElementById("funFactText");
+    if (funFact) {
+        funFact.innerHTML = '<div class="animate-pulse h-4 bg-amber-200/70 rounded w-4/5 my-1"></div>';
+    }
+
+    // Exam Frequency Subtitle
+    const chartSub = document.getElementById("chartFrequencySubtitle");
+    if (chartSub) {
+        chartSub.textContent = `Analyzing examination trends (2021–2025) for "${query}"...`;
+    }
+
+    // Notes Skeleton
+    const notesList = document.getElementById("notesList");
+    if (notesList) {
+        notesList.innerHTML = `
+            <div class="animate-pulse space-y-2">
+                <div class="h-10 bg-slate-100 rounded-lg"></div>
+                <div class="h-10 bg-slate-100 rounded-lg"></div>
+            </div>`;
+    }
+
+    // Roadmap Skeleton
+    const roadmapTimeline = document.getElementById("roadmapTimeline");
+    if (roadmapTimeline) {
+        roadmapTimeline.innerHTML = `
+            <div class="animate-pulse space-y-3">
+                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="h-12 bg-slate-100 rounded-lg"></div>
+            </div>`;
+    }
+
+    // If note detail modal is open during a new search, show clean skeleton loader
+    const noteModal = document.getElementById("noteDetailModal");
+    if (noteModal && !noteModal.classList.contains("hidden")) {
+        showNoteModalLoadingSkeleton(query);
+    }
+}
+
 // --- Central Reactive Search Controller ---
 async function executeSearch(targetQuery, updateHistory = true) {
     const query = (targetQuery || "").trim();
     if (!query) return;
 
+    console.log("Executing search for:", query);
+
     // Prevent re-triggering identical in-flight searches
     if (isSearching && query === currentQuery) return;
     isSearching = true;
     currentQuery = query;
+
+    // Explicitly flush and invalidate stale/cached notes from prior searches
+    studyNotes = "";
+    currentNote = null;
+    try {
+        localStorage.removeItem("omni_active_note");
+        localStorage.removeItem("omni_active_topic");
+        sessionStorage.removeItem("omni_study_notes");
+    } catch (e) {}
 
     // 1. Synchronize all search input elements across the page instantly
     const mainInput = document.getElementById("mainSearchInput");
@@ -70,13 +258,8 @@ async function executeSearch(targetQuery, updateHistory = true) {
     }
     document.title = `${query} — OmniLearn Academic Hub`;
 
-    // 4. Update loading state indicator with target query
-    const loadingScreen = document.getElementById("loadingScreen");
-    if (loadingScreen) {
-        const titleEl = loadingScreen.querySelector("p.text-slate-700");
-        if (titleEl) titleEl.textContent = `Aggregating Live Academic Intelligence for "${query}"...`;
-    }
-    showScreen("loadingScreen");
+    // 4. Activate Card-Level Skeleton Loading State
+    setCardsLoadingState(query);
 
     try {
         const response = await fetch('/api/search', {
@@ -84,35 +267,58 @@ async function executeSearch(targetQuery, updateHistory = true) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ query: query })
+            body: JSON.stringify({ query })
         });
-        if (!response.ok) throw new Error(`Search request failed with status: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
 
         const data = await response.json();
         currentSearchData = data;
 
-        // 5. Instantly and completely re-render all 7 dashboard sections
-        renderDashboard(data);
+        // 5. Instantly and completely re-render all dashboard sections with dynamic data
+        updateDashboardUI(data);
 
-        // 6. Transition to Dashboard Screen and reveal navbar search container
-        showScreen("dashboardScreen");
-        const navSearchContainer = document.getElementById("navSearchContainer");
-        if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+        // If note detail modal is open, dynamically populate with the newly arrived study notes
+        const noteModal = document.getElementById("noteDetailModal");
+        if (noteModal && !noteModal.classList.contains("hidden")) {
+            const primaryNote = (data.notes && data.notes.length > 0) ? data.notes[0] : null;
+            openNoteModal({
+                id: 0,
+                title: `Study Notes: ${data.title || query}`,
+                subject: data.category || data.domain || "Academic Curriculum",
+                uploaded_by: "OmniLearn AI Academic Engine",
+                file_type: "txt",
+                ocr_text: data.study_notes || data.notes_content || studyNotes,
+                file_path: (primaryNote && primaryNote.file_path) ? primaryNote.file_path : ""
+            });
+        }
 
         // Smooth scroll to top of dashboard content
         window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (error) {
-        console.error("Error during search execution:", error);
-        alert(`Failed to fetch search results for "${query}". Please ensure the local server is running.`);
+    } catch (err) {
+        console.error("Search fetch failed:", err);
+        alert("Search failed. Please verify the backend is running and Gemini API key is valid.");
         showScreen("landingScreen");
     } finally {
         isSearching = false;
     }
 }
 
+// Alias updateDashboardUI to renderDashboard and expose to window
+function updateDashboardUI(data) {
+    if (!data) return;
+    renderDashboard(data);
+}
+window.updateDashboardUI = updateDashboardUI;
+window.executeSearch = executeSearch;
+
 // Form submit handler for main and nav inputs
 function handleSearch(event, explicitQuery) {
-    if (event) event.preventDefault();
+    if (event) {
+        event.preventDefault();
+        if (typeof event.stopPropagation === "function") event.stopPropagation();
+    }
 
     if (explicitQuery && explicitQuery.trim()) {
         executeSearch(explicitQuery.trim(), true);
@@ -138,6 +344,7 @@ function handleSearch(event, explicitQuery) {
         executeSearch(query, true);
     }
 }
+window.handleSearch = handleSearch;
 
 function fillAndSearch(topic) {
     executeSearch(topic, true);
@@ -180,19 +387,30 @@ function showScreen(screenId) {
 // --- Dashboard Render Methods ---
 function renderDashboard(data) {
     // 1. Render Summary, Domain and Difficulty
-    document.getElementById("summaryTopicTitle").textContent = data.canonical_title || data.query;
+    const topicTitle = data.title || data.canonical_title || data.query;
+    document.getElementById("summaryTopicTitle").textContent = topicTitle;
     
-    // Set Domain Badge
+    // Set Domain / Category Badge
     const domainBadge = document.getElementById("summaryDomainBadge");
     if (domainBadge) {
-        domainBadge.textContent = data.domain || "Academic Curriculum";
+        domainBadge.textContent = data.category || data.domain || "Academic Curriculum";
     }
     
-    // Format and render concise summary text
-    const summaryContainer = document.getElementById("summaryText");
-    summaryContainer.innerHTML = formatSummaryMarkdown(data.summary);
+    // Format and render concise summary/overview text
+    const summaryContainer = document.getElementById("overview-text") || document.getElementById("summaryText");
+    const overviewContent = (data.overview || data.summary || "").trim();
+    if (!overviewContent) {
+        summaryContainer.innerHTML = `
+            <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm font-medium flex items-center">
+                <i class="fa-solid fa-triangle-exclamation mr-2.5 text-rose-500 text-base"></i>
+                <span>Educational Overview Unavailable: Gemini API payload did not return an academic overview.</span>
+            </div>`;
+    } else {
+        summaryContainer.innerHTML = formatSummaryMarkdown(overviewContent);
+    }
+    renderMathFormulas(summaryContainer);
     
-    // Populate expandable in-depth detailed breakdown
+    // Populate expandable in-depth detailed breakdown directly with theoretical_foundations and core_formulations
     const detailedContainer = document.getElementById("detailedBreakdownContainer");
     if (detailedContainer) {
         // Reset to collapsed state by default
@@ -202,40 +420,74 @@ function renderDashboard(data) {
         if (btnText) btnText.textContent = "Expand In-Depth Academic Notes";
         if (btnIcon) btnIcon.className = "fa-solid fa-chevron-down text-[10px] text-indigo-500 transition-transform duration-300 ml-1";
         
-        detailedContainer.innerHTML = formatDetailedMarkdown(data.detailed_breakdown || data.summary);
+        const tf = (data.theoretical_foundations || "").trim();
+        const cf = (data.core_formulations || "").trim();
+        const db = (data.detailed_breakdown || data.detailedBreakdown || "").trim();
+
+        if (!tf && !db) {
+            detailedContainer.innerHTML = `
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center">
+                    <i class="fa-solid fa-circle-exclamation mr-2 text-rose-500 text-sm"></i>
+                    <span>Theoretical Foundations Unavailable: Content missing from Gemini API response.</span>
+                </div>`;
+        } else if (tf || cf) {
+            detailedContainer.innerHTML = `
+                <div class="space-y-4">
+                    ${tf ? `
+                        <div class="theoretical-foundations">
+                            <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center border-b border-slate-200 pb-1">
+                                <i class="fa-solid fa-microchip text-indigo-600 mr-2 text-xs"></i>Theoretical Foundations
+                            </h3>
+                            <div class="text-slate-700 text-sm leading-relaxed">${formatSummaryMarkdown(tf)}</div>
+                        </div>` : ''}
+                    ${cf ? `
+                        <div class="core-formulations">
+                            <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center border-b border-slate-200 pb-1">
+                                <i class="fa-solid fa-code text-indigo-600 mr-2 text-xs"></i>Core Formulations & Algorithms
+                            </h3>
+                            <div class="text-slate-700 text-sm leading-relaxed">${formatSummaryMarkdown(cf)}</div>
+                        </div>` : ''}
+                </div>`;
+            renderMathFormulas(detailedContainer);
+        } else {
+            detailedContainer.innerHTML = formatDetailedMarkdown(db);
+            renderMathFormulas(detailedContainer);
+        }
     }
     
     // Render Difficulty Score & Badges
-    const diffScore = Number(data.difficulty_score) || 5.0;
-    document.getElementById("difficultyNumber").textContent = diffScore.toFixed(1);
+    const diffScore = Number(data.difficulty_score || data.difficultyScore) || 0;
+    document.getElementById("difficultyNumber").textContent = diffScore > 0 ? diffScore.toFixed(1) : "--";
     
     const diffBar = document.getElementById("difficultyBar");
     const diffLevelBadge = document.getElementById("difficultyLevelBadge");
     diffBar.style.width = `${Math.min(diffScore * 10, 100)}%`;
     
     // Color-code difficulty bar & badge
+    const explicitLevel = data.difficultyLevel;
     diffBar.className = "h-3 rounded-full transition-all duration-700 ease-out ";
-    if (diffScore <= 4.0) {
+    if (diffScore <= 4.0 || explicitLevel === "Beginner") {
         diffBar.classList.add("bg-gradient-to-r", "from-emerald-400", "to-emerald-500");
         if (diffLevelBadge) {
-            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
-            diffLevelBadge.textContent = "Beginner Friendly";
+            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full glass-badge glass-badge-emerald";
+            diffLevelBadge.textContent = explicitLevel || "Beginner Friendly";
         }
-    } else if (diffScore <= 7.0) {
+    } else if (diffScore <= 7.0 || explicitLevel === "Intermediate") {
         diffBar.classList.add("bg-gradient-to-r", "from-amber-400", "to-amber-500");
         if (diffLevelBadge) {
-            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800";
-            diffLevelBadge.textContent = "Intermediate";
+            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full glass-badge glass-badge-amber";
+            diffLevelBadge.textContent = explicitLevel || "Intermediate";
         }
     } else {
         diffBar.classList.add("bg-gradient-to-r", "from-rose-500", "to-red-600");
         if (diffLevelBadge) {
-            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800";
-            diffLevelBadge.textContent = "Advanced Academic";
+            diffLevelBadge.className = "text-[10px] font-bold px-2.5 py-0.5 rounded-full glass-badge glass-badge-rose";
+            diffLevelBadge.textContent = explicitLevel || "Advanced Academic";
         }
     }
     
-    document.getElementById("difficultyVerdict").textContent = data.difficulty_reasons || "Topic requires analytical reasoning and conceptual mastery.";
+    const aiEval = (data.ai_evaluation || data.aiEvaluation || data.difficulty_reasons || "").trim();
+    document.getElementById("difficultyVerdict").textContent = aiEval || "AI complexity evaluation unavailable from API.";
     
     // Update topic bookmark button status
     updateTopicBookmarkButton();
@@ -243,23 +495,33 @@ function renderDashboard(data) {
     // 2. Render Roadmap Timeline with Checklists
     renderRoadmap(data.roadmap);
 
+    // Set global studyNotes state explicitly for the active search query
+    studyNotes = (data.study_notes || data.notes_content || (data.notes && data.notes[0] ? data.notes[0].ocr_text : "")).trim();
+    try {
+        sessionStorage.setItem("omni_study_notes", studyNotes);
+        localStorage.setItem("omni_active_topic", topicTitle);
+    } catch (e) {}
+
     // 3. Render Notes Panel
     renderNotesList(data.notes);
 
     // 4. Render YouTube Videos
-    renderYouTubeVideos(data.youtube_videos);
+    renderYouTubeVideos(data.curated_videos || data.youtube_videos);
 
     // 5. Render Web Links
     renderWebResources(data.web_resources);
 
     // 5.5 Render Careers (roadmap.sh)
-    renderCareers(data.careers);
+    renderCareers(data.careers, data.careerRelevance);
 
-    // 6. Render Fun Fact
-    renderFunFact(data.fun_fact);
+    // 6. Render Fun Fact / Did You Know
+    renderFunFact(data.didYouKnow || data.did_you_know || data.fun_fact);
 
     // 7. Render Chart.js Analytics
-    renderAnalyticsChart(data.pyqs);
+    renderAnalyticsChart(data.pyqs, data.examFrequency || data.exam_frequency);
+
+    // 8. Re-typeset all mathematical formulas via MathJax across the dashboard
+    renderMathFormulas();
 }
 
 function toggleDetailedBreakdown() {
@@ -273,6 +535,7 @@ function toggleDetailedBreakdown() {
         container.classList.remove("hidden");
         if (btnText) btnText.textContent = "Collapse In-Depth Notes";
         if (btnIcon) btnIcon.className = "fa-solid fa-chevron-up text-[10px] text-indigo-600 transition-transform duration-300 ml-1";
+        renderMathFormulas(container);
     } else {
         container.classList.add("hidden");
         if (btnText) btnText.textContent = "Expand In-Depth Academic Notes";
@@ -281,9 +544,24 @@ function toggleDetailedBreakdown() {
 }
 
 function formatSummaryMarkdown(rawText) {
-    if (!rawText) return "<p class='text-slate-400 italic'>No summary available.</p>";
-    let formatted = rawText
+    if (!rawText) return "<p class='text-slate-500'>Comprehensive academic notes are being compiled for this syllabus topic.</p>";
+    
+    // Clean raw ASCII borders and leading headline hashes while preserving raw LaTeX intact
+    let clean = rawText
+        .replace(/^[=\-~_#*]{4,}\s*$/gm, '')
+        .replace(/^#+\s+/gm, '')
+        .replace(/^[=\-]{3,}.*$/gm, '');
+
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        try {
+            return marked.parse(clean);
+        } catch(e) {}
+    }
+
+    let formatted = clean
         .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-800 font-bold">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic text-slate-700">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-indigo-700 px-1 py-0.5 rounded text-xs font-mono">$1</code>')
         .replace(/\n\n/g, '</p><p class="mt-2.5">')
         .replace(/\n/g, '<br>');
     return `<p>${formatted}</p>`;
@@ -359,28 +637,28 @@ function renderRoadmap(steps) {
         const stepEl = document.createElement("div");
         stepEl.className = `relative mb-4 last:mb-0 transition-all duration-200 ${isDone ? 'opacity-65' : ''}`;
         
-        let typeBadgeColor = "bg-slate-100 text-slate-700";
+        let typeBadgeColor = "glass-badge glass-badge-indigo";
         let dotColor = "border-slate-300 bg-white text-slate-400";
         let typeLabel = step.type || "Core";
         
         if (step.type === "prerequisite") {
-            typeBadgeColor = "bg-blue-50 text-blue-700 border border-blue-200";
+            typeBadgeColor = "glass-badge glass-badge-indigo";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-blue-500 bg-blue-50 text-blue-600";
             typeLabel = "Prerequisite";
         } else if (step.type === "core") {
-            typeBadgeColor = "bg-indigo-50 text-indigo-700 border border-indigo-200";
+            typeBadgeColor = "glass-badge glass-badge-indigo";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-indigo-500 bg-indigo-50 text-indigo-600";
             typeLabel = "Core Principle";
         } else if (step.type === "deep_dive") {
-            typeBadgeColor = "bg-amber-50 text-amber-700 border border-amber-200";
+            typeBadgeColor = "glass-badge glass-badge-amber";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-amber-500 bg-amber-50 text-amber-600";
             typeLabel = "Deep Dive";
         } else if (step.type === "practice") {
-            typeBadgeColor = "bg-teal-50 text-teal-700 border border-teal-200";
+            typeBadgeColor = "glass-badge glass-badge-emerald";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-teal-500 bg-teal-50 text-teal-600";
             typeLabel = "Problem Practice";
         } else if (step.type === "advanced") {
-            typeBadgeColor = "bg-purple-50 text-purple-700 border border-purple-200";
+            typeBadgeColor = "glass-badge glass-badge-purple";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-purple-500 bg-purple-50 text-purple-600";
             typeLabel = "Advanced Scope";
         }
@@ -435,47 +713,74 @@ function updateRoadmapProgressDisplay(total, completed) {
     progressBadge.textContent = `${completed} / ${total} Done (${pct}%)`;
     
     if (completed === total && total > 0) {
-        progressBadge.className = "text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full";
+        progressBadge.className = "text-[11px] font-bold glass-badge glass-badge-emerald px-2.5 py-0.5 rounded-full";
     } else if (completed > 0) {
-        progressBadge.className = "text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full";
+        progressBadge.className = "text-[11px] font-bold glass-badge glass-badge-indigo px-2.5 py-0.5 rounded-full";
     } else {
-        progressBadge.className = "text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-0.5 rounded-full";
+        progressBadge.className = "text-[11px] font-bold glass-badge glass-badge-purple px-2.5 py-0.5 rounded-full";
     }
 }
 
 function renderNotesList(notes) {
     const container = document.getElementById("notesList");
+    if (!container) return;
     container.innerHTML = "";
     
-    if (!notes || notes.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-6">
-                <i class="fa-solid fa-folder-open text-slate-300 text-2xl mb-2 block"></i>
-                <p class="text-xs text-slate-400 italic">No notes found matching this topic.</p>
-                <p class="text-[10px] text-slate-400 mt-1">Upload a note using the button above to index it.</p>
-            </div>
-        `;
-        return;
+    // If no notes returned from DB, construct a primary topic note using studyNotes or academic fallback
+    let displayNotes = (notes && notes.length > 0) ? [...notes] : [];
+    if (displayNotes.length === 0) {
+        const topicTitle = (currentSearchData && (currentSearchData.title || currentSearchData.query)) || currentQuery || "Academic Topic";
+        const primaryContent = studyNotes || generateAcademicFallbackNotes(topicTitle, (currentSearchData && (currentSearchData.category || currentSearchData.domain)));
+        if (!studyNotes) {
+            studyNotes = primaryContent;
+            try { sessionStorage.setItem("omni_study_notes", studyNotes); } catch(e) {}
+        }
+        displayNotes.push({
+            id: 0,
+            title: `Study Notes: ${topicTitle}`,
+            subject: (currentSearchData && (currentSearchData.category || currentSearchData.domain)) || "Academic Curriculum",
+            uploaded_by: "OmniLearn AI Academic Engine",
+            file_type: "txt",
+            ocr_text: primaryContent,
+            file_path: ""
+        });
     }
     
-    notes.forEach(note => {
+    displayNotes.forEach((note, idx) => {
         const noteCard = document.createElement("div");
-        noteCard.className = "bg-slate-50 border border-slate-100 rounded-lg p-3 hover:border-indigo-200 transition cursor-pointer flex flex-col justify-between";
+        noteCard.className = "bg-slate-50 border border-slate-100 hover:border-indigo-300 rounded-xl p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-sm hover:shadow";
         noteCard.onclick = () => openNoteModal(note);
+        
+        // Clean snippet preview with raw markdown symbols stripped
+        const rawContent = note.ocr_text || (idx === 0 ? studyNotes : "") || "";
+        const snippet = stripMarkdownSymbols(rawContent).substring(0, 115);
         
         noteCard.innerHTML = `
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full capitalize">${note.subject}</span>
-                    <span class="text-[10px] text-slate-400">${note.file_type.toUpperCase()}</span>
+                    <span class="text-[10px] font-bold glass-badge glass-badge-indigo px-2 py-0.5 rounded-full capitalize">${note.subject || 'Academic'}</span>
+                    <span class="text-[10px] font-medium text-slate-400 uppercase">${note.file_type || 'TXT'}</span>
                 </div>
-                <h4 class="font-bold text-xs text-slate-800 mt-1 line-clamp-1">${note.title}</h4>
+                <h4 class="font-bold text-xs text-slate-900 mt-2 line-clamp-1">${note.title}</h4>
+                ${snippet ? `<p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">${snippet}...</p>` : ''}
             </div>
-            <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                <span class="truncate max-w-[120px]"><i class="fa-regular fa-user mr-1"></i>${note.uploaded_by}</span>
-                <span class="text-indigo-600 font-semibold hover:underline">View File <i class="fa-solid fa-chevron-right ml-0.5"></i></span>
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-200/60 text-[10px] text-slate-400">
+                <span class="truncate max-w-[110px]"><i class="fa-regular fa-user mr-1 text-slate-400"></i>${note.uploaded_by || 'OmniLearn'}</span>
+                <button type="button" class="view-file-btn text-indigo-600 hover:text-indigo-800 font-semibold flex items-center glass-btn px-2.5 py-1 rounded-md text-[10px]" style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
+                    <span>View File &gt;</span>
+                </button>
             </div>
         `;
+
+        const viewFileBtn = noteCard.querySelector('.view-file-btn');
+        if (viewFileBtn) {
+            viewFileBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openStudyNotesModal(note);
+            });
+        }
+
         container.appendChild(noteCard);
     });
 }
@@ -586,28 +891,46 @@ function renderFunFact(fact) {
     if (fact && fact.trim()) {
         el.textContent = fact;
     } else {
-        const topicName = (currentSearchData && (currentSearchData.canonical_title || currentSearchData.query)) || currentQuery || "this topic";
-        el.textContent = `Did you know? Discoveries in ${topicName} formed foundational pillars of modern engineering systems, inspiring mathematical and computational breakthroughs taught across universities worldwide!`;
+        el.textContent = "Trivia fact unavailable from Gemini API.";
     }
 }
 
 // Renders the trend chart indicating how often the topic appears over the years
-function renderAnalyticsChart(pyqs) {
+function renderAnalyticsChart(pyqs, examFrequency) {
     const canvas = document.getElementById("frequencyChart");
     if (!canvas) return;
     
-    const safePyqs = Array.isArray(pyqs) ? pyqs : [];
-    
-    // Count questions per year
-    const counts = {};
     const years = [2021, 2022, 2023, 2024, 2025];
+    const counts = {};
     years.forEach(yr => { counts[yr] = 0; });
     
-    safePyqs.forEach(pyq => {
-        if (pyq && counts[pyq.year] !== undefined) {
-            counts[pyq.year]++;
+    let hasFrequency = false;
+    if (Array.isArray(examFrequency) && examFrequency.length > 0) {
+        if (typeof examFrequency[0] === 'number') {
+            examFrequency.slice(0, 5).forEach((val, idx) => {
+                if (idx < years.length) {
+                    counts[years[idx]] = Number(val) || 0;
+                    hasFrequency = true;
+                }
+            });
+        } else {
+            examFrequency.forEach(item => {
+                if (item && item.year && counts[item.year] !== undefined) {
+                    counts[item.year] = Number(item.count) || 0;
+                    hasFrequency = true;
+                }
+            });
         }
-    });
+    }
+
+    if (!hasFrequency) {
+        const safePyqs = Array.isArray(pyqs) ? pyqs : [];
+        safePyqs.forEach(pyq => {
+            if (pyq && counts[pyq.year] !== undefined) {
+                counts[pyq.year]++;
+            }
+        });
+    }
     
     const dataPoints = years.map(yr => counts[yr]);
     const totalCount = dataPoints.reduce((a, b) => a + b, 0);
@@ -617,7 +940,7 @@ function renderAnalyticsChart(pyqs) {
         if (totalCount > 0) {
             subtitle.textContent = `${totalCount} verified question appearances mapped across AKTU & GATE exams (2021–2025).`;
         } else {
-            subtitle.textContent = "Frequency of query appearances in past exams.";
+            subtitle.textContent = "Frequency of query appearances in past exams (2021–2025).";
         }
     }
     
@@ -711,8 +1034,8 @@ function updateBookmarksList() {
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">${bk.item_type}</span>
                 </div>
             </div>
-            <button onclick="removeBookmark(${bk.id}, event)" class="text-slate-300 hover:text-red-500 p-1.5 transition">
-                <i class="fa-solid fa-trash-can text-sm"></i>
+            <button onclick="removeBookmark(${bk.id}, event)" class="glass-btn-icon text-slate-400 hover:text-red-500 transition" title="Remove Bookmark">
+                <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
         `;
         list.appendChild(el);
@@ -813,34 +1136,768 @@ function toggleBookmarksSidebar() {
     }
 }
 
-// --- Note Details Modal Operations ---
-function openNoteModal(note) {
-    currentNote = note;
+// --- Note Details Modal Operations, TOC Extraction & Markdown Rendering ---
+
+function stripMarkdownSymbols(text) {
+    if (!text) return "";
+    return text
+        .replace(/^[=\-]{3,}.*$/gm, '') // Remove === and --- lines
+        .replace(/^#+\s+/gm, '')        // Remove header hashes
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+        .replace(/\*(.*?)\*/g, '$1')     // Remove italics
+        .replace(/`([^`]+)`/g, '$1')     // Remove inline code ticks
+        .replace(/```[\s\S]*?```/g, '')  // Remove code blocks
+        .replace(/\\([a-zA-Z]+)/g, '$1') // Clean LaTeX backslash commands
+        .replace(/\\/g, '')              // Clean lone backslashes
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Clean links
+        .replace(/^>\s*/gm, '')          // Remove blockquote marks
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function formatInlineMarkdown(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic text-slate-700">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-indigo-700 px-1.5 py-0.5 rounded text-[11px] font-mono border border-slate-200">$1</code>');
+}
+
+function renderMarkdownToHtml(rawText) {
+    if (!rawText) return "<p class='text-slate-400 italic p-4'>No study notes content available.</p>";
     
-    document.getElementById("noteModalTitle").textContent = note.title;
-    document.getElementById("noteModalMeta").innerHTML = `<i class="fa-regular fa-user mr-1"></i>${note.uploaded_by} | Subject: ${note.subject}`;
+    // Pre-process text to remove ASCII divider noise and convert LaTeX notation into readable math
+    let cleanText = rawText
+        .replace(/^[=\-]{4,}.*$/gm, '') // Remove ASCII banners
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/\\mathcal\{([A-Za-z]+)\}/g, '$1')
+        .replace(/\\mathbf\{([A-Za-z0-9]+)\}/g, '$1')
+        .replace(/\\sum_\{([^\}]+)\}\^\{([^\}]+)\}/g, '∑($1 to $2)')
+        .replace(/\\int_\{([^\}]+)\}\^\{([^\}]+)\}/g, '∫($1 to $2)')
+        .replace(/\\cdot/g, '·')
+        .replace(/\\omega/g, 'ω')
+        .replace(/\\psi/g, 'ψ')
+        .replace(/\\epsilon/g, 'ε')
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\theta/g, 'θ')
+        .replace(/\\mu/g, 'μ')
+        .replace(/\\le/g, '≤')
+        .replace(/\\ge/g, '≥')
+        .replace(/\\ne/g, '≠')
+        .replace(/\\in/g, '∈')
+        .replace(/\\subset/g, '⊂')
+        .replace(/\\left\(/g, '(')
+        .replace(/\\right\)/g, ')')
+        .replace(/\\([,;!])/g, '$1');
+
+    // Use marked.js if available
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        try {
+            marked.setOptions({
+                gfm: true,
+                breaks: true
+            });
+            let parsed = marked.parse(cleanText);
+            
+            // Post-process HTML with modern technical document styling classes
+            parsed = parsed
+                .replace(/<pre><code>/g, '<pre class="code-block"><code>')
+                .replace(/<table/g, '<div class="overflow-x-auto my-4"><table class="min-w-full text-xs border border-slate-200 rounded-xl overflow-hidden shadow-sm"')
+                .replace(/<\/table>/g, '</table></div>')
+                .replace(/<th>/g, '<th class="bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-left font-bold text-slate-800">')
+                .replace(/<td>/g, '<td class="border border-slate-200 px-3.5 py-2 text-slate-600">')
+                .replace(/<h1>/g, '<h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-6 mb-3 pb-2 border-b border-slate-200">')
+                .replace(/<h2>/g, '<h2 class="text-base sm:text-lg font-bold text-slate-900 mt-6 mb-3 pb-1.5 border-b border-slate-100 flex items-center">')
+                .replace(/<h3>/g, '<h3 class="text-sm sm:text-base font-bold text-indigo-900 mt-4 mb-2 flex items-center">')
+                .replace(/<h4>/g, '<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mt-3 mb-1.5">')
+                .replace(/<ul>/g, '<ul class="list-disc pl-5 space-y-1.5 my-3 text-xs sm:text-sm text-slate-600">')
+                .replace(/<ol>/g, '<ol class="list-decimal pl-5 space-y-1.5 my-3 text-xs sm:text-sm text-slate-600">')
+                .replace(/<code>([^<]+)<\/code>/g, '<code class="bg-slate-100 text-indigo-700 px-1.5 py-0.5 rounded text-[11px] font-mono border border-slate-200">$1</code>')
+                .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-indigo-500 bg-indigo-50/50 p-3.5 rounded-r-xl my-3 text-slate-700 text-xs sm:text-sm">');
+                
+            return parsed;
+        } catch (e) {
+            console.warn("marked.parse encountered error, using internal parser:", e);
+        }
+    }
     
-    // Set notepad content (simulated handwritten paper page)
-    const pad = document.getElementById("notepadContainer");
-    pad.textContent = note.ocr_text;
+    // Built-in resilient Markdown parser
+    let lines = cleanText.split("\n");
+    let htmlLines = [];
+    let inCodeBlock = false;
+    let codeBuffer = [];
+    let inList = false;
+    let listType = "ul";
+    let inTable = false;
     
-    // Set OCR text block
-    document.getElementById("noteModalOcrText").textContent = note.ocr_text;
+    for (let line of lines) {
+        let trimmed = line.trim();
+        
+        // Code Block
+        if (trimmed.startsWith("```")) {
+            if (inCodeBlock) {
+                htmlLines.push(`<pre class="code-block"><code>${codeBuffer.join("\n")}</code></pre>`);
+                codeBuffer = [];
+                inCodeBlock = false;
+            } else {
+                if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+                if (inTable) { htmlLines.push("</tbody></table></div>"); inTable = false; }
+                inCodeBlock = true;
+            }
+            continue;
+        }
+        
+        if (inCodeBlock) {
+            codeBuffer.push(line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+            continue;
+        }
+        
+        if (!trimmed) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            if (inTable) { htmlLines.push("</tbody></table></div>"); inTable = false; }
+            continue;
+        }
+        
+        // Table Rows
+        if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+            if (!inTable) {
+                if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+                htmlLines.push('<div class="overflow-x-auto my-3"><table class="min-w-full text-xs border border-slate-200 rounded-lg"><tbody>');
+                inTable = true;
+            }
+            if (trimmed.includes("---")) {
+                continue;
+            }
+            let cells = trimmed.split("|").slice(1, -1);
+            let rowHtml = "<tr>" + cells.map(c => `<td class="border border-slate-200 px-3 py-1.5 text-slate-600">${formatInlineMarkdown(c.trim())}</td>`).join("") + "</tr>";
+            htmlLines.push(rowHtml);
+            continue;
+        } else if (inTable) {
+            htmlLines.push("</tbody></table></div>");
+            inTable = false;
+        }
+        
+        // Headers
+        if (trimmed.startsWith("#### ")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mt-3 mb-1.5">${formatInlineMarkdown(trimmed.substring(5))}</h4>`);
+        } else if (trimmed.startsWith("### ")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<h3 class="text-sm font-bold text-indigo-900 mt-4 mb-2 flex items-center"><i class="fa-solid fa-angle-right mr-1.5 text-xs text-indigo-500"></i>${formatInlineMarkdown(trimmed.substring(4))}</h3>`);
+        } else if (trimmed.startsWith("## ")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<h2 class="text-base font-bold text-slate-900 mt-5 mb-2 pb-1 border-b border-slate-100 flex items-center">${formatInlineMarkdown(trimmed.substring(3))}</h2>`);
+        } else if (trimmed.startsWith("# ")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<h1 class="text-xl font-extrabold text-slate-900 mt-5 mb-3 pb-2 border-b border-slate-200">${formatInlineMarkdown(trimmed.substring(2))}</h1>`);
+        } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+            if (!inList || listType !== "ul") {
+                if (inList) htmlLines.push(`</${listType}>`);
+                htmlLines.push('<ul class="list-disc pl-5 space-y-1.5 my-2 text-xs sm:text-sm text-slate-600">');
+                inList = true;
+                listType = "ul";
+            }
+            htmlLines.push(`<li>${formatInlineMarkdown(trimmed.substring(2))}</li>`);
+        } else if (/^\d+\.\s+/.test(trimmed)) {
+            let content = trimmed.replace(/^\d+\.\s+/, '');
+            if (!inList || listType !== "ol") {
+                if (inList) htmlLines.push(`</${listType}>`);
+                htmlLines.push('<ol class="list-decimal pl-5 space-y-1.5 my-2 text-xs sm:text-sm text-slate-600">');
+                inList = true;
+                listType = "ol";
+            }
+            htmlLines.push(`<li>${formatInlineMarkdown(content)}</li>`);
+        } else if (trimmed.startsWith("> ")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<blockquote class="border-l-4 border-indigo-500 bg-indigo-50/50 p-3 rounded-r-lg my-2 text-slate-700 text-xs sm:text-sm">${formatInlineMarkdown(trimmed.substring(2))}</blockquote>`);
+        } else if (trimmed === "---" || trimmed === "***" || trimmed.startsWith("===")) {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push('<hr class="my-4 border-slate-200">');
+        } else {
+            if (inList) { htmlLines.push(`</${listType}>`); inList = false; }
+            htmlLines.push(`<p class="text-xs sm:text-sm text-slate-600 leading-relaxed my-2">${formatInlineMarkdown(trimmed)}</p>`);
+        }
+    }
     
-    // Reset search inputs
-    document.getElementById("modalTextSearchInput").value = "";
+    if (inCodeBlock) {
+        htmlLines.push(`<pre class="code-block"><code>${codeBuffer.join("\n")}</code></pre>`);
+    }
+    if (inList) htmlLines.push(`</${listType}>`);
+    if (inTable) htmlLines.push("</tbody></table></div>");
     
-    // Set download button link
-    const dlBtn = document.getElementById("downloadNoteBtn");
-    if (dlBtn) {
-        dlBtn.href = `/api/notes/file/${encodeURIComponent(note.file_path)}`;
-        dlBtn.setAttribute("download", note.title + (note.file_type === "txt" ? ".txt" : ".pdf"));
+    return htmlLines.join("\n");
+}
+
+// --- Modern Technical Document Reader & TOC Controller ---
+
+function showNoteModalLoadingSpinner(topic) {
+    const markdownContentEl = document.getElementById("modal-markdown-content") || document.getElementById("noteMainDocument");
+    const tocContainer = document.getElementById("noteModalTOC");
+    const wordEl = document.getElementById("noteWordCount");
+    const timeEl = document.getElementById("noteReadingTime");
+    
+    if (wordEl) wordEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-indigo-400"></i> Synthesizing...`;
+    if (timeEl) timeEl.innerHTML = `<i class="fa-regular fa-clock mr-1 text-indigo-400"></i> Generating...`;
+
+    if (tocContainer) {
+        tocContainer.innerHTML = `
+            <div class="animate-pulse space-y-2.5 p-2">
+                <div class="h-3.5 bg-slate-800 rounded w-3/4"></div>
+                <div class="h-3.5 bg-slate-800/60 rounded w-5/6 ml-2"></div>
+                <div class="h-3.5 bg-slate-800/60 rounded w-2/3 ml-4"></div>
+                <div class="h-3.5 bg-slate-800 rounded w-4/5"></div>
+                <div class="h-3.5 bg-slate-800/60 rounded w-3/5 ml-2"></div>
+            </div>
+        `;
     }
 
-    updateNoteModalBookmarkButton();
+    if (markdownContentEl) {
+        markdownContentEl.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 px-4 text-center rounded-2xl border border-slate-700/60 my-6 bg-slate-800/40">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+                <h4 class="text-slate-100 text-base font-bold">Synthesizing Comprehensive Study Notes</h4>
+                <p class="text-slate-400 text-xs mt-1.5 max-w-md leading-relaxed">
+                    AI Academic Engine is generating verified syllabus notes, code implementations, complexity breakdown, and exam tips for <span class="text-indigo-400 font-semibold">"${topic}"</span>.
+                </p>
+            </div>
+        `;
+    }
+}
+
+function showNoteModalLoadingSkeleton(topic) {
+    showNoteModalLoadingSpinner(topic);
+}
+
+function generateAcademicFallbackNotes(topic, subject) {
+    const cleanTopic = (topic || "Academic Topic").trim();
+    const cleanSubject = (subject || "Engineering & Computer Science").trim();
+    const className = cleanTopic.replace(/[^a-zA-Z0-9]/g, '') || "TopicModel";
     
-    // Show Modal
-    document.getElementById("noteDetailModal").classList.remove("hidden");
+    return `# Executive Overview: Core Definition & Intuition
+**${cleanTopic}** constitutes an indispensable pillar of modern ${cleanSubject} university curricula. It addresses fundamental algorithmic trade-offs, structural mechanics, and theoretical models necessary for scalable systems engineering and rigorous computational analysis.
+
+Understanding **${cleanTopic}** requires distinguishing its formal mathematical definition from its physical and programmatic manifestations. It enforces specific operational invariants across all state transformations, ensuring that data integrity, computational efficiency, and predictable termination bounds are mathematically preserved throughout execution cycles.
+
+## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations
+The theoretical framework governing **${cleanTopic}** is defined by analytical state transitions and conservation principles:
+
+1. **Governing State Relation**:
+$$\\mathcal{S}(x, t) = \\sum_{k=1}^{N} \\alpha_k \\cdot \\phi_k(x, t) + \\epsilon(t)$$
+
+2. **Continuous State & Derivation Relation**:
+$$\\int u \\, dv = u \\cdot v - \\int v \\, du$$
+Under operational boundary constraints where $t \\in [0, T]$, the system invariant satisfies:
+$$\\lim_{N \\to \\infty} \\frac{1}{N} \\sum_{i=1}^{N} \\left( x_i - \\mu \\right)^2 = \\sigma^2$$
+
+3. **Optimal Equilibrium State**:
+$$\\nabla \\mathcal{J}(\\mathbf{w}) = \\mathbf{0} \\implies \\mathbf{w}^* = (\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}$$
+
+## Syntax & Implementation: Step-by-Step Worked Examples
+### Worked Example 1: Foundational Implementation & Boundary Validation
+\`\`\`python
+# Canonical Academic Implementation: ${cleanTopic}
+class ${className}:
+    """
+    Robust pedagogical implementation of ${cleanTopic}
+    incorporating boundary assertions and state introspection.
+    """
+    def __init__(self, capacity: int = 100):
+        self.capacity = capacity
+        self.items = []
+        self._is_initialized = True
+
+    def insert_element(self, element) -> bool:
+        """Inserts an element while verifying capacity bounds."""
+        if len(self.items) >= self.capacity:
+            raise OverflowError(f"Maximum capacity ({self.capacity}) reached for ${cleanTopic}.")
+        self.items.append(element)
+        return True
+
+    def find_element(self, target) -> int:
+        """Performs optimal lookup, returning index or -1 if absent."""
+        for idx, val in enumerate(self.items):
+            if val == target:
+                return idx
+        return -1
+
+    def state_summary(self) -> dict:
+        return {
+            "topic": "${cleanTopic}",
+            "element_count": len(self.items),
+            "capacity": self.capacity,
+            "invariant_status": "Healthy"
+        }
+\`\`\`
+
+### Worked Example 2: Mathematical Integration Step-by-Step
+Evaluate the integral $\\int x e^x \\, dx$:
+1. Choose $u = x \\implies du = dx$, and $dv = e^x dx \\implies v = e^x$.
+2. Substitute into Integration by Parts formula:
+$$\\int x e^x \\, dx = x e^x - \\int e^x \\, dx = e^x(x - 1) + C$$
+3. Verify by differentiation: $\\frac{d}{dx}\\left[e^x(x - 1) + C\\right] = e^x(x - 1) + e^x = x e^x$.
+
+## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics
+| Operation / Phase | Best Case | Average Case | Worst Case | Auxiliary Space |
+| :--- | :--- | :--- | :--- | :--- |
+| Initialization / Allocation | $O(1)$ | $O(1)$ | $O(N)$ | $O(N)$ total space |
+| Direct Lookup / Search | $O(1)$ | $O(\\log N)$ | $O(N)$ | $O(1)$ auxiliary |
+| State Insertion / Update | $O(1)$ | $O(1)$ | $O(N)$ | $O(1)$ auxiliary |
+| State Deletion / Deallocation | $O(1)$ | $O(\\log N)$ | $O(N)$ | $O(1)$ auxiliary |
+| Full Sequential Traversal | $O(N)$ | $O(N)$ | $O(N)$ | $O(1)$ auxiliary |
+
+### Essential Cheatsheet Mnemonics
+- **ILATE Priority Rule**: Inverse Trig $\\to$ Log $\\to$ Algebraic $\\to$ Trig $\\to$ Exponential.
+- **Master Theorem Mnemonic**: Compare $f(n)$ with $n^{\\log_b a}$ to quickly resolve divide-and-conquer recurrences.
+- **Base Case Invariant**: Always assert null or $N=0$ bounds before initiating inductive loops.
+
+## Common Mistakes & Exam Pitfalls
+1. **Boundary & Off-by-One Indices**: Index arithmetic errors during zero-indexed array or pointer traversal, resulting in segmentation faults.
+2. **Memory Leaks & Dangling References**: In manual memory models, forgetting to free dynamically allocated buffers; in GC runtimes, retaining unreferenced cycles.
+3. **Neglecting Constants of Integration**: Forgetting $+ C$ in indefinite integrals on examination papers.
+4. **Scale Degeneracy**: Performance degrading to worst-case complexity when input distributions trigger adverse path traversal.
+
+## University Exam: Practice Problems with Answers & Focus Points
+1. **Problem 1 (Recurrence)**: Solve the recurrence relation $T(n) = 2T(n/2) + O(n)$.
+   - *Answer*: By Master Theorem (Case 2), $T(n) = \\Theta(n \\log n)$.
+
+2. **Problem 2 (Definite Integral)**: Compute $\\int_0^1 x^2 \\, dx$.
+   - *Answer*: $\\left[ \\frac{x^3}{3} \\right]_0^1 = \\frac{1}{3}$.
+
+3. **Problem 3 (Space Complexity)**: What is the auxiliary space complexity of iterative vs recursive binary search?
+   - *Answer*: Iterative is $O(1)$ auxiliary space; recursive is $O(\\log N)$ due to call stack frames.
+`;
+}
+
+function parseMarkdownHeaders(rawContent) {
+    if (!rawContent) return [];
+    const headers = [];
+    const lines = rawContent.split("\n");
+    let inCodeBlock = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith("```")) {
+            inCodeBlock = !inCodeBlock;
+            continue;
+        }
+        if (inCodeBlock) continue;
+        
+        const match = line.match(/^(#{1,4})\s+(.+)$/);
+        if (match) {
+            const level = match[1].length;
+            const rawTitle = match[2].trim();
+            const cleanTitle = stripMarkdownSymbols(rawTitle).trim();
+            if (cleanTitle) {
+                headers.push({ level, title: cleanTitle });
+            }
+        }
+    }
+    return headers;
+}
+
+function renderDefaultTableOfContents(tocContainer, container) {
+    const defaultSections = [
+        { title: "Executive Overview", icon: "fa-solid fa-book-open", keywords: ["overview", "introduction", "definition", "about"] },
+        { title: "Key Concepts & Theory", icon: "fa-solid fa-layer-group", keywords: ["concept", "theory", "theoretical", "foundations", "principles"] },
+        { title: "Syntax & Implementation", icon: "fa-solid fa-code", keywords: ["syntax", "implementation", "code", "example", "program"] },
+        { title: "Complexity Breakdown", icon: "fa-solid fa-gauge-high", keywords: ["complexity", "time", "space", "big-o", "matrix"] },
+        { title: "Common Pitfalls & Edge Cases", icon: "fa-solid fa-triangle-exclamation", keywords: ["pitfall", "common", "edge", "cases", "error", "mistake"] },
+        { title: "University Exam Tips", icon: "fa-solid fa-graduation-cap", keywords: ["exam", "interview", "questions", "tips", "derivation", "syllabus"] }
+    ];
+
+    const children = container ? Array.from(container.children) : [];
+    
+    let tocHtml = '<nav class="space-y-1">';
+    defaultSections.forEach((sec, idx) => {
+        const id = `note-default-sec-${idx}`;
+        let matchedEl = null;
+
+        // Match paragraph or section containing keywords
+        if (children.length > 0) {
+            for (let child of children) {
+                const text = child.textContent.toLowerCase();
+                if (sec.keywords.some(k => text.includes(k))) {
+                    matchedEl = child;
+                    break;
+                }
+            }
+            if (!matchedEl) {
+                const childIdx = Math.min(children.length - 1, Math.floor((idx / defaultSections.length) * children.length));
+                matchedEl = children[childIdx];
+            }
+        }
+
+        if (matchedEl && !matchedEl.id) {
+            matchedEl.id = id;
+        } else if (container && !document.getElementById(id)) {
+            const anchor = document.createElement("div");
+            anchor.id = id;
+            anchor.className = "h-0 w-0 overflow-hidden";
+            container.appendChild(anchor);
+        }
+
+        tocHtml += `
+            <a href="#${id}" onclick="scrollToNoteSection(event, '${id}')" class="toc-nav-item pl-2 text-xs font-semibold">
+                <i class="${sec.icon} text-[10px] mr-2 text-indigo-500"></i>
+                <span class="truncate">${sec.title}</span>
+            </a>
+        `;
+    });
+    tocHtml += '</nav>';
+    tocContainer.innerHTML = tocHtml;
+}
+
+function buildTableOfContents(container, rawContent = "") {
+    const tocContainer = document.getElementById("noteModalTOC");
+    if (!tocContainer) return;
+
+    // Clear any previous loading or stale content
+    tocContainer.innerHTML = "";
+
+    // 1. Check DOM headings inside the container
+    let headings = container ? Array.from(container.querySelectorAll("h1, h2, h3, h4")) : [];
+
+    // 2. If no DOM headings found, try parsing from rawContent
+    if (headings.length === 0 && rawContent) {
+        const parsedHeaders = parseMarkdownHeaders(rawContent);
+        if (parsedHeaders.length > 0 && container) {
+            headings = Array.from(container.querySelectorAll("h1, h2, h3, h4"));
+        }
+    }
+
+    // 3. If still no headings found, fall back to default structured academic sections
+    if (headings.length === 0) {
+        renderDefaultTableOfContents(tocContainer, container);
+        setupTOCScrollSpy();
+        return;
+    }
+
+    // 4. Render headings into TOC nav
+    let tocHtml = '<nav class="space-y-1">';
+    headings.forEach((heading, idx) => {
+        const id = `note-sec-${idx}`;
+        heading.id = id;
+
+        const tag = heading.tagName.toLowerCase();
+        let indentClass = 'pl-2 text-xs font-semibold';
+        let icon = '<i class="fa-solid fa-bookmark text-[10px] mr-1.5 text-indigo-400"></i>';
+
+        if (tag === 'h1') {
+            indentClass = 'pl-1 text-xs font-bold text-slate-100';
+            icon = '<i class="fa-solid fa-bookmark text-[10px] mr-1.5 text-indigo-400"></i>';
+        } else if (tag === 'h2') {
+            indentClass = 'pl-2.5 text-xs font-semibold text-slate-200';
+            icon = '<i class="fa-solid fa-layer-group text-[10px] mr-1.5 text-indigo-400"></i>';
+        } else if (tag === 'h3') {
+            indentClass = 'pl-5 text-[11px] text-slate-300';
+            icon = '<i class="fa-solid fa-angle-right text-[9px] mr-1.5 text-indigo-400"></i>';
+        } else if (tag === 'h4') {
+            indentClass = 'pl-7 text-[10px] text-slate-400';
+            icon = '<i class="fa-solid fa-circle text-[6px] mr-1.5 text-indigo-300"></i>';
+        }
+
+        const rawText = heading.textContent || "";
+        const cleanTitle = stripMarkdownSymbols(rawText).replace(/^[\d\.\s]+/, '').trim() || rawText.trim();
+
+        tocHtml += `
+            <a href="#${id}" onclick="scrollToNoteSection(event, '${id}')" class="toc-nav-item ${indentClass}">
+                ${icon}
+                <span class="truncate">${cleanTitle}</span>
+            </a>
+        `;
+    });
+    tocHtml += '</nav>';
+    tocContainer.innerHTML = tocHtml;
+    setupTOCScrollSpy();
+}
+
+let isTOCScrolling = false;
+function setupTOCScrollSpy() {
+    const scrollContainer = document.getElementById("noteMainDocumentScroll");
+    if (!scrollContainer || scrollContainer._hasScrollSpy) return;
+    scrollContainer._hasScrollSpy = true;
+
+    scrollContainer.addEventListener("scroll", () => {
+        if (isTOCScrolling) return;
+        const targets = document.querySelectorAll("#modal-markdown-content h1, #modal-markdown-content h2, #modal-markdown-content h3, #modal-markdown-content [id^='note-default-sec-']");
+        const containerRect = scrollContainer.getBoundingClientRect();
+        
+        let currentActiveId = null;
+        targets.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top - containerRect.top <= 120) {
+                currentActiveId = el.id;
+            }
+        });
+
+        if (currentActiveId) {
+            document.querySelectorAll("#noteModalTOC a").forEach(a => {
+                if (a.getAttribute("href") === `#${currentActiveId}`) {
+                    a.classList.add("active");
+                } else {
+                    a.classList.remove("active");
+                }
+            });
+        }
+    }, { passive: true });
+}
+
+function scrollToNoteSection(event, sectionId) {
+    if (event) event.preventDefault();
+    const targetEl = document.getElementById(sectionId);
+    const scrollContainer = document.getElementById("noteMainDocumentScroll");
+    if (targetEl && scrollContainer) {
+        isTOCScrolling = true;
+        const targetRect = targetEl.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const targetScrollTop = scrollContainer.scrollTop + (targetRect.top - containerRect.top) - 16;
+        scrollContainer.scrollTo({ top: Math.max(0, targetScrollTop), behavior: "smooth" });
+
+        document.querySelectorAll("#noteModalTOC a").forEach(a => a.classList.remove("active"));
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add("active");
+        }
+        setTimeout(() => { isTOCScrolling = false; }, 800);
+    }
+}
+
+// Sanitizes unwanted ASCII artifacts, decorative borders, and redundant plaintext headers
+function sanitizeStudyNotesContent(raw) {
+    if (!raw) return "";
+    let text = String(raw);
+
+    // 1. Strip raw ASCII decorative borders (===, ---, ___, ~~~, etc.)
+    text = text.replace(/^[=\-~_#*]{4,}\s*$/gm, '');
+    text = text.replace(/[=\-]{10,}/g, '');
+
+    // 2. Remove redundant plaintext header blocks from modal body:
+    // e.g. "STUDY NOTES: PYTHON", "LECTURE NOTE: ...", "Subject: ...", "Date Synthesized: ...", "Author: ..."
+    text = text.replace(/^(#+\s*)?(STUDY NOTES|HANDWRITTEN[A-Z\s]*NOTES|LECTURE\s+NOTES?)[:\s].*$/gmi, '');
+    text = text.replace(/^>*\s*\*{0,2}(Academic\s+)?Subject\*{0,2}[:\s].*$/gmi, '');
+    text = text.replace(/^>*\s*\*{0,2}(Date\s+)?Synthesized\*{0,2}[:\s].*$/gmi, '');
+    text = text.replace(/^>*\s*\*{0,2}Author\*{0,2}[:\s].*$/gmi, '');
+    text = text.replace(/^>*\s*\*{0,2}Source\*{0,2}[:\s].*$/gmi, '');
+    text = text.replace(/^>*\s*\*{0,2}Topic\*{0,2}[:\s].*$/gmi, '');
+
+    // 3. Ensure content starts cleanly with # Executive Overview
+    text = text.trim();
+    const execMatch = text.match(/(#+\s*Executive Overview[\s\S]*)/i);
+    if (execMatch) {
+        text = execMatch[1].replace(/^#+\s*Executive Overview/i, '# Executive Overview');
+    } else {
+        if (!text.startsWith("#")) {
+            text = `# Executive Overview\n\n${text}`;
+        }
+    }
+
+    // 4. Clean up multiple empty lines
+    text = text.replace(/\n{3,}/g, '\n\n').trim();
+    return text;
+}
+window.sanitizeStudyNotesContent = sanitizeStudyNotesContent;
+
+function applyKaTeXToElement(container) {
+    if (!container) return;
+    if (typeof renderMathInElement === "function") {
+        try {
+            renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false,
+                ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+            });
+        } catch (err) {
+            console.warn("KaTeX rendering warning:", err);
+        }
+    } else {
+        const checkKaTeXInterval = setInterval(() => {
+            if (typeof renderMathInElement === "function") {
+                clearInterval(checkKaTeXInterval);
+                applyKaTeXToElement(container);
+            }
+        }, 100);
+        setTimeout(() => clearInterval(checkKaTeXInterval), 3000);
+    }
+}
+window.applyKaTeXToElement = applyKaTeXToElement;
+
+// Re-typeset raw LaTeX math strings into formatted mathematical equations using MathJax 3
+function renderMathFormulas(elements) {
+    if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+        const target = elements ? (Array.isArray(elements) ? elements : [elements]) : undefined;
+        window.MathJax.typesetPromise(target).catch((err) => console.error("MathJax error:", err));
+    } else if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+        try {
+            if (elements) {
+                window.MathJax.typeset(Array.isArray(elements) ? elements : [elements]);
+            } else {
+                window.MathJax.typeset();
+            }
+        } catch (err) {
+            console.error("MathJax typeset error:", err);
+        }
+    }
+}
+window.renderMathFormulas = renderMathFormulas;
+
+function renderNoteDocumentContent(content) {
+    const cleanContent = sanitizeStudyNotesContent(content);
+    const markdownContentEl = document.getElementById("modal-markdown-content") || document.getElementById("noteMainDocument");
+    if (markdownContentEl) {
+        let html = "";
+        if (typeof marked !== 'undefined') {
+            if (typeof marked.parse === 'function') {
+                try {
+                    marked.setOptions({ gfm: true, breaks: true });
+                    html = marked.parse(cleanContent);
+                } catch (e) {
+                    html = renderMarkdownToHtml(cleanContent);
+                }
+            } else if (typeof marked === 'function') {
+                html = marked(cleanContent);
+            }
+        }
+        if (!html) {
+            html = renderMarkdownToHtml(cleanContent);
+        }
+        markdownContentEl.innerHTML = html;
+        applyKaTeXToElement(markdownContentEl);
+        renderMathFormulas(markdownContentEl);
+        buildTableOfContents(markdownContentEl, cleanContent);
+    }
+
+    // Reading statistics
+    const wordList = cleanContent.trim().split(/\s+/).filter(Boolean);
+    const wordCount = wordList.length;
+    const readTime = Math.max(1, Math.ceil(wordCount / 185));
+
+    const wordEl = document.getElementById("noteWordCount");
+    if (wordEl) wordEl.innerHTML = `<i class="fa-solid fa-file-lines mr-1 text-indigo-400"></i> ${wordCount} words`;
+
+    const timeEl = document.getElementById("noteReadingTime");
+    if (timeEl) timeEl.innerHTML = `<i class="fa-regular fa-clock mr-1 text-indigo-400"></i> ~${readTime} min read`;
+}
+
+function openStudyNotesModal(note) {
+    if (!note) {
+        if (currentSearchData && currentSearchData.notes && currentSearchData.notes.length > 0) {
+            note = currentSearchData.notes[0];
+        } else {
+            const topicTitle = (currentSearchData && (currentSearchData.title || currentSearchData.query)) || currentQuery || "Academic Topic";
+            note = {
+                title: `Study Notes: ${topicTitle}`,
+                subject: (currentSearchData && (currentSearchData.category || currentSearchData.domain)) || "Academic Curriculum",
+                uploaded_by: "OmniLearn AI Academic Engine",
+                file_path: "",
+                ocr_text: studyNotes || ""
+            };
+        }
+    }
+    return openNoteModal(note);
+}
+window.openStudyNotesModal = openStudyNotesModal;
+
+async function openNoteModal(note) {
+    const activeData = currentSearchData || {};
+    const activeTopic = activeData.title || activeData.query || (note && note.title ? note.title.replace(/^Study Notes:\s*/i, '') : currentQuery) || "Academic Topic";
+
+    if (!note) {
+        note = {
+            title: `Study Notes: ${activeTopic}`,
+            subject: activeData.category || activeData.domain || "Academic Curriculum",
+            uploaded_by: "OmniLearn AI Academic Engine",
+            file_path: ""
+        };
+    }
+    currentNote = note;
+
+    // 1. Dynamic Header Title & Badges
+    const titleEl = document.getElementById("noteModalTitle");
+    if (titleEl) {
+        titleEl.textContent = note.title ? (note.title.startsWith("Study Notes:") ? note.title : `Study Notes: ${note.title}`) : `Study Notes: ${activeTopic}`;
+    }
+
+    const badgeEl = document.getElementById("noteModalSubjectBadge");
+    if (badgeEl) {
+        badgeEl.textContent = note.subject || activeData.domain || activeData.category || "Academic Curriculum";
+    }
+
+    const metaEl = document.getElementById("noteModalMeta");
+    if (metaEl) {
+        metaEl.innerHTML = `<i class="fa-regular fa-user mr-1 text-slate-400"></i>${note.uploaded_by || 'OmniLearn AI Academic Engine'} | Comprehensive University Syllabus Revision`;
+    }
+
+    // Configure "View File" action button in modal header
+    const viewFileBtn = document.getElementById("viewOriginalFileBtn");
+    if (viewFileBtn) {
+        if (note.file_path) {
+            viewFileBtn.href = `/api/notes/file/${encodeURIComponent(note.file_path)}`;
+            viewFileBtn.classList.remove("hidden");
+        } else {
+            viewFileBtn.classList.add("hidden");
+        }
+    }
+
+    // Reset search input & bookmark status
+    const searchInput = document.getElementById("modalTextSearchInput");
+    if (searchInput) searchInput.value = "";
+    updateNoteModalBookmarkButton();
+
+    // 2. Show Modal Immediately
+    const modalEl = document.getElementById("noteDetailModal");
+    if (modalEl) modalEl.classList.remove("hidden");
+
+    // 3. If API data is currently loading and no specific note content exists, show spinner
+    if (isSearching && !note.ocr_text && !note.file_path) {
+        showNoteModalLoadingSpinner(activeTopic);
+        return;
+    }
+
+    // 4. Resolve notes content: prioritize specific note content if card was clicked
+    let notesContent = "";
+    if (note.ocr_text && note.ocr_text.trim()) {
+        notesContent = note.ocr_text;
+    } else if (note.file_path) {
+        try {
+            showNoteModalLoadingSpinner(note.title || activeTopic);
+            const resp = await fetch(`/api/notes/file/${encodeURIComponent(note.file_path)}`);
+            if (resp.ok) {
+                notesContent = await resp.text();
+                note.ocr_text = notesContent;
+            }
+        } catch (err) {
+            console.error("Failed to load note file content:", err);
+        }
+    }
+
+    if (!notesContent || !notesContent.trim()) {
+        notesContent = activeData.notesContent || activeData.studyNotes || activeData.study_notes || activeData.notes_content || studyNotes || "";
+    }
+
+    if (!notesContent || !notesContent.trim()) {
+        try {
+            const stored = sessionStorage.getItem("omni_study_notes");
+            if (stored && stored.trim()) notesContent = stored.trim();
+        } catch (e) {}
+    }
+
+    if (!notesContent || !notesContent.trim()) {
+        notesContent = generateAcademicFallbackNotes(activeTopic, note.subject);
+        studyNotes = notesContent;
+        try { sessionStorage.setItem("omni_study_notes", notesContent); } catch(e) {}
+    }
+
+    // 5. Directly inject dynamic Markdown HTML into #modal-markdown-content
+    renderNoteDocumentContent(notesContent);
+    renderMathFormulas();
 }
 
 function closeNoteModal() {
@@ -855,9 +1912,9 @@ function updateNoteModalBookmarkButton() {
     const isBookmarked = bookmarks.some(b => b.item_type === "note" && b.item_id === currentNote.id);
     
     if (isBookmarked) {
-        btn.innerHTML = `<i class="fa-solid fa-bookmark text-xl text-yellow-500"></i>`;
+        btn.innerHTML = `<i class="fa-solid fa-bookmark text-base text-yellow-500"></i>`;
     } else {
-        btn.innerHTML = `<i class="fa-regular fa-bookmark text-xl text-slate-400"></i>`;
+        btn.innerHTML = `<i class="fa-regular fa-bookmark text-base text-slate-400"></i>`;
     }
 }
 
@@ -889,28 +1946,154 @@ async function toggleNoteBookmarkFromModal() {
     }
 }
 
-// Highlights search occurrences on modal text blocks
-function highlightModalText() {
-    const searchVal = document.getElementById("modalTextSearchInput").value.trim();
-    const notepad = document.getElementById("notepadContainer");
-    const ocrPanel = document.getElementById("noteModalOcrText");
-    
+// Complete note export supporting untruncated TXT and PDF
+function downloadCurrentNote(format = 'txt') {
     if (!currentNote) return;
     
+    const activeData = currentSearchData || {};
+    const activeTopic = activeData.title || activeData.query || (currentNote.title ? currentNote.title.replace(/^Study Notes:\s*/i, '') : "study_notes");
+    let notesContent = (currentNote && currentNote.ocr_text) || activeData.notesContent || activeData.studyNotes || activeData.study_notes || activeData.notes_content || studyNotes || "";
+    if (!notesContent || !notesContent.trim()) {
+        notesContent = generateAcademicFallbackNotes(activeTopic, currentNote.subject);
+    }
+    const cleanTitle = (currentNote.title || `Study_Notes_${activeTopic}`).replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+    if (format === 'txt') {
+        // Direct download of complete untruncated markdown notes
+        const blob = new Blob([notesContent], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${cleanTitle}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (format === 'pdf') {
+        // Open clean styled printable window for complete PDF export
+        const printWindow = window.open('', '_blank', 'width=850,height=900');
+        if (!printWindow) {
+            alert("Please allow popups in your browser to export notes as PDF.");
+            return;
+        }
+        let renderedHtml = "";
+        if (typeof marked !== 'undefined') {
+            if (typeof marked.parse === 'function') {
+                try {
+                    renderedHtml = marked.parse(notesContent);
+                } catch(e) {
+                    renderedHtml = renderMarkdownToHtml(notesContent);
+                }
+            } else if (typeof marked === 'function') {
+                renderedHtml = marked(notesContent);
+            }
+        }
+        if (!renderedHtml) renderedHtml = renderMarkdownToHtml(notesContent);
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>${currentNote.title || `Study Notes: ${activeTopic}`}</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+                <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+                <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+                <style>
+                    @media print {
+                        body { padding: 15px; }
+                        .no-print { display: none !important; }
+                    }
+                    body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 40px; max-width: 850px; margin: 0 auto; line-height: 1.8; font-size: 16px; }
+                    table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+                    th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+                    th { background-color: #f1f5f9; font-weight: 700; }
+                    pre { background-color: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; line-height: 1.5; }
+                    code { font-family: monospace; font-size: 13px; }
+                    .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
+                </style>
+            </head>
+            <body>
+                <div class="mb-6 pb-4 border-b border-slate-200">
+                    <h1 class="text-2xl font-bold text-slate-900">${currentNote.title || `Study Notes: ${activeTopic}`}</h1>
+                    <p class="text-xs text-slate-500 mt-1">Subject: ${currentNote.subject || 'Academic'} | Author: ${currentNote.uploaded_by || 'OmniLearn'} | OmniLearn Academic Study Resource</p>
+                </div>
+                <div class="prose max-w-none text-base space-y-4" id="printDocContent">
+                    ${renderedHtml}
+                </div>
+                <script>
+                    window.onload = function() {
+                        if (typeof renderMathInElement === "function") {
+                            renderMathInElement(document.getElementById("printDocContent"), {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\\\(', right: '\\\\)', display: false },
+                                    { left: '\\\\[', right: '\\\\]', display: true }
+                                ],
+                                throwOnError: false
+                            });
+                        }
+                        setTimeout(() => {
+                            window.print();
+                        }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+}
+
+// Highlights search occurrences on modal text blocks preserving markdown formatting
+function highlightModalText() {
+    const searchVal = document.getElementById("modalTextSearchInput").value.trim();
+    const markdownContentEl = document.getElementById("modal-markdown-content") || document.getElementById("noteMainDocument");
+    if (!currentNote || !markdownContentEl) return;
+    
+    const activeData = currentSearchData || {};
+    const activeTopic = activeData.title || activeData.query || (currentNote.title ? currentNote.title.replace(/^Study Notes:\s*/i, '') : "Topic");
+    let notesContent = activeData.notesContent || activeData.studyNotes || activeData.study_notes || activeData.notes_content || studyNotes || (currentNote && currentNote.ocr_text) || "";
+    if (!notesContent || !notesContent.trim()) {
+        notesContent = generateAcademicFallbackNotes(activeTopic, currentNote.subject);
+    }
+    
     if (!searchVal) {
-        notepad.textContent = currentNote.ocr_text;
-        ocrPanel.textContent = currentNote.ocr_text;
+        renderNoteDocumentContent(notesContent);
         return;
     }
     
-    // Escape regex characters
+    // Safely inject highlight markers before markdown compilation
     const escapedVal = searchVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`(${escapedVal})`, 'gi');
     
-    // Highlight notepad HTML
-    const htmlText = currentNote.ocr_text.replace(regex, '<mark class="bg-yellow-200 text-slate-900 px-0.5 rounded">$1</mark>');
-    notepad.innerHTML = htmlText;
-    ocrPanel.innerHTML = htmlText;
+    const markedText = notesContent.replace(regex, '==OMNI_HL==$1==OMNI_ENDHL==');
+    let renderedHtml = "";
+    if (typeof marked !== 'undefined') {
+        if (typeof marked.parse === 'function') {
+            try {
+                marked.setOptions({ gfm: true, breaks: true });
+                renderedHtml = marked.parse(markedText);
+            } catch(e) {
+                renderedHtml = renderMarkdownToHtml(markedText);
+            }
+        } else if (typeof marked === 'function') {
+            renderedHtml = marked(markedText);
+        }
+    }
+    if (!renderedHtml) {
+        renderedHtml = renderMarkdownToHtml(markedText);
+    }
+    renderedHtml = renderedHtml
+        .replace(/==OMNI_HL==/g, '<mark class="bg-amber-400/30 text-amber-200 px-1 py-0.5 rounded font-semibold border border-amber-400/40">')
+        .replace(/==OMNI_ENDHL==/g, '</mark>');
+        
+    markdownContentEl.innerHTML = renderedHtml;
+    applyKaTeXToElement(markdownContentEl);
+    renderMathFormulas(markdownContentEl);
+    buildTableOfContents(markdownContentEl, notesContent);
 }
 
 // --- Upload Note Operations ---
@@ -972,41 +2155,52 @@ async function handleUploadSubmit(event) {
 }
 
 // --- Render Careers (roadmap.sh) ---
-function renderCareers(careers) {
+function renderCareers(careers, careerRelevanceText) {
     const card = document.getElementById("careersContainerCard");
     const container = document.getElementById("careersContainer");
     
     if (!card || !container) return;
-    
     container.innerHTML = "";
     
-    if (!careers || careers.length === 0) {
+    const hasCareersList = Array.isArray(careers) && careers.length > 0;
+    const hasRelevanceText = careerRelevanceText && typeof careerRelevanceText === "string" && careerRelevanceText.trim().length > 0;
+    
+    if (!hasCareersList && !hasRelevanceText) {
         card.classList.add("hidden");
         return;
     }
     
     card.classList.remove("hidden");
+
+    if (hasRelevanceText) {
+        const descEl = document.createElement("div");
+        descEl.className = "mb-3 p-3 bg-indigo-50/70 border border-indigo-100 rounded-lg text-xs text-slate-700 leading-relaxed";
+        descEl.innerHTML = `<span class="font-bold text-indigo-800 flex items-center mb-1"><i class="fa-solid fa-crosshairs mr-1.5 text-indigo-600"></i>Industry & Career Pathway:</span>${careerRelevanceText}`;
+        container.appendChild(descEl);
+    }
     
-    careers.forEach(item => {
-        const itemEl = document.createElement("div");
-        itemEl.className = "bg-slate-50 border border-slate-100 rounded-lg p-3 hover:bg-slate-100 transition flex items-start justify-between gap-3";
-        
-        itemEl.innerHTML = `
-            <div class="min-w-0 flex-1">
-                <h4 class="font-bold text-xs text-slate-800 flex items-center">
-                    <i class="fa-solid fa-briefcase text-indigo-500 mr-2 text-[11px]"></i>${item.role}
-                </h4>
-                <p class="text-[10px] text-slate-600 mt-1 leading-relaxed">${item.importance}</p>
-            </div>
-            <div class="flex-shrink-0 self-center">
-                <a href="${item.roadmap_url}" target="_blank" class="inline-flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-2.5 py-1.5 rounded-md text-[10px] transition duration-200 border border-indigo-100 shadow-3xs">
-                    <span>View Roadmap</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
-                </a>
-            </div>
-        `;
-        container.appendChild(itemEl);
-    });
+    if (hasCareersList) {
+        careers.forEach(item => {
+            const itemEl = document.createElement("div");
+            itemEl.className = "bg-slate-50 border border-slate-100 rounded-lg p-3 hover:bg-slate-100 transition flex items-start justify-between gap-3";
+            
+            itemEl.innerHTML = `
+                <div class="min-w-0 flex-1">
+                    <h4 class="font-bold text-xs text-slate-800 flex items-center">
+                        <i class="fa-solid fa-briefcase text-indigo-500 mr-2 text-[11px]"></i>${item.role}
+                    </h4>
+                    <p class="text-[10px] text-slate-600 mt-1 leading-relaxed">${item.importance}</p>
+                </div>
+                <div class="flex-shrink-0 self-center">
+                    <a href="${item.roadmap_url}" target="_blank" class="glass-btn glass-btn-primary inline-flex items-center space-x-1.5 font-semibold px-2.5 py-1.5 rounded-md text-[10px] transition duration-200">
+                        <span>View Roadmap</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                    </a>
+                </div>
+            `;
+            container.appendChild(itemEl);
+        });
+    }
 }
 
 // --- Year-wise Notes Library Helpers ---
@@ -1481,7 +2675,7 @@ function viewSubjectUnits(year, subjectIndex) {
     const backBtnContainer = document.createElement("div");
     backBtnContainer.className = "col-span-full mb-2";
     backBtnContainer.innerHTML = `
-        <button onclick="selectYearNotes(${year})" class="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition">
+        <button onclick="selectYearNotes(${year})" class="glass-btn glass-btn-secondary inline-flex items-center space-x-2 font-semibold px-3 py-1.5 rounded-lg text-xs transition">
             <i class="fa-solid fa-arrow-left"></i>
             <span>Back to Subjects</span>
         </button>
@@ -1498,16 +2692,12 @@ function viewSubjectUnits(year, subjectIndex) {
         unitCard.innerHTML = `
             <div class="flex-1">
                 <div class="flex items-center space-x-2">
-                    <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Unit ${unit.number}</span>
+                    <span class="glass-badge glass-badge-indigo px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Unit ${unit.number}</span>
                     <h5 class="font-bold text-sm text-slate-800">${unit.name}</h5>
                 </div>
                 <p class="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans"><strong class="text-slate-755">Topics:</strong> ${unit.chapters}</p>
             </div>
             <div class="flex-shrink-0 self-stretch md:self-center flex items-center">
-                <a href="/api/notes/file/${filename}" target="_blank" class="w-full text-center inline-flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg text-xs transition shadow-xs">
-                    <i class="fa-solid fa-file-arrow-down"></i>
-                    <span>Download Notes</span>
-                </a>
             </div>
         `;
         list.appendChild(unitCard);
@@ -1520,3 +2710,65 @@ function closeYearSubjects() {
         panel.classList.add("hidden");
     }
 }
+
+async function toggleSettingsModal() {
+    const modal = document.getElementById("settingsModal");
+    if (!modal) return;
+    
+    if (modal.classList.contains("hidden")) {
+        try {
+            const res = await fetch("/api/config/get-status");
+            const data = await res.json();
+            const statusText = document.getElementById("apiKeyStatusText");
+            const keyInput = document.getElementById("geminiApiKeyInput");
+            if (data.has_key) {
+                statusText.textContent = `✓ Gemini Key active (${data.masked_key})`;
+                statusText.className = "text-xs text-emerald-400 block mt-1 font-semibold";
+                if (keyInput) keyInput.value = "";
+            } else {
+                statusText.textContent = "✗ No Gemini Key configured (running in fallback mode)";
+                statusText.className = "text-xs text-rose-400 block mt-1 font-semibold";
+            }
+        } catch (e) {
+            console.error("Failed to fetch key status:", e);
+        }
+        modal.classList.remove("hidden");
+    } else {
+        modal.classList.add("hidden");
+    }
+}
+window.toggleSettingsModal = toggleSettingsModal;
+
+async function saveApiKey(event) {
+    event.preventDefault();
+    const keyInput = document.getElementById("geminiApiKeyInput");
+    if (!keyInput) return;
+    
+    const keyVal = keyInput.value.trim();
+    if (!keyVal) {
+        alert("Please enter a valid API key.");
+        return;
+    }
+    
+    try {
+        const res = await fetch("/api/config/save-key", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ gemini_api_key: keyVal })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+            alert("Success! Your Gemini API key has been saved and connected.");
+            toggleSettingsModal();
+        } else {
+            alert("Error: " + (data.detail || "Failed to save key"));
+        }
+    } catch (e) {
+        console.error("Failed to save key:", e);
+        alert("Failed to connect to backend server. Make sure it is running.");
+    }
+}
+window.saveApiKey = saveApiKey;
+

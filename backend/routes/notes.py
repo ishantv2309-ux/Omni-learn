@@ -155,13 +155,16 @@ def get_aktu_unit_topics(subject: str, unit: int) -> str:
     return topics[idx]
 
 @router.get("/file/{filename}")
-def serve_note_file(filename: str):
+def serve_note_file(filename: str, db: Session = Depends(get_db)):
     """Serves the actual file for display in the frontend viewer or download. Dynamically generates if missing."""
     try:
         file_path = StorageService.get_file_path(filename)
+        lower_name = filename.lower()
         if not file_path.exists():
-            lower_name = filename.lower()
-            if lower_name.startswith("aktu_"):
+            db_note = db.query(Note).filter(Note.file_path == filename).first()
+            if db_note and db_note.ocr_text:
+                file_path.write_text(db_note.ocr_text, encoding="utf-8")
+            elif lower_name.startswith("aktu_"):
                 m = re.search(r'aktu_(.+)_unit_(\d+)', lower_name)
                 if m:
                     subject_slug = m.group(1)
@@ -323,6 +326,13 @@ def serve_note_file(filename: str):
                     file_path.write_text(html_content, encoding="utf-8")
                 else:
                     file_path.write_text(content, encoding="utf-8")
+            elif lower_name.startswith("temp_"):
+                m = re.search(r'temp_(.+?)_\d+', lower_name)
+                q_topic = m.group(1).replace("_", " ").title() if m else filename
+                from backend.services.crawler_service import CrawlerService
+                content = CrawlerService._synthesize_local_notes(q_topic, "Academic Curriculum")
+                full_text = f"# Study Notes: {q_topic}\n\n{content}"
+                file_path.write_text(full_text, encoding="utf-8")
             else:
                 raise HTTPException(status_code=404, detail="File not found")
         

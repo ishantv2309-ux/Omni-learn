@@ -70,17 +70,30 @@ class SearchResponse(BaseModel):
     title: Optional[str] = None
     category: Optional[str] = None
     summary: str
+    overview: Optional[str] = None
     detailed_breakdown: Optional[str] = None
+    detailedBreakdown: Optional[str] = None
     domain: Optional[str] = None
     difficulty_score: float
+    difficultyScore: Optional[float] = None
+    difficultyLevel: Optional[str] = None
     difficulty_reasons: Optional[str] = None
+    aiEvaluation: Optional[str] = None
     roadmap: Optional[List[Dict[str, Any]]] = None
     youtube_videos: List[YouTubeVideo]
     web_resources: List[WebResource]
     pyqs: Optional[List[PYQResponse]] = None
     notes: List[NoteResponse]
     careers: Optional[List[CareerRelevance]] = None
+    careerRelevance: Optional[str] = None
     fun_fact: Optional[str] = None
     did_you_know: Optional[str] = None
-    exam_frequency: Optional[List[Dict[str, Any]]] = None
+    didYouKnow: Optional[str] = None
+    ai_evaluation: Optional[str] = None
+    theoretical_foundations: Optional[str] = None
+    core_formulations: Optional[str] = None
+    study_notes: Optional[str] = None
+    notes_content: Optional[str] = None
+    exam_frequency: Optional[Any] = None
+    examFrequency: Optional[List[int]] = None
 

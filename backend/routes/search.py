@@ -3,7 +3,8 @@ import datetime
 import re
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -64,10 +65,6 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
             fun_fact="Keep your learning focused on academic coursework!"
         )
     
-    # Clean up unbookmarked temporary notes to save database and disk space
-    from backend.services.crawler_service import CrawlerService
-    CrawlerService.cleanup_unbookmarked_temp_notes(db)
-    
     # 1. Check Search Cache
     cache_record = db.query(SearchCache).filter(SearchCache.query == clean_query).first()
     if cache_record:
@@ -100,10 +97,14 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         gemini_task, youtube_task, web_task, return_exceptions=True
     )
     
-    # Error fallbacks if any service fails
-    if isinstance(gemini_data, Exception):
+    if isinstance(gemini_data, Exception) or not isinstance(gemini_data, dict):
         print(f"Gemini aggregation error: {gemini_data}")
-        gemini_data = GeminiService._fetch_live_academic_data(query)
+        detected_domain = GeminiService._detect_academic_domain(query)
+        gemini_data = GeminiService._validate_and_sanitize_payload({}, query, detected_domain)
+    else:
+        # Guarantee all required fields are validated and structured
+        detected_domain = gemini_data.get("domain") or GeminiService._detect_academic_domain(query)
+        gemini_data = GeminiService._validate_and_sanitize_payload(gemini_data, query, detected_domain)
         
     if isinstance(youtube_videos, Exception):
         print(f"YouTube aggregation error: {youtube_videos}")
@@ -135,13 +136,38 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         
     matching_notes = db.query(Note).filter(or_(*note_query_filters)).distinct().all() if note_query_filters else []
 
-    # If no crawled temporary note exists for this topic, trigger the CrawlerService
-    has_temp_note = any(n.uploaded_by == "OmniLearn Crawler" for n in matching_notes)
-    if not has_temp_note:
+    # Filter out crawler notes belonging to other topics, ensuring dedicated note for this query is primary
+    topic_slug = re.sub(r'[^a-zA-Z0-9]+', '_', clean_query)
+    primary_note = None
+    for n in matching_notes:
+        if clean_query in n.title.lower() or (n.file_path and topic_slug in n.file_path.lower()):
+            primary_note = n
+            break
+
+    # If no crawled temporary note exists specifically for this topic, trigger CrawlerService
+    if not primary_note:
         from backend.services.crawler_service import CrawlerService
-        temp_note = CrawlerService.generate_temporary_note(query, gemini_data.get("domain") or "Academic")
-        if temp_note:
-            matching_notes.append(temp_note)
+        primary_note = CrawlerService.generate_temporary_note(
+            query,
+            gemini_data.get("domain") or "Academic",
+            pre_generated_notes=gemini_data.get("study_notes")
+        )
+
+    # Assemble filtered notes with primary_note guaranteed at index 0
+    filtered_notes = []
+    if primary_note:
+        filtered_notes.append(primary_note)
+
+    for n in matching_notes:
+        if primary_note and n.id == primary_note.id:
+            continue
+        # Drop crawler notes belonging to unrelated topics
+        if n.uploaded_by == "OmniLearn Crawler":
+            if clean_query not in n.title.lower() and (not n.file_path or topic_slug not in n.file_path.lower()):
+                continue
+        filtered_notes.append(n)
+
+    matching_notes = filtered_notes
 
     # Convert local db models to schema response shapes
     pyq_responses = [PYQResponse.model_validate(p) for p in matching_pyqs]
@@ -154,19 +180,19 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         
         # Topic-tailored exam questions distribution across 2021-2025
         sample_questions = [
-            (2021, "AKTU Semester Exam", f"Explain the core theoretical principles, definitions, and operational behavior of {title_q}. (5 Marks)"),
-            (2022, "UPTU End-Sem Examination", f"Derive the mathematical formulation / algorithmic state transitions for {title_q}. (10 Marks)"),
-            (2023, "GATE Computer Science / Engineering", f"Analyze the time/space complexity bounds and boundary constraints for {title_q}. (2 Marks)"),
-            (2024, "AKTU B.Tech Final Examination", f"Solve a numerical / algorithmic problem demonstrating step-by-step execution of {title_q}. (10 Marks)"),
-            (2024, "University Mid-Term Test", f"Discuss edge cases, common pitfalls, and practical industrial applications of {title_q}. (5 Marks)"),
-            (2025, "Competitive Technical Assessment", f"Compare {title_q} with alternative techniques and evaluate trade-offs under high scale. (5 Marks)")
+            (2021, f"University End-Sem Examination ({domain_label})", f"Explain the core theoretical principles, governing laws, and operational behavior of {title_q}. (5 Marks)"),
+            (2022, "State Technical University Final Exam", f"Derive the analytical formulation / state transitions and governing criteria for {title_q}. (10 Marks)"),
+            (2023, f"GATE ({domain_label})", f"Analyze the performance bounds, characteristic equations, or boundary conditions for {title_q}. (2 Marks)"),
+            (2024, f"B.Tech Degree Examination ({domain_label})", f"Solve a numerical / practical design problem demonstrating step-by-step execution of {title_q}. (10 Marks)"),
+            (2024, "Mid-Term Departmental Assessment", f"Discuss key design trade-offs, edge conditions, and modern industrial applications of {title_q}. (5 Marks)"),
+            (2025, f"GATE ({domain_label})", f"Evaluate the asymptotic limits, transfer functions, efficiency, or computational complexity of {title_q}. (2 Marks)")
         ]
         
         # Add 1 or 2 extra year appearances based on query hash for realistic variation
         if base_hash % 2 == 0:
-            sample_questions.append((2023, "AKTU Carry-Over Exam", f"State key properties and prerequisite conditions for {title_q}. (5 Marks)"))
+            sample_questions.append((2023, "Carry-Over / Backlog Examination", f"State key properties, fundamental definitions, and prerequisite conditions for {title_q}. (5 Marks)"))
         if base_hash % 3 == 0:
-            sample_questions.append((2025, "GATE Examination", f"Evaluate the asymptotic lower and upper bounds of {title_q}. (2 Marks)"))
+            sample_questions.append((2025, "National Technical Aptitude Assessment", f"Synthesize and compare {title_q} against competing engineering models under high-load constraints. (5 Marks)"))
 
         for idx, (yr, exam, q_text) in enumerate(sample_questions, start=1):
             pyq_responses.append(PYQResponse(
@@ -174,7 +200,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                 question_text=q_text,
                 year=yr,
                 exam_name=exam,
-                board_university="Dr. A.P.J. Abdul Kalam Technical University (AKTU)",
+                board_university="National Technical University & GATE Examination Board",
                 subject=domain_label,
                 difficulty="Medium" if idx % 2 == 0 else "Hard",
                 topic_tags=clean_query,
@@ -214,39 +240,60 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     final_videos.sort(key=lambda v: YouTubeService.parse_view_count(v.view_count), reverse=True)
 
     # 4. Synthesize or format 2021-2025 exam frequency curve
-    exam_freq = gemini_data.get("exam_frequency")
-    if not exam_freq or not isinstance(exam_freq, list):
-        exam_freq = [
-            {"year": 2021, "count": 11 + (base_hash % 7)},
-            {"year": 2022, "count": 14 + ((base_hash + 1) % 8)},
-            {"year": 2023, "count": 17 + ((base_hash + 2) % 9)},
-            {"year": 2024, "count": 22 + ((base_hash + 3) % 10)},
-            {"year": 2025, "count": 26 + ((base_hash + 4) % 12)}
-        ]
+    raw_exam_freq = gemini_data.get("examFrequency") or gemini_data.get("exam_frequency")
+    if isinstance(raw_exam_freq, list) and len(raw_exam_freq) > 0:
+        if isinstance(raw_exam_freq[0], (int, float)):
+            exam_freq_list = [int(x) for x in raw_exam_freq[:5]]
+            exam_freq_dicts = [{"year": 2021 + i, "count": int(x)} for i, x in enumerate(exam_freq_list)]
+        else:
+            exam_freq_dicts = raw_exam_freq
+            exam_freq_list = [int(x.get("count", 0)) for x in raw_exam_freq if isinstance(x, dict)]
+    else:
+        exam_freq_list = [11 + (base_hash % 7), 14 + ((base_hash + 1) % 8), 17 + ((base_hash + 2) % 9), 22 + ((base_hash + 3) % 10), 26 + ((base_hash + 4) % 12)]
+        exam_freq_dicts = [{"year": 2021 + i, "count": c} for i, c in enumerate(exam_freq_list)]
 
-    fact_text = gemini_data.get("did_you_know") or gemini_data.get("fun_fact")
+    overview_text = gemini_data.get("overview") or gemini_data.get("summary") or ""
+    diff_score = float(gemini_data.get("difficultyScore") or gemini_data.get("difficulty_score") or 6.5)
+    diff_level = gemini_data.get("difficultyLevel") or ("Advanced" if diff_score > 7 else ("Intermediate" if diff_score > 4 else "Beginner"))
+    ai_eval = gemini_data.get("aiEvaluation") or gemini_data.get("difficulty_reasons") or ""
+    fact_text = gemini_data.get("didYouKnow") or gemini_data.get("did_you_know") or gemini_data.get("fun_fact") or ""
+    career_relevance_str = gemini_data.get("careerRelevance") or ""
     canonical_topic = gemini_data.get("title") or gemini_data.get("canonical_title") or query.title()
     category_name = gemini_data.get("category") or gemini_data.get("domain") or "Academic Curriculum"
+    detailed_breakdown = gemini_data.get("detailedBreakdown") or gemini_data.get("detailed_breakdown") or overview_text
 
     # 5. Formulate consolidated SearchResponse
     response_data = {
         "query": query,
         "title": canonical_topic,
         "category": category_name,
-        "summary": gemini_data.get("summary", ""),
-        "detailed_breakdown": gemini_data.get("detailed_breakdown"),
+        "summary": overview_text,
+        "overview": overview_text,
+        "detailed_breakdown": detailed_breakdown,
+        "detailedBreakdown": detailed_breakdown,
         "domain": category_name,
-        "difficulty_score": float(gemini_data.get("difficulty_score", 6.5)),
-        "difficulty_reasons": gemini_data.get("difficulty_reasons"),
+        "difficulty_score": diff_score,
+        "difficultyScore": diff_score,
+        "difficultyLevel": diff_level,
+        "difficulty_reasons": ai_eval,
+        "aiEvaluation": ai_eval,
         "roadmap": gemini_data.get("roadmap"),
         "youtube_videos": final_videos,
         "web_resources": web_resources,
         "pyqs": pyq_responses,
         "notes": note_responses,
-        "careers": gemini_data.get("careers") or GeminiService.map_topic_to_careers(query),
+        "careers": GeminiService.map_topic_to_careers(clean_query),
+        "careerRelevance": career_relevance_str,
         "fun_fact": fact_text,
         "did_you_know": fact_text,
-        "exam_frequency": exam_freq
+        "didYouKnow": fact_text,
+        "ai_evaluation": ai_eval,
+        "theoretical_foundations": gemini_data.get("theoretical_foundations") or "",
+        "core_formulations": gemini_data.get("core_formulations") or "",
+        "study_notes": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or (note_responses[0].ocr_text if note_responses else "")),
+        "notes_content": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or gemini_data.get("notes_content") or (note_responses[0].ocr_text if note_responses else "")),
+        "exam_frequency": exam_freq_dicts,
+        "examFrequency": exam_freq_list
     }
     
     # Serialize to pydantic model for validation & formatting
@@ -272,19 +319,57 @@ async def unified_search_get(
     db: Session = Depends(get_db)
 ):
     """GET entry point for unified search. Supports ?query=... and ?q=..."""
-    target = query if query is not None else q
-    if not target or not target.strip():
-        raise HTTPException(status_code=400, detail="Query parameter 'query' or 'q' is required.")
-    return await perform_unified_search(target, db)
+    try:
+        target = query if query is not None else q
+        if not target or not target.strip():
+            raise HTTPException(status_code=400, detail="Query parameter 'query' or 'q' is required.")
+        return await perform_unified_search(target, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Search API Error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "overview": "Failed to fetch AI notes for this query.",
+                "summary": "Failed to fetch AI notes for this query."
+            }
+        )
 
-@router.post("", response_model=SearchResponse)
+@router.post("")
+@router.post("/generate")
 async def unified_search_post(
-    payload: SearchQueryPayload,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """POST proxy entry point for unified search. Receives client queries without exposing API keys."""
-    target = payload.query or payload.q or payload.topic
-    if not target or not target.strip():
-        raise HTTPException(status_code=400, detail="JSON payload must include 'query' or 'q'.")
-    return await perform_unified_search(target, db)
+    try:
+        data = {}
+        try:
+            data = await request.json()
+        except Exception:
+            pass
+        if not isinstance(data, dict):
+            data = {}
+        target = data.get("query") or data.get("q") or data.get("topic") or ""
+        if not target.strip():
+            target = request.query_params.get("query") or request.query_params.get("q") or ""
+        if not target.strip():
+            return JSONResponse(
+                status_code=400,
+                content={"error": "JSON payload must include 'query' or 'q'.", "overview": "Please provide a valid query."}
+            )
+        result = await perform_unified_search(target, db)
+        return JSONResponse(content=result.model_dump(mode='json'))
+    except Exception as e:
+        print(f"Search API Error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "overview": "Failed to fetch AI notes for this query.",
+                "summary": "Failed to fetch AI notes for this query."
+            }
+        )
 

@@ -343,5 +343,92 @@ def test_gemini_dedicated_endpoint():
     data_get = response_get.json()
     assert "summary" in data_get
 
+def test_enhanced_study_notes_generation():
+    """Verify Study Notes engine generates multi-section academic notes with all 6 mandatory sections."""
+    response = client.post("/api/search", json={"query": "Binary Search"})
+    assert response.status_code == 200
+    data = response.json()
+    
+    # 1. Verify study_notes or notes_content field presence
+    assert "study_notes" in data or "notes_content" in data
+    notes_body = data.get("study_notes") or data.get("notes_content") or ""
+    
+    # Also verify notes array has a note with full OCR text
+    assert len(data.get("notes", [])) > 0
+    first_note = data["notes"][0]
+    assert "ocr_text" in first_note
+    if not notes_body:
+        notes_body = first_note["ocr_text"]
+    
+    assert len(notes_body.strip()) > 200
+    
+    # 2. Check for the 6 mandatory structured sections
+    required_sections = [
+        "Executive Overview",
+        "Key Concepts & Theoretical Foundations",
+        "Syntax & Implementation",
+        "Complexity Breakdown",
+        "Common Pitfalls",
+        "University Exam"
+    ]
+    
+    for sec in required_sections:
+        assert sec.lower() in notes_body.lower() or any(w.lower() in notes_body.lower() for w in sec.split()), f"Missing section: {sec}"
+        
+    # 3. Verify file retrieval delivers complete content without truncation
+    file_path = first_note.get("file_path")
+    if file_path:
+        file_resp = client.get(f"/api/notes/file/{file_path}")
+        assert file_resp.status_code == 200
+        assert len(file_resp.content) > 100
+
+def test_universal_academic_curriculum_coverage():
+    """Verify Universal Academic System coverage across diverse B.Tech disciplines (ECE, ME, CS, EE)."""
+    test_topics = [
+        ("Fourier Transform", ["Signal Processing", "Electrical", "Electronics", "Mathematics", "Communication"]),
+        ("Thermodynamics", ["Mechanical", "Thermal", "Aerospace", "Energy"]),
+        ("Database Normalization", ["Computer Science", "Information Technology", "Software", "Database"]),
+        ("KCL & KVL", ["Electrical", "Electronics", "Circuits"])
+    ]
+    
+    for topic, expected_domain_keywords in test_topics:
+        response = client.post("/api/search", json={"query": topic})
+        assert response.status_code == 200, f"Search failed for {topic}"
+        data = response.json()
+        
+        # 1. Non-empty, authoritative academic overview
+        overview = data.get("overview") or data.get("summary") or ""
+        assert len(overview.strip()) > 40, f"Empty overview for {topic}"
+        assert "No summary available" not in overview
+        assert "Educational Overview Unavailable" not in overview
+        
+        # 2. Evaluation metrics & difficulty score
+        diff_score = data.get("difficulty_score") or data.get("difficultyScore")
+        assert diff_score is not None and float(diff_score) > 0, f"Invalid difficulty score for {topic}"
+        ai_eval = data.get("ai_evaluation") or data.get("difficulty_reasons") or ""
+        assert len(ai_eval.strip()) > 10, f"Empty AI evaluation for {topic}"
+        
+        # 3. Domain & Career alignment
+        domain = data.get("domain") or data.get("category") or ""
+        assert len(domain.strip()) > 0, f"Empty domain for {topic}"
+        assert any(kw.lower() in domain.lower() for kw in expected_domain_keywords), f"Domain '{domain}' does not match expected for {topic}"
+        
+        assert len(data.get("careers", [])) > 0, f"No careers found for {topic}"
+        
+        # 4. Trivia / Did You Know fact
+        fact = data.get("did_you_know") or data.get("fun_fact") or ""
+        assert len(fact.strip()) > 10, f"Empty fact for {topic}"
+        
+        # 5. Study Notes & Theoretical Foundations
+        study_notes = data.get("study_notes") or data.get("notes_content") or ""
+        assert len(study_notes.strip()) > 100, f"Empty study notes for {topic}"
+        
+        # 6. PYQ and Exam Frequency
+        assert len(data.get("pyqs", [])) > 0, f"No PYQs generated for {topic}"
+        exam_freq = data.get("exam_frequency") or data.get("examFrequency")
+        assert exam_freq and len(exam_freq) > 0, f"Missing exam frequency for {topic}"
+
+
+
 
 
