@@ -11,10 +11,12 @@ class OCRService:
             return OCRService._get_mock_ocr_text(filename)
             
         try:
-            from google import genai
             from google.genai import types
+            from backend.services.gemini_service import GeminiService
             
-            client = genai.Client(api_key=config.GEMINI_API_KEY)
+            client = GeminiService.get_client()
+            if not client:
+                return OCRService._get_mock_ocr_text(filename)
             
             # Read file bytes
             with open(file_path, "rb") as f:
@@ -30,7 +32,7 @@ class OCRService:
             )
             
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=[
                     types.Part.from_bytes(
                         data=file_bytes,

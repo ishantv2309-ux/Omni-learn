@@ -149,17 +149,19 @@ class CrawlerService:
         # Call Gemini if configured and online to synthesize rich notes
         if not config.is_gemini_mocked():
             try:
-                from google import genai
                 from google.genai import types
+                from backend.services.gemini_service import GeminiService
                 
-                client = genai.Client(api_key=config.GEMINI_API_KEY)
+                client = GeminiService.get_client()
+                if not client:
+                    raise RuntimeError("Gemini client not initialized")
                 prompt = f"""
                 You are a senior academic assistant. Generate highly comprehensive, structured, and detailed revision study notes for the academic topic: "{query}".
                 Write about 300-500 words of thorough technical notes. Include definitions, key concepts, formulas or code structures (if applicable), and study references.
                 Return clean text formatting suitable for notepad/terminal view.
                 """
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.6-flash",
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.0,
@@ -170,19 +172,92 @@ class CrawlerService:
             except Exception as e:
                 print(f"Gemini crawler notes synthesis notice: {e}")
                 
-        # Template fallback notes
-        return (
-            f"### 1. Overview of {query}\n"
-            f"This topic represents a central component of {domain or 'Higher Academic Study'}. "
-            f"It covers the core architectural layouts, governing algorithms, and operational properties.\n\n"
-            f"### 2. Key Concepts & Details\n"
-            f"- Foundational Structure: The organizational structure defines the constraints and interactions.\n"
-            f"- Methodical Execution: Transition sequences are performed incrementally, ensuring correctness.\n"
-            f"- Operational Analysis: Running complex inputs exhibits clear asymptotic performance bounds.\n\n"
-            f"### 3. Review Questions & Edge Cases\n"
-            f"- How does {query} scale under extreme concurrency or data constraints?\n"
-            f"- Identify two primary edge cases when evaluating {query} solutions."
-        )
+        # Topic-specific substantive fallback notes
+        q_low = query.lower()
+        title_q = query.title()
+
+        if any(w in q_low for w in ["dijkstra", "shortest path"]):
+            body = (
+                f"### 1. Definitional Foundations & Problem Context\n"
+                f"Dijkstra's Algorithm finds the single-source shortest paths from a starting node to all other vertices in a weighted graph.\n"
+                f"Key Constraint: All edge weights must be strictly non-negative ($w(u, v) \\ge 0$).\n\n"
+                f"### 2. Core Mechanics & State Invariants\n"
+                f"- Distance Array: Initializes `dist[source] = 0`, all others to $\\infty$.\n"
+                f"- Min-Priority Queue: Greedily extracts the unvisited vertex $u$ with minimum `dist[u]`.\n"
+                f"- Edge Relaxation: For each neighbor $v$, if `dist[u] + weight(u, v) < dist[v]`, update `dist[v]` and push `(dist[v], v)` to queue.\n"
+                f"- Complexity: $O((V + E) \\log V)$ time with adjacency list and binary heap.\n\n"
+                f"### 3. Examination Questions & Traps\n"
+                f"- Why does Dijkstra fail with negative edge weights? (Greedy finalized distance assumption is violated).\n"
+                f"- What algorithm should be used if edges can be negative? (Bellman-Ford, $O(V \\cdot E)$)."
+            )
+        elif any(w in q_low for w in ["newton", "motion", "force"]):
+            body = (
+                f"### 1. The Three Fundamental Laws of Classical Dynamics\n"
+                f"- Law 1 (Inertia): A body continues in state of rest or uniform motion unless acted upon by a net external force.\n"
+                f"- Law 2 (Force & Momentum): $\\vec{{F}} = \\frac{{d\\vec{{p}}}}{{dt}} = m \\cdot \\vec{{a}}$ (for constant mass).\n"
+                f"- Law 3 (Action-Reaction): Forces occur in equal and opposite pairs acting on different bodies: $\\vec{{F}}_{{AB}} = -\\vec{{F}}_{{BA}}$.\n\n"
+                f"### 2. Analytical Problem-Solving Protocol\n"
+                f"- Step 1: Draw a clear Free-Body Diagram (FBD) isolating the target body.\n"
+                f"- Step 2: Establish orthogonal coordinate axes ($x, y$) aligned with acceleration.\n"
+                f"- Step 3: Resolve all vector forces ($F_x = m a_x, \\quad F_y = m a_y$).\n"
+                f"- Friction Equations: Static $f_s \\le \\mu_s N$; Kinetic $f_k = \\mu_k N$.\n\n"
+                f"### 3. High-Yield Examination Questions\n"
+                f"- Derive acceleration and tension in an Atwood machine with masses $m_1$ and $m_2$.\n"
+                f"- Calculate optimum banking angle $\\theta$ for a highway curve without friction: $\\tan \\theta = \\frac{{v^2}}{{r g}}$."
+            )
+        elif any(w in q_low for w in ["linked list", "pointer", "reverse", "inversion"]):
+            body = (
+                f"### 1. Linked List Architecture & In-Place Reversal\n"
+                f"A linked list is a linear collection of data elements where linear order is determined by pointers.\n"
+                f"Each node contains `data` and pointer `next`.\n\n"
+                f"### 2. Step-by-Step 3-Pointer Iterative Reversal Algorithm\n"
+                f"```cpp\n"
+                f"ListNode* reverseList(ListNode* head) {{\n"
+                f"    ListNode *prev = nullptr, *curr = head, *next = nullptr;\n"
+                f"    while (curr != nullptr) {{\n"
+                f"        next = curr->next;  // 1. Cache next node\n"
+                f"        curr->next = prev;  // 2. Reverse pointer\n"
+                f"        prev = curr;        // 3. Move prev forward\n"
+                f"        curr = next;        // 4. Move curr forward\n"
+                f"    }}\n"
+                f"    return prev; // New head of reversed list\n"
+                f"}}\n"
+                f"```\n"
+                f"- Time Complexity: $O(N)$ single pass.\n"
+                f"- Space Complexity: $O(1)$ strictly in-place auxiliary memory.\n\n"
+                f"### 3. Common Examination Edge Cases\n"
+                f"- Empty list (`head == nullptr`) -> return `nullptr`.\n"
+                f"- Single node (`head->next == nullptr`) -> return `head`.\n"
+                f"- Cycles: Use Floyd's Tortoise and Hare algorithm ($O(N)$ time, $O(1)$ space) before reversal."
+            )
+        elif any(w in q_low for w in ["operating system", "os", "process", "scheduling"]):
+            body = (
+                f"### 1. Operating System Fundamentals\n"
+                f"The OS provides process management, memory virtualisation, and device abstractions.\n"
+                f"A process is a program in execution with text, data, heap, and stack segments.\n\n"
+                f"### 2. Key Scheduling & Memory Mechanics\n"
+                f"- Scheduling Algorithms: First-Come-First-Serve (FCFS), Shortest Job First (SJF), Round Robin (RR).\n"
+                f"- Metrics: Turnaround Time = Completion Time - Arrival Time; Waiting Time = Turnaround Time - Burst Time.\n"
+                f"- Memory: Paging eliminates external fragmentation by mapping fixed-size pages to physical frames.\n\n"
+                f"### 3. Review Questions & Exam Focus\n"
+                f"- State the 4 necessary conditions for Deadlock (Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait).\n"
+                f"- Explain the role of the Translation Lookaside Buffer (TLB) in virtual memory address resolution."
+            )
+        else:
+            body = (
+                f"### 1. Definitional Foundations of {title_q}\n"
+                f"{title_q} represents a fundamental academic subject in {domain or 'Higher Academic Studies'}.\n"
+                f"It encompasses core structural rules, theoretical models, and formal methodologies required for rigorous analysis.\n\n"
+                f"### 2. Core Concepts & Systematic Principles\n"
+                f"- Theoretical Formulation: Mathematical and logical rules govern the operational relationships.\n"
+                f"- Execution & Analytical Workflow: Step-by-step methods ensure consistent, deterministic results.\n"
+                f"- System Constraints: Boundary conditions dictate valid input domains and performance trade-offs.\n\n"
+                f"### 3. Examination Review & Practice Problems\n"
+                f"- Explain the primary working principle and governing equations of {title_q}.\n"
+                f"- Identify key edge conditions and describe two real-world engineering or scientific applications."
+            )
+
+        return body
 
     @staticmethod
     def cleanup_unbookmarked_temp_notes(db):

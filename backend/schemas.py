@@ -67,6 +67,8 @@ class CareerRelevance(BaseModel):
 # --- Aggregated Search Schema ---
 class SearchResponse(BaseModel):
     query: str
+    title: Optional[str] = None
+    category: Optional[str] = None
     summary: str
     detailed_breakdown: Optional[str] = None
     domain: Optional[str] = None
@@ -79,3 +81,6 @@ class SearchResponse(BaseModel):
     notes: List[NoteResponse]
     careers: Optional[List[CareerRelevance]] = None
     fun_fact: Optional[str] = None
+    did_you_know: Optional[str] = None
+    exam_frequency: Optional[List[Dict[str, Any]]] = None
+

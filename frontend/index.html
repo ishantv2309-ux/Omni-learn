@@ -61,9 +61,6 @@
                     <span class="hidden sm:inline">Bookmarks</span>
                     <span id="bookmarkCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
                 </button>
-                <button onclick="toggleSettingsModal()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2.5 rounded-lg flex items-center justify-center transition" title="API Settings">
-                    <i class="fa-solid fa-gear text-slate-100"></i>
-                </button>
             </div>
         </div>
     </header>
@@ -341,7 +338,7 @@
                         <h3 class="font-bold text-slate-800 pb-2 flex items-center">
                             <i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>Topic Exam Frequency
                         </h3>
-                        <p class="text-xs text-slate-400 mb-4">Frequency of query appearances in past exams.</p>
+                        <p id="chartFrequencySubtitle" class="text-xs text-slate-400 mb-4">Frequency of query appearances in past exams.</p>
                         <div class="relative h-44 w-full">
                             <canvas id="frequencyChart"></canvas>
                         </div>
@@ -491,37 +488,6 @@
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center">
                         <span id="uploadBtnText">Upload & OCR Index</span>
                         <div id="uploadSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent ml-2"></div>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
-            <button onclick="toggleSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center">
-                <i class="fa-solid fa-key text-indigo-650 mr-2"></i>Gemini API Settings
-            </h3>
-            <p class="text-xs text-slate-500 mb-4">
-                Connect search and study notes dynamically to Gemini AI. Get clear, factual answers for any custom topic.
-            </p>
-            <form onsubmit="saveApiKey(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Google Gemini API Key</label>
-                    <input type="password" id="geminiApiKeyInput" placeholder="Enter your GEMINI_API_KEY..." 
-                           class="w-full bg-white px-3 py-2 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <span id="apiKeyStatusText" class="text-xs text-green-600 block mt-1 font-semibold"></span>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="toggleSettingsModal()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200">
-                        Close
-                    </button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                        Save Key
                     </button>
                 </div>
             </form>

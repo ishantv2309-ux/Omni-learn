@@ -292,27 +292,56 @@ def test_omni_learn_search_endpoint():
     assert "Warning" in data_blocked["result"]
 
 def test_api_key_configuration_endpoints():
-    # 1. Fetch current status
-    response_get = client.get("/api/config/get-status")
-    assert response_get.status_code == 200
-    data_get = response_get.json()
-    assert data_get["status"] == "success"
-    assert "has_key" in data_get
+    from backend import config
+    original_key = config.GEMINI_API_KEY
+    try:
+        # 1. Fetch current status
+        response_get = client.get("/api/config/get-status")
+        assert response_get.status_code == 200
+        data_get = response_get.json()
+        assert data_get["status"] == "success"
+        assert "has_key" in data_get
 
-    # 2. Save a test API Key
-    response_post = client.post("/api/config/save-key", json={"gemini_api_key": "TEST_GEMINI_KEY_123456"})
+        # 2. Save a test API Key
+        response_post = client.post("/api/config/save-key", json={"gemini_api_key": "TEST_GEMINI_KEY_123456"})
+        assert response_post.status_code == 200
+        data_post = response_post.json()
+        assert data_post["status"] == "success"
+
+        # 3. Verify status updated
+        response_get_new = client.get("/api/config/get-status")
+        assert response_get_new.status_code == 200
+        data_get_new = response_get_new.json()
+        assert data_get_new["has_key"] is True
+        assert data_get_new["masked_key"] == "TEST...3456"
+    finally:
+        # Restore original key
+        client.post("/api/config/save-key", json={"gemini_api_key": original_key})
+
+def test_post_search_proxy_endpoint():
+    """Verify POST /api/search handles query without client API key requirement."""
+    response = client.post("/api/search", json={"query": "Dijkstra's Algorithm"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["query"] == "Dijkstra's Algorithm"
+    assert "summary" in data
+    assert "difficulty_score" in data
+    assert len(data["youtube_videos"]) > 0
+
+def test_gemini_dedicated_endpoint():
+    """Verify POST and GET /api/gemini proxy endpoints work server-side."""
+    # POST
+    response_post = client.post("/api/gemini", json={"query": "Newton's Laws"})
     assert response_post.status_code == 200
     data_post = response_post.json()
-    assert data_post["status"] == "success"
+    assert "summary" in data_post
+    assert "difficulty_score" in data_post
 
-    # 3. Verify status updated
-    response_get_new = client.get("/api/config/get-status")
-    assert response_get_new.status_code == 200
-    data_get_new = response_get_new.json()
-    assert data_get_new["has_key"] is True
-    assert data_get_new["masked_key"] == "TEST...3456"
+    # GET
+    response_get = client.get("/api/gemini", params={"query": "Newton's Laws"})
+    assert response_get.status_code == 200
+    data_get = response_get.json()
+    assert "summary" in data_get
 
-    # Clean up test env change
-    client.post("/api/config/save-key", json={"gemini_api_key": ""})
 
 

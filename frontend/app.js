@@ -5,69 +5,162 @@ let bookmarks = [];
 let chartInstance = null;
 let currentNote = null;
 let completedRoadmapSteps = {}; // Map of query -> Set of step indices
+let isSearching = false;
 
-// --- Init on Page Load ---
+// --- Init on Page Load & URL Routing ("useEffect" Hook equivalent) ---
 document.addEventListener("DOMContentLoaded", () => {
     fetchBookmarks();
+    initUrlRouting();
 });
 
-// --- Search Flow ---
-async function handleSearch(event) {
-    if (event) event.preventDefault();
-    
+// Listens to browser navigation (Back / Forward) and initial URL params
+function initUrlRouting() {
+    window.addEventListener("popstate", (event) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryFromUrl = urlParams.get("q") || urlParams.get("query") || urlParams.get("topic");
+        if (queryFromUrl && queryFromUrl.trim()) {
+            executeSearch(queryFromUrl.trim(), false);
+        } else {
+            resetSearch(false);
+        }
+    });
+
+    // Handle cold page load with query parameter in URL (e.g. ?q=Dijkstra or ?query=Newton)
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialQuery = initialParams.get("q") || initialParams.get("query") || initialParams.get("topic");
+    if (initialQuery && initialQuery.trim()) {
+        executeSearch(initialQuery.trim(), false);
+    }
+}
+
+// --- Central Reactive Search Controller ---
+async function executeSearch(targetQuery, updateHistory = true) {
+    const query = (targetQuery || "").trim();
+    if (!query) return;
+
+    // Prevent re-triggering identical in-flight searches
+    if (isSearching && query === currentQuery) return;
+    isSearching = true;
+    currentQuery = query;
+
+    // 1. Synchronize all search input elements across the page instantly
     const mainInput = document.getElementById("mainSearchInput");
     const navInput = document.getElementById("navSearchInput");
-    
-    // Determine which search input was used based on screen visibility
-    const landingVisible = !document.getElementById("landingScreen").classList.contains("hidden");
-    let query = "";
-    if (landingVisible) {
-        query = mainInput ? mainInput.value.trim() : "";
-        if (navInput) navInput.value = query;
-    } else {
-        query = navInput ? navInput.value.trim() : "";
-        if (mainInput) mainInput.value = query;
+    const noteInput = document.getElementById("noteSearchInput");
+
+    if (mainInput) mainInput.value = query;
+    if (navInput) navInput.value = query;
+    if (noteInput) {
+        noteInput.value = "";
+        noteInput.placeholder = `Search inside notes (OCR)...`;
     }
-    
-    if (!query) return;
-    currentQuery = query;
-    
-    // Show loading state
+
+    // 2. Collapse and reset detailed notes container
+    const detailedContainer = document.getElementById("detailedBreakdownContainer");
+    if (detailedContainer) detailedContainer.classList.add("hidden");
+    const btnText = document.getElementById("toggleDetailBtnText");
+    const btnIcon = document.getElementById("toggleDetailBtnIcon");
+    if (btnText) btnText.textContent = "Expand In-Depth Academic Notes";
+    if (btnIcon) btnIcon.className = "fa-solid fa-chevron-down text-[10px] text-indigo-500 transition-transform duration-300 ml-1";
+
+    // 3. Synchronize URL query parameter and browser document title
+    if (updateHistory) {
+        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}`;
+        window.history.pushState({ query }, "", newUrl);
+    }
+    document.title = `${query} — OmniLearn Academic Hub`;
+
+    // 4. Update loading state indicator with target query
+    const loadingScreen = document.getElementById("loadingScreen");
+    if (loadingScreen) {
+        const titleEl = loadingScreen.querySelector("p.text-slate-700");
+        if (titleEl) titleEl.textContent = `Aggregating Live Academic Intelligence for "${query}"...`;
+    }
     showScreen("loadingScreen");
-    
+
     try {
-        const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-        if (!response.ok) throw new Error("Search request failed");
-        
+        const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: query })
+        });
+        if (!response.ok) throw new Error(`Search request failed with status: ${response.status}`);
+
         const data = await response.json();
         currentSearchData = data;
-        
-        // Populate Dashboard
+
+        // 5. Instantly and completely re-render all 7 dashboard sections
         renderDashboard(data);
-        
-        // Transition to Dashboard screen
+
+        // 6. Transition to Dashboard Screen and reveal navbar search container
         showScreen("dashboardScreen");
-        document.getElementById("navSearchContainer").classList.remove("hidden");
+        const navSearchContainer = document.getElementById("navSearchContainer");
+        if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+
+        // Smooth scroll to top of dashboard content
+        window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
         console.error("Error during search execution:", error);
-        alert("Failed to fetch search results. Make sure backend is running.");
+        alert(`Failed to fetch search results for "${query}". Please ensure the local server is running.`);
         showScreen("landingScreen");
+    } finally {
+        isSearching = false;
+    }
+}
+
+// Form submit handler for main and nav inputs
+function handleSearch(event, explicitQuery) {
+    if (event) event.preventDefault();
+
+    if (explicitQuery && explicitQuery.trim()) {
+        executeSearch(explicitQuery.trim(), true);
+        return;
+    }
+
+    const mainInput = document.getElementById("mainSearchInput");
+    const navInput = document.getElementById("navSearchInput");
+    const landingVisible = !document.getElementById("landingScreen").classList.contains("hidden");
+
+    let query = "";
+    if (document.activeElement === navInput && navInput && navInput.value.trim()) {
+        query = navInput.value.trim();
+    } else if (document.activeElement === mainInput && mainInput && mainInput.value.trim()) {
+        query = mainInput.value.trim();
+    } else if (landingVisible) {
+        query = mainInput ? mainInput.value.trim() : (navInput ? navInput.value.trim() : "");
+    } else {
+        query = navInput ? navInput.value.trim() : (mainInput ? mainInput.value.trim() : "");
+    }
+
+    if (query) {
+        executeSearch(query, true);
     }
 }
 
 function fillAndSearch(topic) {
-    document.getElementById("mainSearchInput").value = topic;
-    handleSearch();
+    executeSearch(topic, true);
 }
 
-function resetSearch() {
-    document.getElementById("mainSearchInput").value = "";
-    document.getElementById("navSearchInput").value = "";
-    document.getElementById("navSearchContainer").classList.add("hidden");
+function resetSearch(updateHistory = true) {
+    const mainInput = document.getElementById("mainSearchInput");
+    const navInput = document.getElementById("navSearchInput");
+    if (mainInput) mainInput.value = "";
+    if (navInput) navInput.value = "";
+
+    const navContainer = document.getElementById("navSearchContainer");
+    if (navContainer) navContainer.classList.add("hidden");
+
     showScreen("landingScreen");
     currentQuery = "";
     currentSearchData = null;
     closeYearSubjects();
+
+    if (updateHistory) {
+        window.history.pushState({}, "", window.location.pathname);
+    }
+    document.title = "OmniLearn - All-in-One Student Learning Hub";
 }
 
 function showScreen(screenId) {
@@ -489,8 +582,12 @@ function renderWebResources(resources) {
 
 function renderFunFact(fact) {
     const el = document.getElementById("funFactText");
-    if (el) {
-        el.textContent = fact || "Did you know? Studying this topic helps build logical reasoning, critical thinking, and problem-solving skills which are highly valued in academic and professional fields globally!";
+    if (!el) return;
+    if (fact && fact.trim()) {
+        el.textContent = fact;
+    } else {
+        const topicName = (currentSearchData && (currentSearchData.canonical_title || currentSearchData.query)) || currentQuery || "this topic";
+        el.textContent = `Did you know? Discoveries in ${topicName} formed foundational pillars of modern engineering systems, inspiring mathematical and computational breakthroughs taught across universities worldwide!`;
     }
 }
 
@@ -499,22 +596,35 @@ function renderAnalyticsChart(pyqs) {
     const canvas = document.getElementById("frequencyChart");
     if (!canvas) return;
     
+    const safePyqs = Array.isArray(pyqs) ? pyqs : [];
+    
     // Count questions per year
     const counts = {};
     const years = [2021, 2022, 2023, 2024, 2025];
     years.forEach(yr => { counts[yr] = 0; });
     
-    pyqs.forEach(pyq => {
-        if (counts[pyq.year] !== undefined) {
+    safePyqs.forEach(pyq => {
+        if (pyq && counts[pyq.year] !== undefined) {
             counts[pyq.year]++;
         }
     });
     
     const dataPoints = years.map(yr => counts[yr]);
+    const totalCount = dataPoints.reduce((a, b) => a + b, 0);
+
+    const subtitle = document.getElementById("chartFrequencySubtitle");
+    if (subtitle) {
+        if (totalCount > 0) {
+            subtitle.textContent = `${totalCount} verified question appearances mapped across AKTU & GATE exams (2021–2025).`;
+        } else {
+            subtitle.textContent = "Frequency of query appearances in past exams.";
+        }
+    }
     
-    // Destruct existing chart instance if it exists
+    // Destruct existing chart instance cleanly if it exists
     if (chartInstance) {
         chartInstance.destroy();
+        chartInstance = null;
     }
     
     // Resolve theme colors
@@ -1408,64 +1518,5 @@ function closeYearSubjects() {
     const panel = document.getElementById("yearSubjectsPanel");
     if (panel) {
         panel.classList.add("hidden");
-    }
-}
-
-async function toggleSettingsModal() {
-    const modal = document.getElementById("settingsModal");
-    if (!modal) return;
-    
-    if (modal.classList.contains("hidden")) {
-        try {
-            const res = await fetch("/api/config/get-status");
-            const data = await res.json();
-            const statusText = document.getElementById("apiKeyStatusText");
-            const keyInput = document.getElementById("geminiApiKeyInput");
-            if (data.has_key) {
-                statusText.textContent = `✓ Gemini Key active (${data.masked_key})`;
-                statusText.className = "text-xs text-green-600 block mt-1 font-semibold";
-                if (keyInput) keyInput.value = "";
-            } else {
-                statusText.textContent = "✗ No Gemini Key configured (running in mock mode)";
-                statusText.className = "text-xs text-red-500 block mt-1 font-semibold";
-            }
-        } catch (e) {
-            console.error("Failed to fetch key status:", e);
-        }
-        modal.classList.remove("hidden");
-    } else {
-        modal.classList.add("hidden");
-    }
-}
-
-async function saveApiKey(event) {
-    event.preventDefault();
-    const keyInput = document.getElementById("geminiApiKeyInput");
-    if (!keyInput) return;
-    
-    const keyVal = keyInput.value.trim();
-    if (!keyVal) {
-        alert("Please enter a valid API key.");
-        return;
-    }
-    
-    try {
-        const res = await fetch("/api/config/save-key", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ gemini_api_key: keyVal })
-        });
-        const data = await res.json();
-        if (data.status === "success") {
-            alert("Success! Your Gemini API key has been saved and connected.");
-            toggleSettingsModal();
-        } else {
-            alert("Error: " + data.detail);
-        }
-    } catch (e) {
-        console.error("Failed to save key:", e);
-        alert("Failed to connect to backend server. Make sure it is running.");
     }
 }
