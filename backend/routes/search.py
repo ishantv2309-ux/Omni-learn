@@ -41,6 +41,22 @@ def is_inappropriate_topic(topic: str) -> bool:
             return True
     return False
 
+def is_non_btech_topic(topic: str) -> bool:
+    """Checks whether query falls outside B.Tech Engineering & Applied Sciences."""
+    t = topic.strip().lower()
+    non_btech_keywords = [
+        "damnum sine injuria", "injuria sine damno", "volenti non fit",
+        "res ipsa loquitur", "legal maxim", "tort", "law of torts",
+        "ipc section", "criminal law", "civil litigation", "medical advice",
+        "paracetamol", "symptoms of", "diagnosis", "disease treatment",
+        "cooking", "recipe", "baking cake", "pasta sauce", "entertainment",
+        "bollywood", "celebrity gossip", "horoscope", "astrology", "ipl score"
+    ]
+    for kw in non_btech_keywords:
+        if kw in t:
+            return True
+    return False
+
 async def perform_unified_search(target_query: str, db: Session) -> SearchResponse:
     """Core unified search execution. Fetches AI details, videos, articles, local notes, and PYQs.
     Applies caching for high-speed queries.
@@ -48,6 +64,12 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     query = target_query.strip()
     clean_query = query.lower()
     
+    if is_non_btech_topic(clean_query):
+        raise HTTPException(
+            status_code=400,
+            detail="This topic is outside your academic syllabus. Only B.Tech & Engineering topics are allowed here."
+        )
+
     if is_inappropriate_topic(clean_query):
         return SearchResponse(
             query=query,

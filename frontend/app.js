@@ -270,6 +270,16 @@ async function executeSearch(targetQuery, updateHistory = true) {
             body: JSON.stringify({ query })
         });
         if (!response.ok) {
+            let errorMsg = "";
+            try {
+                const errData = await response.json();
+                errorMsg = errData.detail || errData.error || errData.overview;
+            } catch (_) {}
+            if (response.status === 400 && errorMsg) {
+                alert(errorMsg);
+                showScreen("landingScreen");
+                return;
+            }
             throw new Error(`HTTP Error! Status: ${response.status}`);
         }
 

@@ -248,12 +248,8 @@
         }
         if (viewFileBtn) viewFileBtn.classList.add("hidden");
 
+        // Bypass in-memory stale cache to ensure hard refresh and fresh generation
         const cacheKey = `${code}__unit_${unit}`;
-        if (aktuUnitNotesCache.has(cacheKey)) {
-            const cachedNotes = aktuUnitNotesCache.get(cacheKey);
-            renderParsedContent(cachedNotes, `${code} Unit ${unit}`, name);
-            return;
-        }
 
         // Show glassmorphic loading spinner
         if (contentEl) {
@@ -280,16 +276,20 @@
         console.log("[OmniLearn Mode 1] Dispatching dynamic unit payload to /api/generate-unit-notes:", payload);
 
         try {
-            const resp = await fetch("/api/generate-unit-notes", {
+            const resp = await fetch(`/api/generate-unit-notes?t=${Date.now()}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache"
+                },
+                cache: "no-store",
                 body: JSON.stringify(payload)
             });
 
             if (resp.ok) {
                 const data = await resp.json();
                 const notes = data.unit_notes || data.notes || "";
-                aktuUnitNotesCache.set(cacheKey, notes);
                 renderParsedContent(notes, `${code} Unit ${unit}`, name);
             } else {
                 throw new Error(`Server responded with status ${resp.status}`);
@@ -744,3 +744,139 @@
 
     console.log("[OmniLearn] Dual AI Note Architecture ready.");
 })();
+
+
+// A. CLEAN SEARCH SCOPE ERROR HANDLING
+async function searchTopic(query) {
+    try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            showAcademicErrorCard(data.detail || "This topic is outside your academic syllabus. Only B.Tech & Engineering topics are allowed here.");
+            return;
+        }
+
+        renderSearchResults(data);
+    } catch (err) {
+        console.error("Search Error:", err);
+    }
+}
+
+function showAcademicErrorCard(message) {
+    const container = document.querySelector('#resultsContainer') || document.body;
+    container.innerHTML = `
+        <div style="max-width: 600px; margin: 40px auto; padding: 28px; background: #1e1b4b; border: 1px solid #4338ca; border-radius: 12px; text-align: center; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+            <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+            <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">Academic Scope Exceeded</h3>
+            <p style="color: #c7d2fe; font-size: 14px; line-height: 1.5;">${message}</p>
+        </div>
+    `;
+}
+
+// B. DYNAMIC UNIT NOTES FETCHING
+async function fetchUnitNotes(subjectCode, subjectName, unitNumber, topics) {
+    try {
+        const response = await fetch('/api/generate-unit-notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject_code: subjectCode,
+                subject_name: subjectName,
+                unit_number: parseInt(unitNumber),
+                aktu_syllabus_topics: topics
+            })
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            openNotesModal(data.unit_notes);
+        }
+    } catch (err) {
+        console.error("Error fetching unit notes:", err);
+    }
+}
+
+// C. WORKING TXT & PDF EXPORT HANDLERS
+function downloadNotesAsTXT() {
+    const content = document.querySelector('.modal-body') || document.querySelector('#noteContentArea');
+    if (!content) return alert("No note content found to download!");
+
+    const blob = new Blob([content.innerText], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "AKTU_Study_Notes.txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportNotesAsPDF() {
+    const content = document.querySelector('.modal-body') || document.querySelector('#noteContentArea');
+    if (!content) return alert("No note content found to export!");
+
+    const printWindow = window.open('', '', 'height=750,width=950');
+    printWindow.document.write('<html><head><title>AKTU Revision Notes</title>');
+    printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:30px;line-height:1.6;color:#111;} pre,code{background:#f4f4f4;padding:8px;border-radius:4px;}</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(content.innerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+}
+
+// Attach export event listeners on modal load
+function attachModalExportListeners() {
+    const txtBtn = document.getElementById('downloadTxtBtn');
+    const pdfBtn = document.getElementById('exportPdfBtn');
+    
+    if (txtBtn) txtBtn.onclick = downloadNotesAsTXT;
+    if (pdfBtn) pdfBtn.onclick = exportNotesAsPDF;
+}
+async function fetchUnitNotesStream(subjectCode, subjectName, unitNumber, topicsArray) {
+  const modalBody = document.querySelector('.modal-body') || document.querySelector('#noteContentArea');
+  if (!modalBody) return;
+
+  modalBody.innerHTML = '<div style="color: #818cf8; font-weight: bold;">Generating notes in real-time...</div><div id="streamTarget"></div>';
+  const target = document.getElementById('streamTarget');
+
+  try {
+    const response = await fetch('/api/generate-unit-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject_code: subjectCode,
+        subject_name: subjectName,
+        unit_number: parseInt(unitNumber),
+        aktu_syllabus_topics: topicsArray
+      })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullMarkdown = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // Append incoming text chunk instantly
+      fullMarkdown += decoder.decode(value, { stream: true });
+      target.innerHTML = parseMarkdownToHTML(fullMarkdown);
+    }
+
+    // Trigger MathJax formula rendering once complete
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([target]);
+    }
+
+  } catch (err) {
+    console.error("Streaming error:", err);
+    modalBody.innerHTML = '<div style="color: #ef4444;">Failed to generate notes. Please try again.</div>';
+  }
+}
