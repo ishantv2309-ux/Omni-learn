@@ -339,4 +339,28 @@ def test_cache_busting_headers_and_timestamp():
         assert data["timestamp"] > 0
 
 
+def test_exact_aktu_exam_specialist_output_structure():
+    """Verify that notes follow the exact 4-section AKTU Specialist output structure."""
+    backend_app = _get_backend_py_app()
+    b_client = TestClient(backend_app)
 
+    payload = {
+        "subject_code": "KCS301",
+        "subject_name": "Data Structures",
+        "unit_number": 1,
+        "aktu_syllabus_topics": ["Arrays", "Searching and Sorting", "Asymptotic Analysis"]
+    }
+
+    for cl in [client, b_client]:
+        res = cl.post("/api/generate-unit-notes", json=payload)
+        assert res.status_code == 200
+        notes = res.json().get("unit_notes") or res.json().get("notes")
+
+        # Check exact Title
+        assert "KCS301" in notes and "Unit 1" in notes and "Revision & Exam Guide" in notes
+
+        # Check 4 Exact Structure Headings
+        assert ("## 1. Complete Unit Concept Breakdown" in notes or "## 1. Core Technical Concept Breakdown" in notes)
+        assert ("## 2. AKTU Exam Scoring Strategy & Pitfalls" in notes or "## 2. Exam Scoring Strategy & Common Pitfalls" in notes)
+        assert ("## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)" in notes or "## 3. Section A: 2-Mark Short Questions & Answers" in notes)
+        assert ("## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)" in notes or "## 4. Section B & C: 10-Mark Long Questions & Answers" in notes)

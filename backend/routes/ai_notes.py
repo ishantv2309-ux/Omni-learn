@@ -753,30 +753,35 @@ def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[
             )
 
     return (
-        f"# {clean_code}: Unit {unit_num} - Technical Revision Guide\n\n"
+        f"# {clean_code}: Unit {unit_num} - Comprehensive Revision & Exam Guide\n\n"
         f"### AKTU End-Semester Examination Notes\n"
         f"- Course Code: {clean_code}\n"
         f"- Course Name: {clean_name}\n"
         f"- Unit: {unit_num} - [{theme}]\n"
-        f"- Allowed Topics: {topics_str}\n\n"
-        f"## 1. Deep Conceptual Analysis\n"
+        f"- Allowed Topics: [{topics_str}]\n\n"
+        f"## 1. Complete Unit Concept Breakdown\n"
+        f"## 1. Core Technical Concept Breakdown\n"
         f"### Specific Notes on Important Topics\n"
-        f"**Official Unit {unit_num} Topics Covered:** {topics_str}\n\n"
+        f"**Official Unit {unit_num} Topics Covered:** [{topics_str}]\n\n"
         f"### Technical Formulations & Micro-Architectural Foundations\n"
         f"{math_block}\n\n"
-        f"## 2. High-Yield Exam Questions & Solutions\n"
+        f"## 2. AKTU Exam Scoring Strategy & Pitfalls\n"
+        f"## 2. Exam Scoring Strategy & Common Pitfalls\n"
         f"### AKTU Exam Scoring Strategy & Common Marking Pitfalls\n"
-        f"- **High-Yield Areas**: Specific to [{topics_str}].\n"
+        f"- **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {unit_num}.\n"
+        f"- **High-Yield Areas**: Specific topics within [{topics_str}] tested every year.\n"
+        f"- **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.\n"
         f"- **Common Mistakes**: Frequent student errors specifically in [{topics_str}].\n"
-        f"- **Weightage Analysis**: Predict 2-mark (Section A: 2 questions, ~4 marks) and 10-mark frequency (Section B/C: 1-2 questions, ~10-20 marks) specifically for Unit {unit_num} ({primary_topic}).\n"
-        f"- **Common Marking Pitfalls**:\n"
+        f"- **Common Deductions**: 3 specific logic or formatting errors students make on these topics:\n"
         f"  1. Missing standard block, circuit, or data flow diagrams required for Section B questions in Unit {unit_num}.\n"
         f"  2. Incomplete intermediate steps or omitting justification of theorem conditions in 10-mark derivations.\n"
         f"  3. Failing to state asymptotic complexity, boundary assumptions, or final boxed units.\n\n"
-        f"### Section A (2-Mark Questions)\n"
+        f"## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)\n"
+        f"## 3. Section A: 2-Mark Short Questions & Answers\n"
         f"### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)\n"
         f"{sec_a}\n\n"
-        f"### Section B/C (10-Mark Questions)\n"
+        f"## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)\n"
+        f"## 4. Section B & C: 10-Mark Long Questions & Answers\n"
         f"### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)\n"
         f"{sec_b}"
     )
@@ -876,43 +881,65 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
     aktu_unit_prompt = f"""
     [Generation Timestamp: {time.time()}]
     
-You are a subject matter expert in {name} ({code}).
+You are an expert AKTU University Professor and Exam Specialist for {code} ({name}).
 
-CRITICAL MANDATE:
-- TARGET UNIT: Unit {unit} ONLY
-- TOPICS TO COVER: {topics_str}
+CRITICAL UNIT SCOPE RULES:
+1. STRICT BOUNDARY ENFORCEMENT: Output revision notes ONLY for Unit {unit}.
+2. SYLLABUS LIST: You MUST cover ONLY these topics: [{topics_str}].
+3. NO TOPIC BLEED: 
+   - Unit 1: Register Transfer, Microoperations, Bus Architecture, Addressing Modes, Stack Organization.
+   - Unit 2: ALU, Booth's Algorithm, Restoring/Non-Restoring Division, Look-Ahead Carry Adder, IEEE 754 Floating Point.
+   - Unit 3: Control Unit (Hardwired & Microprogrammed), RISC/CISC, Pipelining, Instruction Cycles.
+   - Unit 4: Memory Hierarchy, 2D/2.5D RAM, Cache Mapping (Direct, Associative, Set-Associative), Virtual Memory, Page Replacement.
+   - Unit 5: I/O Interface, Modes of Data Transfer (Programmed, Interrupt-Driven, DMA), Interrupt Hardware, Serial Communication.
+4. FORBIDDEN OVERLAP: Do NOT output formulas or algorithms from other units.
 
-ABSOLUTE REJECTION RULES:
-1. DO NOT output Amdahl's Law ($S = \\frac{{1}}{{(1-f) + \\frac{{f}}{{p}}}}$) UNLESS the target topic is explicitly Pipelining or Parallel Processing.
-2. DO NOT output State-Space differential equations under ANY circumstance for Computer Science or Architecture subjects.
-3. DO NOT repeat standard generic header intros ("Key performance metrics, timing models..."). Jump DIRECTLY into the technical definitions of the requested topics.
-4. Every formula, diagram, register transfer notation (e.g. R2 <- R1), and solved question MUST belong 100% strictly to: [{topics_str}].
+REQUIRED OUTPUT FORMAT:
 
-OUTPUT FORMAT:
-# {code}: Unit {unit} - Technical Revision Guide
+# {code}: Unit {unit} - Comprehensive Revision & Exam Guide
 
 ### AKTU End-Semester Examination Notes
 - Course Code: {code}
 - Course Name: {name}
 - Unit: {unit}
-- Allowed Topics: {topics_str}
+- Allowed Topics: [{topics_str}]
 
-## 1. Deep Conceptual Analysis
+## 1. Complete Unit Concept Breakdown
+## 1. Core Technical Concept Breakdown
 ### Specific Notes on Important Topics
-(Explain each topic in [{topics_str}] with strict domain correctness. For COA Unit 1, use Register Transfer Language (RTL), Bus design logic, and Arithmetic/Logic micro-operations).
+- Provide exhaustive, step-by-step notes strictly for: [{topics_str}].
+- Include relevant circuit block diagrams, RTL expressions, register transfers, timing models, or assembly instruction formats.
 
-## 2. High-Yield Exam Questions & Solutions
+## 2. AKTU Exam Scoring Strategy & Pitfalls
+## 2. Exam Scoring Strategy & Common Pitfalls
 ### AKTU Exam Scoring Strategy & Common Marking Pitfalls
-- **High-Yield Areas**: Specific to [{topics_str}].
-- **Common Mistakes**: Frequent student errors specifically in [{topics_str}].
+- **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {unit}.
+- **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.
 
-### Section A (2-Mark Questions)
+## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)
+## 3. Section A: 2-Mark Short Questions & Answers
 ### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)
-(Provide 5 distinct short Q&As purely derived from [{topics_str}]).
+Provide 10 high-frequency, distinct 2-mark short questions with concise, complete answers based strictly on [{topics_str}]:
+1. Q1: [Concept/Definition Question] -> Answer: ...
+2. Q2: [Short Derivation/Expression Question] -> Answer: ...
+3. Q3: [Difference/Comparison Question] -> Answer: ...
+4. Q4: [Short Numerical/Register Operation] -> Answer: ...
+5. Q5: [Logic Gate/Control Signal Question] -> Answer: ...
+6. Q6: [Definition/Property Question] -> Answer: ...
+7. Q7: [Architectural Terminology Question] -> Answer: ...
+8. Q8: [Short Formula/Calculation Question] -> Answer: ...
+9. Q9: [Microoperation/Transfer Question] -> Answer: ...
+10. Q10: [State/Flag/Mode Question] -> Answer: ...
 
-### Section B/C (10-Mark Questions)
+## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)
+## 4. Section B & C: 10-Mark Long Questions & Answers
 ### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)
-(Provide 3 long exam Q&As with step-by-step logic and calculations purely derived from [{topics_str}]).
+Provide 5 complete long-form exam questions with thorough, step-by-step derivations, solved numericals, or detailed architectural explanations strictly based on [{topics_str}]:
+1. Q1 (Architectural Design/Trace): ... -> Solution: ...
+2. Q2 (Numerical Calculation/Algorithm Trace): ... -> Solution: ...
+3. Q3 (Circuit Logic/Comparative Analysis): ... -> Solution: ...
+4. Q4 (System Derivation/Execution Flow): ... -> Solution: ...
+5. Q5 (Comprehensive Working Mechanism): ... -> Solution: ...
 """
 
     if not config.is_gemini_mocked():

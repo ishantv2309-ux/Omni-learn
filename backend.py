@@ -130,10 +130,17 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
         model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             system_instruction=(
-                "You are an expert AKTU university professor. "
-                "CRITICAL MANDATE: Generate notes EXCLUSIVELY for the provided syllabus topics. "
-                "NEVER include Amdahl's Law, Speedup equations, Linked Lists, or generic template "
-                "formulas unless they are explicitly requested in the syllabus list."
+                f"You are an expert AKTU University Professor and Exam Specialist for {req.subject_code} ({req.subject_name}).\n"
+                "CRITICAL UNIT SCOPE RULES:\n"
+                f"1. STRICT BOUNDARY ENFORCEMENT: Output revision notes ONLY for Unit {req.unit_number}.\n"
+                f"2. SYLLABUS LIST: You MUST cover ONLY these topics: [{topics_list}].\n"
+                "3. NO TOPIC BLEED:\n"
+                "   - Unit 1: Register Transfer, Microoperations, Bus Architecture, Addressing Modes, Stack Organization.\n"
+                "   - Unit 2: ALU, Booth's Algorithm, Restoring/Non-Restoring Division, Look-Ahead Carry Adder, IEEE 754 Floating Point.\n"
+                "   - Unit 3: Control Unit (Hardwired & Microprogrammed), RISC/CISC, Pipelining, Instruction Cycles.\n"
+                "   - Unit 4: Memory Hierarchy, 2D/2.5D RAM, Cache Mapping (Direct, Associative, Set-Associative), Virtual Memory, Page Replacement.\n"
+                "   - Unit 5: I/O Interface, Modes of Data Transfer (Programmed, Interrupt-Driven, DMA), Interrupt Hardware, Serial Communication.\n"
+                "4. FORBIDDEN OVERLAP: Do NOT output formulas or algorithms from other units."
             )
         )
         
@@ -142,23 +149,61 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
         DYNAMIC_PROMPT = f"""
         [Generation Timestamp: {time.time()}]
         
-        SUBJECT: {req.subject_code} - {req.subject_name}
-        UNIT: Unit {req.unit_number}
-        EXPACT SYLLABUS TOPICS: [{topics_list}]
+        You are an expert AKTU University Professor and Exam Specialist for {req.subject_code} ({req.subject_name}).
 
-        Generate technical revision notes following this exact structure:
+        CRITICAL UNIT SCOPE RULES:
+        1. STRICT BOUNDARY ENFORCEMENT: Output revision notes ONLY for Unit {req.unit_number}.
+        2. SYLLABUS LIST: You MUST cover ONLY these topics: [{topics_list}].
+        3. NO TOPIC BLEED: 
+           - Unit 1: Register Transfer, Microoperations, Bus Architecture, Addressing Modes, Stack Organization.
+           - Unit 2: ALU, Booth's Algorithm, Restoring/Non-Restoring Division, Look-Ahead Carry Adder, IEEE 754 Floating Point.
+           - Unit 3: Control Unit (Hardwired & Microprogrammed), RISC/CISC, Pipelining, Instruction Cycles.
+           - Unit 4: Memory Hierarchy, 2D/2.5D RAM, Cache Mapping (Direct, Associative, Set-Associative), Virtual Memory, Page Replacement.
+           - Unit 5: I/O Interface, Modes of Data Transfer (Programmed, Interrupt-Driven, DMA), Interrupt Hardware, Serial Communication.
+        4. FORBIDDEN OVERLAP: Do NOT output formulas or algorithms from other units.
 
-        # {req.subject_code}: Unit {req.unit_number} - {req.subject_name} Revision Notes
+        REQUIRED OUTPUT FORMAT:
 
-        ## 1. Technical Topic Breakdown
-        - Provide deep explanations strictly for: [{topics_list}].
-        - Use formulas, registers, or code snippets that ONLY belong to [{topics_list}].
+        # {req.subject_code}: Unit {req.unit_number} - Comprehensive Revision & Exam Guide
 
-        ## 2. Section A: 2-Mark Exam Questions & Solutions
-        - Generate 5 distinct 2-mark questions and answers strictly based on [{topics_list}].
+        ### AKTU End-Semester Examination Notes
+        - Course Code: {req.subject_code}
+        - Course Name: {req.subject_name}
+        - Unit: {req.unit_number}
+        - Allowed Topics: [{topics_list}]
 
-        ## 3. Section B/C: 10-Mark Exam Questions & Solutions
-        - Generate 3 distinct 10-mark long questions and full step-by-step solutions strictly based on [{topics_list}].
+        ## 1. Complete Unit Concept Breakdown
+        ### Specific Notes on Important Topics
+        - Provide exhaustive, step-by-step notes strictly for: [{topics_list}].
+        - Include relevant circuit block diagrams, RTL expressions, register transfers, timing models, or assembly instruction formats.
+
+        ## 2. AKTU Exam Scoring Strategy & Pitfalls
+        ### AKTU Exam Scoring Strategy & Common Marking Pitfalls
+        - **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {req.unit_number}.
+        - **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.
+
+        ## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)
+        ### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)
+        Provide 10 high-frequency, distinct 2-mark short questions with concise, complete answers based strictly on [{topics_list}]:
+        1. Q1: [Concept/Definition Question] -> Answer: ...
+        2. Q2: [Short Derivation/Expression Question] -> Answer: ...
+        3. Q3: [Difference/Comparison Question] -> Answer: ...
+        4. Q4: [Short Numerical/Register Operation] -> Answer: ...
+        5. Q5: [Logic Gate/Control Signal Question] -> Answer: ...
+        6. Q6: [Definition/Property Question] -> Answer: ...
+        7. Q7: [Architectural Terminology Question] -> Answer: ...
+        8. Q8: [Short Formula/Calculation Question] -> Answer: ...
+        9. Q9: [Microoperation/Transfer Question] -> Answer: ...
+        10. Q10: [State/Flag/Mode Question] -> Answer: ...
+
+        ## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)
+        ### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)
+        Provide 5 complete long-form exam questions with thorough, step-by-step derivations, solved numericals, or detailed architectural explanations strictly based on [{topics_list}]:
+        1. Q1 (Architectural Design/Trace): ... -> Solution: ...
+        2. Q2 (Numerical Calculation/Algorithm Trace): ... -> Solution: ...
+        3. Q3 (Circuit Logic/Comparative Analysis): ... -> Solution: ...
+        4. Q4 (System Derivation/Execution Flow): ... -> Solution: ...
+        5. Q5 (Comprehensive Working Mechanism): ... -> Solution: ...
         """
 
         res = model.generate_content(
@@ -189,68 +234,3 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
             }
         except Exception:
             raise HTTPException(status_code=500, detail=str(e))
-
-import json
-import time
-import google.generativeai as genai
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-
-app = FastAPI()
-
-
-class UnitNoteRequest(BaseModel):
-  subject_code: str
-  subject_name: str
-  unit_number: int
-  aktu_syllabus_topics: list[str]
-
-
-@app.post("/api/generate-unit-notes")
-async def generate_aktu_unit_notes(req: UnitNoteRequest):
-  try:
-    # 1. Switch to gemini-1.5-flash for ultra-fast generation speed
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=(
-            "You are a strict AKTU exam note generator. "
-            "Output concise, highly accurate revision notes ONLY for the requested topics. "
-            "Do NOT output generic formulas, Amdahl's Law, or topics outside the syllabus list."
-        ),
-    )
-
-    topics_list = ", ".join(req.aktu_syllabus_topics)
-
-    prompt = f"""
-        SUBJECT: {req.subject_code} - {req.subject_name}
-        UNIT: Unit {req.unit_number}
-        EXACT TOPICS: [{topics_list}]
-
-        # {req.subject_code}: Unit {req.unit_number} - {req.subject_name}
-
-        ## 1. Quick Technical Concepts
-        (Provide concise breakdowns strictly for: [{topics_list}])
-
-        ## 2. Section A: 2-Mark Questions & Answers
-        (5 short, precise solved questions strictly on [{topics_list}])
-
-        ## 3. Section B/C: 10-Mark Solved Questions
-        (2 high-yield solved exam problems strictly on [{topics_list}])
-        """
-
-    # 2. Enable streaming output (stream=True)
-    def generate_stream():
-      response = model.generate_content(
-          prompt,
-          stream=True,
-          generation_config={"max_output_tokens": 2048, "temperature": 0.0},
-      )
-      for chunk in response:
-        if chunk.text:
-          yield chunk.text
-
-    return StreamingResponse(generate_stream(), media_type="text/plain")
-
-  except Exception as e:
-    raise HTTPException(status_code=500, detail=str(e))
