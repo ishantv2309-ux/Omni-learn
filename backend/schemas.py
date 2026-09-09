@@ -67,6 +67,7 @@ class CareerRelevance(BaseModel):
 # --- Aggregated Search Schema ---
 class SearchResponse(BaseModel):
     query: str
+    topic: Optional[str] = None
     title: Optional[str] = None
     category: Optional[str] = None
     summary: str
@@ -76,6 +77,7 @@ class SearchResponse(BaseModel):
     domain: Optional[str] = None
     difficulty_score: float
     difficultyScore: Optional[float] = None
+    difficulty_level: Optional[str] = None
     difficultyLevel: Optional[str] = None
     difficulty_reasons: Optional[str] = None
     aiEvaluation: Optional[str] = None

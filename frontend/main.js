@@ -193,26 +193,37 @@
         const payload = { topic: exactTopic, subject: activeSubject };
         console.log("[OmniLearn Mode 2] Sending exact search payload to /api/generate-notes:", payload);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            try { controller.abort(); } catch (e) {}
+        }, 3500);
+
         try {
             const resp = await fetch("/api/generate-notes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (resp.ok) {
                 const data = await resp.json();
                 const notes = data.notes || "";
-                topicNotesCache.set(cacheKey, notes);
-                renderParsedContent(notes, exactTopic, data.subject || activeSubject);
-            } else {
-                throw new Error(`Server responded with status ${resp.status}`);
+                if (notes && notes.length > 50) {
+                    topicNotesCache.set(cacheKey, notes);
+                    renderParsedContent(notes, exactTopic, data.subject || activeSubject);
+                    return;
+                }
             }
+            throw new Error(`Server status ${resp.status}`);
         } catch (err) {
+            clearTimeout(timeoutId);
             console.warn("[OmniLearn] Topic note fetch notice, using academic fallback:", err);
             const fallback = (typeof generateAcademicFallbackNotes === "function") 
                 ? generateAcademicFallbackNotes(exactTopic, activeSubject) 
                 : `# Executive Overview: ${exactTopic}\n\nComprehensive university study notes strictly for ${exactTopic}.`;
+            topicNotesCache.set(cacheKey, fallback);
             renderParsedContent(fallback, exactTopic, activeSubject);
         }
     }
@@ -248,8 +259,12 @@
         }
         if (viewFileBtn) viewFileBtn.classList.add("hidden");
 
-        // Bypass in-memory stale cache to ensure hard refresh and fresh generation
         const cacheKey = `${code}__unit_${unit}`;
+        if (aktuUnitNotesCache.has(cacheKey)) {
+            const cachedNotes = aktuUnitNotesCache.get(cacheKey);
+            renderParsedContent(cachedNotes, `${code} Unit ${unit}`, name);
+            return;
+        }
 
         // Show glassmorphic loading spinner
         if (contentEl) {
@@ -275,6 +290,11 @@
         };
         console.log("[OmniLearn Mode 1] Dispatching dynamic unit payload to /api/generate-unit-notes:", payload);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            try { controller.abort(); } catch (e) {}
+        }, 3500);
+
         try {
             const resp = await fetch(`/api/generate-unit-notes?t=${Date.now()}`, {
                 method: "POST",
@@ -284,21 +304,28 @@
                     "Pragma": "no-cache"
                 },
                 cache: "no-store",
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (resp.ok) {
                 const data = await resp.json();
                 const notes = data.unit_notes || data.notes || "";
-                renderParsedContent(notes, `${code} Unit ${unit}`, name);
-            } else {
-                throw new Error(`Server responded with status ${resp.status}`);
+                if (notes && notes.length > 50) {
+                    aktuUnitNotesCache.set(cacheKey, notes);
+                    renderParsedContent(notes, `${code} Unit ${unit}`, name);
+                    return;
+                }
             }
+            throw new Error(`Server responded with status ${resp.status}`);
         } catch (err) {
+            clearTimeout(timeoutId);
             console.warn("[OmniLearn] AKTU unit note fetch notice, using fallback:", err);
-            const fallback = (typeof _generateFallbackUnitNotes === "function")
-                ? _generateFallbackUnitNotes(code, name, unit, topicsList)
+            const fallback = (typeof generateAcademicFallbackNotes === "function")
+                ? generateAcademicFallbackNotes(`${name} Unit ${unit}: ${topicsList.join(', ')}`, name)
                 : `### AKTU End-Semester Examination Notes\n- Course Code: ${code}\n- Course Name: ${name}\n- Unit: ${unit}\n\n### Specific Notes on Important Topics\nOfficial revision notes for Unit ${unit}.`;
+            aktuUnitNotesCache.set(cacheKey, fallback);
             renderParsedContent(fallback, `${code} Unit ${unit}`, name);
         }
     }
@@ -311,7 +338,7 @@
         const contentEl = document.getElementById("modal-markdown-content");
         if (!contentEl) return;
 
-        let cleanText = markdownText;
+        let cleanText = markdownText || "";
         if (typeof sanitizeStudyNotesContent === "function") {
             cleanText = sanitizeStudyNotesContent(markdownText);
         }
@@ -341,12 +368,25 @@
             };
         }
 
-        // Calculate and update reading time badge
-        const words = cleanText.trim().split(/\s+/).length;
+        // Calculate and update reading time badge & word count
+        const words = cleanText.trim().split(/\s+/).filter(Boolean).length;
         const readTime = Math.max(1, Math.ceil(words / 200));
         const timeEl = document.getElementById("noteReadingTime");
         if (timeEl) {
             timeEl.innerHTML = `<i class="fa-regular fa-clock mr-1 text-indigo-400"></i> ~${readTime} min read`;
+        }
+        const wordEl = document.getElementById("noteWordCount");
+        if (wordEl) {
+            wordEl.innerHTML = `<i class="fa-solid fa-file-lines mr-1 text-indigo-400"></i> ~${words} words`;
+        }
+
+        // Build Table of Contents in Left Sidebar
+        if (typeof buildTableOfContents === "function") {
+            try {
+                buildTableOfContents(contentEl, cleanText);
+            } catch (e) {
+                console.warn("[OmniLearn] Table of contents notice:", e);
+            }
         }
 
         // Trigger scoped MathJax typesetting on this element
@@ -619,10 +659,18 @@
         if (typeof window !== "undefined") {
             const originalModalFn = window.openStudyNotesModal;
             window.openStudyNotesModal = function(note) {
-                const exactQuery = getExactSearchQuery();
-                let topic = exactQuery;
-                if (!topic && note && note.title) {
+                if (note && note.ocr_text && note.ocr_text.trim()) {
+                    renderParsedContent(note.ocr_text, note.title, note.subject);
+                    const modalEl = document.getElementById("noteDetailModal");
+                    if (modalEl) modalEl.classList.remove("hidden");
+                    return;
+                }
+                let topic = "";
+                if (note && note.title) {
                     topic = cleanQueryString(note.title);
+                }
+                if (!topic) {
+                    topic = getExactSearchQuery();
                 }
                 const subject = (note && note.subject) ? note.subject : "";
                 triggerTopicNoteGeneration(topic, subject);
@@ -694,17 +742,28 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Extract exact query without defaults
-                let exactTopic = getExactSearchQuery();
                 const noteCard = viewFileBtn.closest(".note-card") || viewFileBtn.closest("[data-topic]") || viewFileBtn.closest(".bg-white");
-                if (!exactTopic && noteCard) {
+                let cardTopic = "";
+                if (noteCard) {
                     const cardTitleEl = noteCard.querySelector("h4");
                     if (cardTitleEl && cardTitleEl.textContent) {
-                        exactTopic = cleanQueryString(cardTitleEl.textContent);
+                        cardTopic = cleanQueryString(cardTitleEl.textContent);
                     }
                 }
 
-                const activeSubject = (window.currentSearchData && (window.currentSearchData.category || window.currentSearchData.domain)) || "";
+                // If noteCard has an existing note with text in search results, render immediately
+                if (cardTopic && window.currentSearchData && Array.isArray(window.currentSearchData.notes)) {
+                    const existingNote = window.currentSearchData.notes.find(n => n.title && cleanQueryString(n.title).toLowerCase() === cardTopic.toLowerCase());
+                    if (existingNote && existingNote.ocr_text && existingNote.ocr_text.trim()) {
+                        renderParsedContent(existingNote.ocr_text, existingNote.title, existingNote.subject);
+                        const modalEl = document.getElementById("noteDetailModal");
+                        if (modalEl) modalEl.classList.remove("hidden");
+                        return;
+                    }
+                }
+
+                const exactTopic = cardTopic || getExactSearchQuery() || "University Engineering";
+                const activeSubject = (noteCard && noteCard.dataset && noteCard.dataset.subject) || (window.currentSearchData && (window.currentSearchData.category || window.currentSearchData.domain)) || "";
                 triggerTopicNoteGeneration(exactTopic, activeSubject);
                 return;
             }

@@ -7,6 +7,7 @@ let currentNote = null;
 let studyNotes = ""; // Current active query generated study notes
 let completedRoadmapSteps = {}; // Map of query -> Set of step indices
 let isSearching = false;
+const searchResultCache = new Map(); // Client-side instant query cache
 
 // --- Init on Page Load & URL Routing ("useEffect" Hook equivalent) ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -258,8 +259,32 @@ async function executeSearch(targetQuery, updateHistory = true) {
     }
     document.title = `${query} — OmniLearn Academic Hub`;
 
-    // 4. Activate Card-Level Skeleton Loading State
-    setCardsLoadingState(query);
+    const cacheKey = query.toLowerCase();
+    let hasInstantRendered = false;
+
+    // 4. Check client-side instant cache for zero-latency rendering
+    let cachedData = searchResultCache.get(cacheKey);
+    if (!cachedData) {
+        try {
+            const rawStored = sessionStorage.getItem("omni_cache_" + cacheKey);
+            if (rawStored) {
+                cachedData = JSON.parse(rawStored);
+                searchResultCache.set(cacheKey, cachedData);
+            }
+        } catch (_) {}
+    }
+
+    if (cachedData && cachedData.summary && cachedData.difficulty_score !== undefined) {
+        currentSearchData = cachedData;
+        showScreen("dashboardScreen");
+        const navSearchContainer = document.getElementById("navSearchContainer");
+        if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+        updateDashboardUI(cachedData);
+        hasInstantRendered = true;
+    } else {
+        // Activate Card-Level Skeleton Loading State only if not already rendered
+        setCardsLoadingState(query);
+    }
 
     try {
         const response = await fetch('/api/search', {
@@ -285,6 +310,10 @@ async function executeSearch(targetQuery, updateHistory = true) {
 
         const data = await response.json();
         currentSearchData = data;
+        searchResultCache.set(cacheKey, data);
+        try {
+            sessionStorage.setItem("omni_cache_" + cacheKey, JSON.stringify(data));
+        } catch (_) {}
 
         // 5. Instantly and completely re-render all dashboard sections with dynamic data
         updateDashboardUI(data);
@@ -304,12 +333,16 @@ async function executeSearch(targetQuery, updateHistory = true) {
             });
         }
 
-        // Smooth scroll to top of dashboard content
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        // Smooth scroll to top of dashboard content if first render
+        if (!hasInstantRendered) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
     } catch (err) {
         console.error("Search fetch failed:", err);
-        alert("Search failed. Please verify the backend is running and Gemini API key is valid.");
-        showScreen("landingScreen");
+        if (!hasInstantRendered) {
+            alert("Search failed. Please verify the backend is running and Gemini API key is valid.");
+            showScreen("landingScreen");
+        }
     } finally {
         isSearching = false;
     }
@@ -553,17 +586,98 @@ function toggleDetailedBreakdown() {
     }
 }
 
-function formatSummaryMarkdown(rawText) {
-    if (!rawText) return "<p class='text-slate-500'>Comprehensive academic notes are being compiled for this syllabus topic.</p>";
+function prepareMathMarkdown(rawText) {
+    if (!rawText || typeof rawText !== 'string') return "";
     
-    // Clean raw ASCII borders and leading headline hashes while preserving raw LaTeX intact
-    let clean = rawText
+    // 1. Unescape literal \n into real newlines
+    let clean = rawText.replace(/\\n/g, '\n');
+
+    // 2. Clean decorative borders and leading headline hashes
+    clean = clean
         .replace(/^[=\-~_#*]{4,}\s*$/gm, '')
         .replace(/^#+\s+/gm, '')
         .replace(/^[=\-]{3,}.*$/gm, '');
 
+    // 3. Detect and wrap C/C++ or Python code snippets if not inside backticks
+    if (!clean.includes("```") && (clean.includes("malloc(") || clean.includes("sizeof(") || clean.includes("int main") || clean.includes("def ") || clean.includes("class "))) {
+        clean = clean.replace(
+            /((?:(?:int|char|float|double|void|\*|struct)\s+[\w*]+\s*=|if\s*\([^)]+\)\s*\{|malloc\()[^`]+?(?:;\s*\}|;))/g,
+            "\n```c\n$1\n```\n"
+        );
+    }
+
+    // 4. Wrap naked LaTeX commands in math delimiters ($...$ or $$...$$)
+    const latexCmds = [
+        '\\text{', '\\frac{', '\\mathcal{', '\\pmod', '\\times', '\\cdot',
+        '\\sum', '\\int', '\\sqrt', '\\alpha', '\\beta', '\\theta', '\\Theta',
+        '\\Omega', '\\leq', '\\geq', '\\approx'
+    ];
+
+    let lines = clean.split('\n');
+    let processed = [];
+    let inCode = false;
+
+    for (let line of lines) {
+        let trimmed = line.trim();
+        if (trimmed.startsWith('```')) {
+            inCode = !inCode;
+            processed.push(line);
+            continue;
+        }
+        if (inCode || !trimmed) {
+            processed.push(line);
+            continue;
+        }
+
+        // Already delimited with $$ or $ or \[
+        if ((trimmed.startsWith('$$') && trimmed.endsWith('$$')) ||
+            (trimmed.startsWith('$') && trimmed.endsWith('$')) ||
+            (trimmed.startsWith('\\[') && trimmed.endsWith('\\]'))) {
+            processed.push(line);
+            continue;
+        }
+
+        const hasLatex = latexCmds.some(cmd => trimmed.includes(cmd));
+        if (hasLatex) {
+            if (!trimmed.includes('$')) {
+                const colonIdx = trimmed.indexOf(':');
+                if (colonIdx !== -1 && latexCmds.some(cmd => trimmed.slice(colonIdx).includes(cmd))) {
+                    const prefix = trimmed.slice(0, colonIdx + 1);
+                    const eq = trimmed.slice(colonIdx + 1).trim();
+                    processed.push(prefix);
+                    processed.push(`$$${eq}$$`);
+                    continue;
+                } else if (trimmed.includes('=') || trimmed.includes('\\\\') || trimmed.startsWith('\\text') || trimmed.startsWith('A[')) {
+                    if (trimmed.includes('\\\\')) {
+                        const parts = trimmed.split('\\\\').map(p => p.trim()).filter(Boolean);
+                        for (const p of parts) {
+                            processed.push(p.includes('$') ? p : `$$${p}$$`);
+                        }
+                        continue;
+                    } else {
+                        processed.push(`$$${trimmed}$$`);
+                        continue;
+                    }
+                }
+            } else {
+                // Ensure \mathcal{...} without dollar signs are wrapped
+                line = line.replace(/(?<!\$)\\mathcal\{[A-Za-z]\}(?:\([a-zA-Z0-9+\-* /]+\))?(?!\$)/g, '$$&$');
+            }
+        }
+        processed.push(line);
+    }
+
+    return processed.join('\n');
+}
+
+function formatSummaryMarkdown(rawText) {
+    if (!rawText) return "<p class='text-slate-500'>Comprehensive academic notes are being compiled for this syllabus topic.</p>";
+    
+    let clean = prepareMathMarkdown(rawText);
+
     if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
         try {
+            marked.setOptions({ gfm: true, breaks: true });
             return marked.parse(clean);
         } catch(e) {}
     }
@@ -1385,102 +1499,325 @@ function showNoteModalLoadingSkeleton(topic) {
 function generateAcademicFallbackNotes(topic, subject) {
     const cleanTopic = (topic || "Academic Topic").trim();
     const cleanSubject = (subject || "Engineering & Computer Science").trim();
-    const className = cleanTopic.replace(/[^a-zA-Z0-9]/g, '') || "TopicModel";
-    
-    return `# Executive Overview: Core Definition & Intuition
-**${cleanTopic}** constitutes an indispensable pillar of modern ${cleanSubject} university curricula. It addresses fundamental algorithmic trade-offs, structural mechanics, and theoretical models necessary for scalable systems engineering and rigorous computational analysis.
+    const tLower = cleanTopic.toLowerCase();
+    const sLower = cleanSubject.toLowerCase();
+    const combined = `${tLower} ${sLower}`;
 
-Understanding **${cleanTopic}** requires distinguishing its formal mathematical definition from its physical and programmatic manifestations. It enforces specific operational invariants across all state transformations, ensuring that data integrity, computational efficiency, and predictable termination bounds are mathematically preserved throughout execution cycles.
+    const isEE = /circuit|kcl|kvl|thevenin|norton|kirchhoff|transistor|diode|bjt|mosfet|op-amp|rlc|transformer|induction motor/.test(combined);
+    const isME = /thermodynamic|carnot|entropy|enthalpy|fluid|bernoulli|reynolds|stress|strain|otto|diesel/.test(combined);
+    const isMath = /calculus|integral|derivative|differential equation|eigenvalue|eigenvector|matrix algebra|taylor series|fourier/.test(combined);
 
-## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations
-The theoretical framework governing **${cleanTopic}** is defined by analytical state transitions and conservation principles:
+    if (isEE) {
+        return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Electrical & Electronics Engineering | **Level:** B.Tech Undergraduate
 
-1. **Governing State Relation**:
-$$\\mathcal{S}(x, t) = \\sum_{k=1}^{N} \\alpha_k \\cdot \\phi_k(x, t) + \\epsilon(t)$$
+**${cleanTopic}** is a fundamental theoretical and operational subject within Electrical Network Theory and Circuit Analysis. It establishes the governing laws for charge conservation, voltage loops, and electromagnetic energy distribution.
 
-2. **Continuous State & Derivation Relation**:
-$$\\int u \\, dv = u \\cdot v - \\int v \\, du$$
-Under operational boundary constraints where $t \\in [0, T]$, the system invariant satisfies:
-$$\\lim_{N \\to \\infty} \\frac{1}{N} \\sum_{i=1}^{N} \\left( x_i - \\mu \\right)^2 = \\sigma^2$$
+## Core Concepts & Mathematical / Architectural Linchpins
+Electrical networks are governed by conservation laws derived directly from Maxwell's equations:
 
-3. **Optimal Equilibrium State**:
-$$\\nabla \\mathcal{J}(\\mathbf{w}) = \\mathbf{0} \\implies \\mathbf{w}^* = (\\mathbf{X}^T\\mathbf{X})^{-1}\\mathbf{X}^T\\mathbf{y}$$
+1. **Kirchhoff's Current Law (KCL - Charge Conservation)**:
+$$\\sum_{k=1}^{N} I_k = 0$$
+At any junction node in an electrical circuit, the algebraic sum of currents entering equals the sum of currents leaving.
 
-## Syntax & Implementation: Step-by-Step Worked Examples
-### Worked Example 1: Foundational Implementation & Boundary Validation
+2. **Kirchhoff's Voltage Law (KVL - Energy Conservation)**:
+$$\\sum_{k=1}^{M} V_k = 0$$
+The directed sum of electrical potential differences (voltages) around any closed loop equals zero.
+
+3. **Thevenin's Equivalent & Maximum Power Transfer**:
+$$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L}, \\qquad P_{\\max} = \\frac{V_{\\text{th}}^2}{4 R_{\\text{th}}}$$
+
+## Production-Grade Implementation & Boundary Validation
 \`\`\`python
-# Canonical Academic Implementation: ${cleanTopic}
-class ${className}:
-    """
-    Robust pedagogical implementation of ${cleanTopic}
-    incorporating boundary assertions and state introspection.
-    """
+# Python Analysis: Thevenin Equivalent Calculator
+def solve_thevenin(v_oc: float, r_th: float, r_load: float) -> dict:
+    \"\"\"Computes circuit branch current, load voltage, and delivered power.\"\"\"
+    if (r_th + r_load) <= 0:
+        raise ValueError("Total circuit resistance must be strictly positive.")
+    i_load = v_oc / (r_th + r_load)
+    v_load = i_load * r_load
+    p_load = (i_load ** 2) * r_load
+    p_max = (v_oc ** 2) / (4 * r_th) if r_th > 0 else 0
+    return {"I_load_A": i_load, "V_load_V": v_load, "P_load_W": p_load, "P_max_W": p_max}
+\`\`\`
+
+## Step-by-Step Solved Numericals & Circuit Traces
+### Problem 1: Thevenin Equivalent Calculation
+**Problem**: A DC network has $V_S = 24\\text{ V}$, series resistance $R_1 = 6\\,\\Omega$, and parallel resistor $R_2 = 12\\,\\Omega$ across load terminals $A-B$. Compute $V_{\\text{th}}$, $R_{\\text{th}}$, and load current $I_L$ for $R_L = 4\\,\\Omega$.
+1. **Open-Circuit Voltage**: $V_{\\text{th}} = 24 \\times \\frac{12}{6 + 12} = 16\\text{ V}$.
+2. **Thevenin Resistance**: $R_{\\text{th}} = R_1 \\parallel R_2 = \\frac{6 \\times 12}{6 + 12} = 4\\,\\Omega$.
+3. **Load Current**: $I_L = \\frac{16\\text{ V}}{4\\,\\Omega + 4\\,\\Omega} = 2\\text{ A}$.
+
+## Complexity Analysis & Asymptotic Matrix
+| Component / Parameter | Governing Invariant | State Equation |
+| :--- | :--- | :--- |
+| **Resistive Network** | Ohm's Law | $V = I \\cdot R$ |
+| **Inductive Storage** | Faraday's Law | $v(t) = L \\frac{di}{dt}$ |
+| **Capacitive Storage** | Displacement Current | $i(t) = C \\frac{dv}{dt}$ |
+
+## Real-World Pitfalls, Common Bugs & Exam Traps
+1. Deactivating independent current sources as short circuits instead of open circuits.
+2. Sign convention errors when traversing mesh loops against opposing current directions.
+3. Forgetting source internal resistance in maximum power transfer computations.
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State Thevenin's Theorem.**
+   - *Answer*: Any linear two-terminal DC circuit can be replaced by an equivalent voltage source $V_{\\text{th}}$ in series with resistance $R_{\\text{th}}$.
+2. **Q2: Under what condition is maximum power transferred to a load in a DC circuit?**
+   - *Answer*: When the load resistance equals the internal Thevenin resistance ($R_L = R_{\\text{th}}$).
+3. **Q3: State Kirchhoff's Current Law and its physical basis.**
+   - *Answer*: $\\sum I = 0$ at any circuit junction; physically based on conservation of electric charge.`;
+    }
+
+    if (isME) {
+        return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Mechanical Engineering | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** is a core operational discipline within thermal systems, fluid mechanics, and mechanical engineering. It governs macroscopic work extraction, heat transfer, and mechanical equilibrium.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **First Law of Thermodynamics (Conservation of Energy)**:
+$$dQ = dU + dW \\implies \\Delta U = Q - W$$
+For an ideal gas, work done during quasi-static expansion is $W = \\int P \\, dV$.
+
+2. **Second Law & Carnot Maximum Thermal Efficiency**:
+$$\\eta_{\\text{Carnot}} = 1 - \\frac{T_L}{T_H} = \\frac{T_H - T_L}{T_H}$$
+where $T_H$ and $T_L$ represent source and sink temperatures in absolute Kelvin ($\\text{K}$).
+
+3. **Bernoulli's Equation (Incompressible Fluid Flow)**:
+$$P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{Constant}$$
+
+## Step-by-Step Solved Numericals & Thermodynamic Traces
+### Problem 1: Carnot Cycle Thermal Efficiency Calculation
+**Problem**: A heat engine operates between $T_H = 600^\\circ\\text{C}$ and $T_L = 30^\\circ\\text{C}$, absorbing $1200\\text{ kJ}$ heat per cycle. Compute thermal efficiency $\\eta$ and net work output $W_{\\text{net}}$.
+1. **Convert to Kelvin**: $T_H = 600 + 273.15 = 873.15\\text{ K}$, $T_L = 30 + 273.15 = 303.15\\text{ K}$.
+2. **Carnot Efficiency**: $\\eta = 1 - \\frac{303.15}{873.15} = 0.6528 \\implies 65.28\\%$.
+3. **Net Work Output**: $W_{\\text{net}} = 0.6528 \\times 1200\\text{ kJ} = 783.36\\text{ kJ}$.
+
+## Real-World Pitfalls, Common Bugs & Exam Traps
+1. Forgetting to convert Celsius to Kelvin ($\\text{K} = ^\\circ\\text{C} + 273.15$).
+2. Confusing gauge pressure with absolute pressure ($P_{\\text{abs}} = P_{\\text{gauge}} + P_{\\text{atm}}$).
+3. Violating thermodynamic sign conventions for heat supplied vs heat rejected.
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State the Kelvin-Planck statement of the Second Law of Thermodynamics.**
+   - *Answer*: It is impossible for any device operating on a cycle to receive heat from a single thermal reservoir and produce a net amount of work.
+2. **Q2: State Bernoulli's equation assumptions.**
+   - *Answer*: Inviscid, steady, incompressible, and irrotational flow along a streamline.
+3. **Q3: What is the efficiency of a reversible engine operating with equal source and sink temperatures?**
+   - *Answer*: $\\eta = 0$, since $T_H = T_L$.`;
+    }
+
+    if (isMath) {
+        return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Engineering Mathematics | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** provides the analytical foundations required to model multi-dimensional dynamical, structural, and computational engineering systems.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **Characteristic Equation & Matrix Eigenvalues**:
+$$\\det(A - \\lambda I) = 0$$
+For an $n \\times n$ matrix $A$, the roots of this polynomial yield eigenvalues $\\lambda_1, \\dots, \\lambda_n$.
+
+2. **Cayley-Hamilton Theorem**:
+Every square matrix satisfies its own characteristic equation:
+$$p(A) = A^n + c_{n-1}A^{n-1} + \\dots + c_0 I = 0$$
+
+3. **Exact Differential Equation Criterion**:
+$$M(x, y)\\,dx + N(x, y)\\,dy = 0 \\iff \\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$$
+
+## Step-by-Step Solved Numericals & Analytical Derivations
+### Problem 1: Eigenvalues and Eigenvectors of a $2 \\times 2$ Matrix
+**Problem**: Find eigenvalues of $A = \\begin{bmatrix} 4 & 1 \\\\ 2 & 3 \\end{bmatrix}$.
+1. **Characteristic Equation**: $\\det(A - \\lambda I) = (4 - \\lambda)(3 - \\lambda) - 2 = \\lambda^2 - 7\\lambda + 10 = 0$.
+2. **Factoring**: $(\\lambda - 5)(\\lambda - 2) = 0 \\implies \\lambda_1 = 5, \\lambda_2 = 2$.
+3. **Eigenvector for $\\lambda = 5$**: $(A - 5I)\\mathbf{v} = \\begin{bmatrix} -1 & 1 \\\\ 2 & -2 \\end{bmatrix} \\begin{bmatrix} x_1 \\\\ x_2 \\end{bmatrix} = 0 \\implies \\mathbf{v}_1 = \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$.
+
+## Real-World Pitfalls, Common Bugs & Exam Traps
+1. Failing to test for exactness before integrating differential forms.
+2. Determinant sign errors during expansion of $3 \\times 3$ matrices.
+3. Confusing linear independence with orthogonality.
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State the Cayley-Hamilton Theorem.**
+   - *Answer*: Every square matrix satisfies its own characteristic polynomial equation.
+2. **Q2: State the relation between trace and eigenvalues.**
+   - *Answer*: $\\text{Trace}(A) = \\sum_{i=1}^n \\lambda_i$.
+3. **Q3: What is the condition for exactness in $M dx + N dy = 0$?**
+   - *Answer*: $\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$.`;
+    }
+
+    // Default Computer Science / Data Structures / Algorithms realistic template
+    const isArray = /array|matrix|vector/.test(tLower);
+    const isList = /list|linked|pointer/.test(tLower);
+    const isTree = /tree|bst|avl|heap/.test(tLower);
+    const isHash = /hash/.test(tLower);
+
+    let mathSection = "";
+    let codeSection = "";
+    let workedProblem = "";
+
+    if (isArray) {
+        mathSection = `### 1. Memory Representation & Address Arithmetic
+In computer memory, an array stores elements at contiguous physical memory addresses. The memory address of any element is calculated algebraically in constant $\\mathcal{O}(1)$ time:
+
+- **1D Array Address Formula**:
+$$\\text{Address}(A[i]) = \\text{BaseAddress} + (i - \\text{LowerBound}) \\times w$$
+where $w$ is the element width in bytes (e.g., $w = 4$ for 32-bit integers).
+
+- **2D Row-Major Order (RMO - C/Python)**:
+$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big] \\times w$$
+
+- **2D Column-Major Order (CMO - Fortran/MATLAB)**:
+$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big] \\times w$$`;
+
+        codeSection = `\`\`\`python
+# Production Python: Dynamic Vector Array with Binary Search
+class DynamicArray:
+    def __init__(self, capacity: int = 8):
+        self.capacity = capacity
+        self.data = [0] * capacity
+        self.size = 0
+
+    def append(self, value: int) -> None:
+        if self.size >= self.capacity:
+            self.capacity *= 2
+            resized = [0] * self.capacity
+            for i in range(self.size):
+                resized[i] = self.data[i]
+            self.data = resized
+        self.data[self.size] = value
+        self.size += 1
+
+    def binary_search(self, target: int) -> int:
+        low, high = 0, self.size - 1
+        while low <= high:
+            mid = low + (high - low) // 2
+            if self.data[mid] == target:
+                return mid
+            elif self.data[mid] < target:
+                low = mid + 1
+            else:
+                high = mid - 1
+        return -1
+\`\`\``;
+
+        workedProblem = `### Problem 1: 2D Array Address Derivation
+**Problem**: An array $A[-5 \\dots 15, 10 \\dots 30]$ has Base Address $1020$ and element size $w = 4$ bytes. Compute $\\text{Address}(A[5][20])$ in Row-Major Order.
+1. **Dimensions**: $N_r = 15 - (-5) + 1 = 21$, $N_c = 30 - 10 + 1 = 21$.
+2. **Offset Calculation**: $(5 - (-5)) \\times 21 + (20 - 10) = 10 \\times 21 + 10 = 220$.
+3. **Final Address**: $1020 + (220 \\times 4) = 1020 + 880 = 1900$.`;
+    } else if (isList) {
+        mathSection = `### 1. Pointer Invariants & Cycle Detection
+A Linked List is a collection of dynamic heap-allocated nodes connected via pointer addresses:
+
+- **Node Structure**:
+$$\\text{Node} = \\langle \\text{Data}, \\quad \\text{NextPointer} \\in \\text{AddressSpace} \\cup \\{\\text{NULL}\\} \\rangle$$
+
+- **Floyd's Tortoise & Hare Cycle Invariant**:
+$$\\text{Time Complexity} = \\mathcal{O}(n), \\qquad \\text{Auxiliary Space} = \\mathcal{O}(1)$$`;
+
+        codeSection = `\`\`\`python
+# Production Python: Singly Linked List Reversal
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def reverse_linked_list(head: ListNode) -> ListNode:
+    prev = None
+    curr = head
+    while curr:
+        next_node = curr.next
+        curr.next = prev
+        prev = curr
+        curr = next_node
+    return prev
+\`\`\``;
+
+        workedProblem = `### Problem 1: Linked List In-Place Reversal Trace
+Given list $10 \\to 20 \\to 30 \\to \\text{NULL}$:
+- Iteration 1: $10\\to\\text{NULL}$, \`prev=10\`, \`curr=20\`
+- Iteration 2: $20\\to 10\\to\\text{NULL}$, \`prev=20\`, \`curr=30\`
+- Iteration 3: $30\\to 20\\to 10\\to\\text{NULL}$, \`prev=30\`, \`curr=NULL\`
+Final reversed list head: $30$ in $\\mathcal{O}(n)$ time and $\\mathcal{O}(1)$ space.`;
+    } else {
+        mathSection = `### 1. Algorithmic Invariants & Recurrence Relations
+The operational behavior of **${cleanTopic}** is defined by asymptotic complexity and state invariants:
+
+- **Master Theorem Recurrence Form**:
+$$T(n) = a \\, T\\left(\\frac{n}{b}\\right) + f(n)$$
+- **Algorithmic Bounds**:
+$$\\mathcal{O}(1) \\le \\text{Optimal State} \\le \\mathcal{O}(n \\log n)$$`;
+
+        codeSection = `\`\`\`python
+# Production Python: Core Implementation for ${cleanTopic}
+class ${cleanTopic.replace(/[^a-zA-Z0-9]/g, '') || "Engine"}:
     def __init__(self, capacity: int = 100):
         self.capacity = capacity
         self.items = []
-        self._is_initialized = True
 
-    def insert_element(self, element) -> bool:
-        """Inserts an element while verifying capacity bounds."""
-        if len(self.items) >= self.capacity:
-            raise OverflowError(f"Maximum capacity ({self.capacity}) reached for ${cleanTopic}.")
-        self.items.append(element)
+    def insert(self, item) -> bool:
+        if item is None or len(self.items) >= self.capacity:
+            return False
+        self.items.append(item)
         return True
 
-    def find_element(self, target) -> int:
-        """Performs optimal lookup, returning index or -1 if absent."""
+    def find(self, target) -> int:
         for idx, val in enumerate(self.items):
             if val == target:
                 return idx
         return -1
+\`\`\``;
 
-    def state_summary(self) -> dict:
-        return {
-            "topic": "${cleanTopic}",
-            "element_count": len(self.items),
-            "capacity": self.capacity,
-            "invariant_status": "Healthy"
-        }
-\`\`\`
+        workedProblem = `### Problem 1: Asymptotic Recurrence Solution
+**Problem**: Solve $T(n) = 2T(n/2) + \\Theta(n)$.
+1. $a = 2, b = 2, f(n) = \\Theta(n^1)$.
+2. $\\log_b a = \\log_2 2 = 1 \\implies n^{\\log_b a} = n^1 = f(n)$.
+3. Case 2 of Master Theorem applies $\\implies T(n) = \\Theta(n \\log n)$.`;
+    }
 
-### Worked Example 2: Mathematical Integration Step-by-Step
-Evaluate the integral $\\int x e^x \\, dx$:
-1. Choose $u = x \\implies du = dx$, and $dv = e^x dx \\implies v = e^x$.
-2. Substitute into Integration by Parts formula:
-$$\\int x e^x \\, dx = x e^x - \\int e^x \\, dx = e^x(x - 1) + C$$
-3. Verify by differentiation: $\\frac{d}{dx}\\left[e^x(x - 1) + C\\right] = e^x(x - 1) + e^x = x e^x$.
+    return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Computer Science & Engineering | **Level:** B.Tech Undergraduate
 
-## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics
-| Operation / Phase | Best Case | Average Case | Worst Case | Auxiliary Space |
+**${cleanTopic}** constitutes a core conceptual and algorithmic foundation in modern Computer Science and Engineering. Mastering this topic provides the structural basis for high-throughput software architecture, memory optimization, and university end-semester examinations.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+${mathSection}
+
+## Physical Memory Layout & Structural Representation
+1. **Memory Allocation**: Managed in contiguous physical memory buffers or heap-allocated pointer chains to guarantee deterministic execution invariants.
+2. **Cache Locality**: Exploits CPU L1/L2 cache line spatial locality to maximize memory bus throughput.
+3. **Pointer Arithmetic**: Guarantees boundary safety and eliminates memory corruption.
+
+## Production-Grade Implementation & Boundary Validation
+${codeSection}
+
+## Step-by-Step Solved Numericals & Algorithmic Traces
+${workedProblem}
+
+## Complexity Analysis & Asymptotic Matrix
+| Operation / Stage | Best Case | Average Case | Worst Case | Auxiliary Space |
 | :--- | :--- | :--- | :--- | :--- |
-| Initialization / Allocation | $O(1)$ | $O(1)$ | $O(N)$ | $O(N)$ total space |
-| Direct Lookup / Search | $O(1)$ | $O(\\log N)$ | $O(N)$ | $O(1)$ auxiliary |
-| State Insertion / Update | $O(1)$ | $O(1)$ | $O(N)$ | $O(1)$ auxiliary |
-| State Deletion / Deallocation | $O(1)$ | $O(\\log N)$ | $O(N)$ | $O(1)$ auxiliary |
-| Full Sequential Traversal | $O(N)$ | $O(N)$ | $O(N)$ | $O(1)$ auxiliary |
+| **Lookup / Random Access** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
+| **Insertion at Boundary** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ amortized | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(1)$ |
+| **Arbitrary Search** | $\\mathcal{O}(1)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
+| **Full Traversal** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
 
-### Essential Cheatsheet Mnemonics
-- **ILATE Priority Rule**: Inverse Trig $\\to$ Log $\\to$ Algebraic $\\to$ Trig $\\to$ Exponential.
-- **Master Theorem Mnemonic**: Compare $f(n)$ with $n^{\\log_b a}$ to quickly resolve divide-and-conquer recurrences.
-- **Base Case Invariant**: Always assert null or $N=0$ bounds before initiating inductive loops.
+## Real-World Pitfalls, Common Bugs & Exam Traps
+1. **Off-by-One Index Errors**: Loop boundary inaccuracies producing segmentation faults or buffer overflows.
+2. **Unchecked Null/Dangling Pointers**: Dereferencing deallocated or uninitialized memory addresses.
+3. **Capacity Overflow**: Failing to verify memory allocation bounds before inserting elements.
 
-## Common Mistakes & Exam Pitfalls
-1. **Boundary & Off-by-One Indices**: Index arithmetic errors during zero-indexed array or pointer traversal, resulting in segmentation faults.
-2. **Memory Leaks & Dangling References**: In manual memory models, forgetting to free dynamically allocated buffers; in GC runtimes, retaining unreferenced cycles.
-3. **Neglecting Constants of Integration**: Forgetting $+ C$ in indefinite integrals on examination papers.
-4. **Scale Degeneracy**: Performance degrading to worst-case complexity when input distributions trigger adverse path traversal.
-
-## University Exam: Practice Problems with Answers & Focus Points
-1. **Problem 1 (Recurrence)**: Solve the recurrence relation $T(n) = 2T(n/2) + O(n)$.
-   - *Answer*: By Master Theorem (Case 2), $T(n) = \\Theta(n \\log n)$.
-
-2. **Problem 2 (Definite Integral)**: Compute $\\int_0^1 x^2 \\, dx$.
-   - *Answer*: $\\left[ \\frac{x^3}{3} \\right]_0^1 = \\frac{1}{3}$.
-
-3. **Problem 3 (Space Complexity)**: What is the auxiliary space complexity of iterative vs recursive binary search?
-   - *Answer*: Iterative is $O(1)$ auxiliary space; recursive is $O(\\log N)$ due to call stack frames.
-`;
+## University Examination Practice Problems with Model Answers
+1. **Q1: Define ${cleanTopic} in Computer Science.**
+   - *Answer*: A foundational structure or computational methodology that models data and operational workflows under deterministic time and space bounds.
+2. **Q2: Why is random access in an array performed in $\\mathcal{O}(1)$ time?**
+   - *Answer*: Because physical memory addresses are calculated directly via index arithmetic without sequential element traversal.
+3. **Q3: State the worst-case time complexity of Binary Search.**
+   - *Answer*: $\\mathcal{O}(\\log n)$ by repeatedly halving the active search interval.`;
 }
+
 
 function parseMarkdownHeaders(rawContent) {
     if (!rawContent) return [];
@@ -1739,11 +2076,19 @@ function applyKaTeXToElement(container) {
 }
 window.applyKaTeXToElement = applyKaTeXToElement;
 
-// Re-typeset raw LaTeX math strings into formatted mathematical equations using MathJax 3
+// Re-typeset raw LaTeX math strings into formatted mathematical equations using KaTeX and MathJax 3
 function renderMathFormulas(elements) {
+    const targets = elements ? (Array.isArray(elements) ? elements : [elements]) : [document.body];
+    
+    // 1. Instant rendering with KaTeX
+    targets.forEach(el => {
+        if (el) applyKaTeXToElement(el);
+    });
+
+    // 2. Typeset with MathJax 3 for full TeX coverage
     if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-        const target = elements ? (Array.isArray(elements) ? elements : [elements]) : undefined;
-        window.MathJax.typesetPromise(target).catch((err) => console.error("MathJax error:", err));
+        const mathJaxTargets = elements ? (Array.isArray(elements) ? elements : [elements]) : undefined;
+        window.MathJax.typesetPromise(mathJaxTargets).catch((err) => console.warn("MathJax error:", err));
     } else if (window.MathJax && typeof window.MathJax.typeset === 'function') {
         try {
             if (elements) {
@@ -1752,7 +2097,7 @@ function renderMathFormulas(elements) {
                 window.MathJax.typeset();
             }
         } catch (err) {
-            console.error("MathJax typeset error:", err);
+            console.warn("MathJax typeset error:", err);
         }
     }
 }
@@ -1865,9 +2210,24 @@ async function openNoteModal(note) {
     const modalEl = document.getElementById("noteDetailModal");
     if (modalEl) modalEl.classList.remove("hidden");
 
-    // 3. If API data is currently loading and no specific note content exists, show spinner
+    // 3. If API data is currently loading and no specific note content exists, show spinner and auto-resolve
     if (isSearching && !note.ocr_text && !note.file_path) {
         showNoteModalLoadingSpinner(activeTopic);
+        const checkInterval = setInterval(() => {
+            if (!isSearching || (currentSearchData && (currentSearchData.study_notes || currentSearchData.notes))) {
+                clearInterval(checkInterval);
+                openNoteModal(note);
+            }
+        }, 300);
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            const contentEl = document.getElementById("modal-markdown-content");
+            if (contentEl && contentEl.innerHTML.includes("Synthesizing")) {
+                const fb = generateAcademicFallbackNotes(activeTopic, note.subject);
+                renderNoteDocumentContent(fb);
+                renderMathFormulas();
+            }
+        }, 3500);
         return;
     }
 

@@ -110,10 +110,24 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     async def get_gemini_data():
         return await loop.run_in_executor(None, GeminiService.generate_topic_details, query)
 
+    async def get_youtube_data():
+        try:
+            return await asyncio.wait_for(YouTubeService.search_videos(query), timeout=3.5)
+        except Exception as yt_err:
+            print(f"YouTube search timeout/notice: {yt_err}")
+            return YouTubeService._get_educational_fallback(query)
+
+    async def get_web_data():
+        try:
+            return await asyncio.wait_for(SearchService.fetch_web_resources(query), timeout=2.5)
+        except Exception as web_err:
+            print(f"Web search timeout/notice: {web_err}")
+            return SearchService._get_mock_resources(query)
+
     # Gather external requests concurrently
     gemini_task = get_gemini_data()
-    youtube_task = YouTubeService.search_videos(query)
-    web_task = SearchService.fetch_web_resources(query)
+    youtube_task = get_youtube_data()
+    web_task = get_web_data()
     
     gemini_data, youtube_videos, web_resources = await asyncio.gather(
         gemini_task, youtube_task, web_task, return_exceptions=True
@@ -121,18 +135,16 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     
     if isinstance(gemini_data, Exception) or not isinstance(gemini_data, dict):
         print(f"Gemini aggregation error: {gemini_data}")
-        detected_domain = GeminiService._detect_academic_domain(query)
-        gemini_data = GeminiService._validate_and_sanitize_payload({}, query, detected_domain)
-    else:
-        # Guarantee all required fields are validated and structured
-        detected_domain = gemini_data.get("domain") or GeminiService._detect_academic_domain(query)
-        gemini_data = GeminiService._validate_and_sanitize_payload(gemini_data, query, detected_domain)
+        raise HTTPException(
+            status_code=500,
+            detail=f"LLM API generation failed: {str(gemini_data)}"
+        )
         
-    if isinstance(youtube_videos, Exception):
+    if isinstance(youtube_videos, Exception) or not isinstance(youtube_videos, list):
         print(f"YouTube aggregation error: {youtube_videos}")
         youtube_videos = YouTubeService._get_educational_fallback(query)
         
-    if isinstance(web_resources, Exception):
+    if isinstance(web_resources, Exception) or not isinstance(web_resources, list):
         print(f"Web search aggregation error: {web_resources}")
         web_resources = SearchService._get_mock_resources(query)
 
@@ -277,7 +289,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     overview_text = gemini_data.get("overview") or gemini_data.get("summary") or ""
     diff_score = float(gemini_data.get("difficultyScore") or gemini_data.get("difficulty_score") or 6.5)
     diff_level = gemini_data.get("difficultyLevel") or ("Advanced" if diff_score > 7 else ("Intermediate" if diff_score > 4 else "Beginner"))
-    ai_eval = gemini_data.get("aiEvaluation") or gemini_data.get("difficulty_reasons") or ""
+    ai_eval = gemini_data.get("ai_evaluation") or gemini_data.get("aiEvaluation") or gemini_data.get("difficulty_reasons") or ""
     fact_text = gemini_data.get("didYouKnow") or gemini_data.get("did_you_know") or gemini_data.get("fun_fact") or ""
     career_relevance_str = gemini_data.get("careerRelevance") or ""
     canonical_topic = gemini_data.get("title") or gemini_data.get("canonical_title") or query.title()
@@ -287,6 +299,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     # 5. Formulate consolidated SearchResponse
     response_data = {
         "query": query,
+        "topic": gemini_data.get("topic") or canonical_topic,
         "title": canonical_topic,
         "category": category_name,
         "summary": overview_text,
@@ -296,6 +309,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         "domain": category_name,
         "difficulty_score": diff_score,
         "difficultyScore": diff_score,
+        "difficulty_level": gemini_data.get("difficulty_level") or diff_level,
         "difficultyLevel": diff_level,
         "difficulty_reasons": ai_eval,
         "aiEvaluation": ai_eval,

@@ -11,9 +11,15 @@ from typing import List, Optional, Dict, Any
 import os
 import re
 import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from backend.services.gemini_service import GeminiService
 from backend import config
+
+_THREAD_POOL = ThreadPoolExecutor(max_workers=4)
+_TOPIC_NOTES_CACHE: Dict[str, Dict[str, Any]] = {}
+_AKTU_UNIT_CACHE: Dict[str, Dict[str, Any]] = {}
 
 router = APIRouter(tags=["AI Dual Note Engine"])
 
@@ -29,256 +35,50 @@ class UnitNoteRequest(BaseModel):
     aktu_syllabus_topics: Optional[List[str]] = []
 
 TOPIC_SYSTEM_PROMPT = (
-    "You are a Senior University Engineering Professor and Computer Science Expert. "
-    "Your mandate is to generate exhaustive, authoritative academic revision notes bound strictly and exclusively to the user's requested topic.\n"
-    "CRITICAL DOMAIN RULES:\n"
-    "1. DOMAIN DISCRIMINATION: You must accurately detect the query domain:\n"
-    "   - For COMPUTER SCIENCE, DATA STRUCTURES & ALGORITHMS (e.g., Array, Linked List, Recursion, Stack, Queue, Tree, Graph, Hashing, Sorting, Pointer, Complexity):\n"
+    "You are a Distinguished Senior University Engineering Professor, Department Chair, and Chief Examination Evaluator. "
+    "Your mandate is to generate exhaustive, authoritative, textbook-chapter grade academic revision notes of MAXIMUM DEPTH AND SIZE "
+    "bound strictly and exclusively to the user's requested topic.\n"
+    "CRITICAL DOMAIN & REALISM RULES:\n"
+    "1. DOMAIN DISCRIMINATION & REALISTIC MATHEMATICS:\n"
+    "   - For COMPUTER SCIENCE, DATA STRUCTURES, ALGORITHMS & SYSTEMS (e.g., Array, Linked List, Recursion, Stack, Queue, Tree, Graph, Hashing, Sorting, Pointer, OS, DBMS, Networks, Complexity):\n"
     "     * DO NOT generate differential equations, Laplace transforms, control systems, divergence/curl gradients, or thermodynamic laws.\n"
-    "     * Formulate mathematical foundations STRICTLY relevant to CS: memory addressing formulas (e.g., Address(A[i]) = Base + i * w), asymptotic recurrence relations (e.g., Master Theorem, T(n) = T(n-1) + O(1)), Big-O bounds ($O(1)$, $O(n)$, $O(\\log n)$), pointer arithmetic, and algorithmic state invariants.\n"
-    "     * Include clean, complete, idiomatic code implementations (Python/C++) with edge-case handling.\n"
-    "   - For CORE ENGINEERING & MATHEMATICS (e.g., Calculus, Circuits, Thermodynamics, Fluid Dynamics, Mechanics):\n"
-    "     * Formulate appropriate governing differential equations, boundary conditions, and physical conservation laws.\n"
+    "     * Formulate mathematical foundations STRICTLY relevant to CS: memory addressing formulas (e.g., Address(A[i]) = Base + (i - LB) * w), 2D Row-Major/Column-Major equations, asymptotic recurrence relations (e.g., Master Theorem, T(n) = aT(n/b) + f(n)), Big-O bounds ($O(1)$, $O(n)$, $O(\\log n)$), tree height/node theorems, collision probability, pointer arithmetic, and algorithmic state invariants.\n"
+    "     * Include clean, complete, production-grade idiomatic code implementations (Python/C/C++) with thorough comments, edge-case handling, and boundary assertions.\n"
+    "   - For CORE ENGINEERING & MATHEMATICS (e.g., Calculus, Linear Algebra, Circuits, Thermodynamics, Fluid Dynamics, Mechanics):\n"
+    "     * Formulate authentic governing equations (e.g., Kirchhoff's laws, Thevenin equivalent, Maxwell's equations, Carnot efficiency, Bernoulli's equation, Navier-Stokes, Taylor series, differential equations) with complete step-by-step physical derivations.\n"
     "2. STRICT TOPIC BINDING: Every section, example, code snippet, and examination question must correspond directly to the exact requested topic without wandering or irrelevant template filler.\n"
-    "3. LATEX MATH: Render ALL mathematical expressions and variables in standard LaTeX ($inline$ and $$display$$)."
+    "3. MAXIMUM DEPTH & EXHAUSTIVE STRUCTURE: Do NOT abbreviate or truncate. Provide multi-page, comprehensive depth covering:\n"
+    "   # Executive Overview & Theoretical Foundations\n"
+    "   ## Core Concepts & Architectural / Mathematical Linchpins\n"
+    "   ## Physical Memory Layout & Structural Representation\n"
+    "   ## Production-Grade Implementation & Boundary Validation (Full working code in Python and C/C++)\n"
+    "   ## Step-by-Step Solved Numericals & Algorithmic Traces (Real numbers, step-by-step calculation)\n"
+    "   ## Complexity Analysis & Asymptotic Matrix (Best, Average, Worst, Auxiliary Space, Stability)\n"
+    "   ## Real-World Pitfalls, Common Bugs & Exam Traps\n"
+    "   ## University Examination Practice Problems with Model Answers (Section A 2-Mark & Section B/C 10-Mark Solved Questions)\n"
+    "4. LATEX MATH: Render ALL mathematical expressions and variables in standard LaTeX ($inline$ and $$display$$)."
 )
 
 AKTU_UNIT_PROMPT = (
     "You are an official AKTU Senior University Engineering Professor, Exam Paper Setter, and Chief Evaluator. "
-    "Your mandate is to generate high-yield active revision notes tailored strictly for AKTU End-Semester Examinations.\n"
+    "Your mandate is to generate high-yield, exhaustive active revision notes of MAXIMUM DEPTH AND SIZE tailored strictly for AKTU End-Semester Examinations.\n"
     "CRITICAL FORMAT RULES:\n"
-    "1. Deep concept breakdowns with explicit formulas (e.g., Row-Major vs. Column-Major address equations, Big-O tables, recurrence relations) and C/C++ code snippets.\n"
-    "2. Exactly 5 Fully Solved Section A (2-Mark) direct short questions with high-scoring answers.\n"
+    "1. Deep concept breakdowns with explicit formulas (e.g., Row-Major vs. Column-Major address equations, Big-O tables, recurrence relations, circuit models, RTL transfers) and complete C/C++ code snippets.\n"
+    "2. Exactly 5 Fully Solved Section A (2-Mark) direct short questions with high-scoring model answers.\n"
     "3. Exactly 3 Fully Solved Section B/C (10-Mark) AKTU past-year numericals, comprehensive proofs, and derivations with step-by-step math solutions.\n"
     "4. Standard LaTeX ($inline$ and $$display$$) across all equations and variables."
 )
 
+from backend.routes.topic_notes_engine import detect_academic_domain, build_realistic_topic_notes
+
 def detect_query_domain(topic: str, subject: str = "") -> str:
-    """Accurately classifies the academic domain of a query."""
-    text = (topic + " " + subject).lower()
-    
-    cs_keywords = [
-        "array", "linked list", "recursion", "stack", "queue", "tree", "binary tree",
-        "bst", "avl", "b-tree", "graph", "dfs", "bfs", "dijkstra", "sorting", "sort",
-        "quick sort", "merge sort", "bubble sort", "insertion sort", "heap", "heapsort",
-        "hash", "hashing", "hash table", "hash map", "trie", "algorithm", "data structure",
-        "pointer", "dynamic programming", "greedy", "backtracking", "divide and conquer",
-        "string", "bit manipulation", "matrix", "time complexity", "space complexity",
-        "big o", "asymptotic", "oop", "object oriented", "class", "inheritance",
-        "polymorphism", "encapsulation", "compiler", "operating system", "process",
-        "thread", "deadlock", "semaphore", "paging", "virtual memory", "dbms", "sql",
-        "normalization", "relational", "transaction", "acid", "computer network",
-        "tcp", "udp", "ip", "osi", "http", "routing", "socket", "cryptography",
-        "rsa", "des", "aes", "cipher", "software engineering", "agile", "sdlc",
-        "testing", "web technology", "html", "css", "javascript", "python", "java", "c++", "c language"
-    ]
-    for kw in cs_keywords:
-        if kw in text:
-            return "Computer Science & Engineering"
-            
-    ee_keywords = ["circuit", "kcl", "kvl", "thevenin", "norton", "transistor", "diode", "bjt", "mosfet", "op-amp", "amplifier", "transformer", "induction motor", "synchronous", "power system", "signal", "fourier", "laplace", "z-transform", "modulation"]
-    for kw in ee_keywords:
-        if kw in text:
-            return "Electrical & Electronics Engineering"
-            
-    me_keywords = ["thermodynamic", "entropy", "enthalpy", "carnot", "otto", "diesel", "fluid mechanics", "bernoulli", "reynolds", "stress", "strain", "beam", "bending moment", "shear force", "kinematics", "heat transfer", "conduction", "convection", "radiation"]
-    for kw in me_keywords:
-        if kw in text:
-            return "Mechanical Engineering"
-            
-    math_keywords = ["integral", "derivative", "differential equation", "calculus", "matrix algebra", "eigenvalue", "eigenvector", "probability", "statistics", "vector calculus", "gradient", "divergence", "curl"]
-    for kw in math_keywords:
-        if kw in text:
-            return "Engineering Mathematics"
-            
-    return subject if subject and subject != "B.Tech Engineering" else "Computer Science & Engineering"
+    """Accurately classifies the academic domain of a query using the realistic topic notes engine."""
+    return detect_academic_domain(topic, subject)
 
 def _generate_fallback_topic_notes(topic: str, subject: str) -> str:
-    clean_topic = topic.strip().title()
-    domain = detect_query_domain(clean_topic, subject)
-    clean_sub = domain if domain else subject.strip()
-    topic_lower = clean_topic.lower()
+    """Generates exhaustive, textbook-chapter grade realistic revision notes bound strictly to the topic."""
+    return build_realistic_topic_notes(topic, subject)
 
-    if "Computer Science" in domain:
-        # High-yield CS / Data Structures fallback with zero differential equations
-        if "array" in topic_lower:
-            math_section = (
-                "### Memory Representation & Index Address Calculation\n"
-                "In computer memory, an array stores elements at contiguous physical memory addresses. "
-                "The address calculation function guarantees constant-time random access:\n\n"
-                "1. **One-Dimensional Array Address Formula**:\n"
-                "$$\\text{Address}(A[i]) = \\text{BaseAddress} + (i - \\text{LowerBound}) \\times w$$\n"
-                "where $w$ is the element size in bytes (e.g., $w = 4$ for standard 32-bit integers).\n\n"
-                "2. **Two-Dimensional Row-Major Order Formula**:\n"
-                "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big( (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big) \\times w$$\n"
-                "where $N_c$ is the total number of columns.\n\n"
-                "3. **Two-Dimensional Column-Major Order Formula**:\n"
-                "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big( (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big) \\times w$$\n"
-                "where $N_r$ is the total number of rows."
-            )
-            code_section = (
-                "```python\n"
-                "# Python demonstration of Array operations: Traversal, Linear Search, Insertion\n"
-                "class ArrayOperations:\n"
-                "    def __init__(self, capacity: int = 10):\n"
-                "        self.capacity = capacity\n"
-                "        self.data = [0] * capacity\n"
-                "        self.size = 0\n"
-                "\n"
-                "    def insert_at(self, index: int, value: int) -> bool:\n"
-                "        \"\"\"Inserts element at specified index in O(n) time.\"\"\"\n"
-                "        if self.size >= self.capacity or index < 0 or index > self.size:\n"
-                "            return False\n"
-                "        for i in range(self.size, index, -1):\n"
-                "            self.data[i] = self.data[i - 1]\n"
-                "        self.data[index] = value\n"
-                "        self.size += 1\n"
-                "        return True\n"
-                "\n"
-                "    def linear_search(self, target: int) -> int:\n"
-                "        \"\"\"Finds index of target element in O(n) time.\"\"\"\n"
-                "        for idx in range(self.size):\n"
-                "            if self.data[idx] == target:\n"
-                "                return idx\n"
-                "        return -1\n"
-                "```"
-            )
-            pitfalls = (
-                "1. **Off-By-One Index Errors**: Accessing `A[n]` instead of `A[n-1]` in 0-indexed languages leading to `IndexOutOfBoundsException` or Segmentation Faults.\n"
-                "2. **Buffer Overflow & Fixed Size**: Static arrays have fixed capacity defined at compile-time. Attempting to insert beyond capacity corrupts adjacent memory blocks in C/C++.\n"
-                "3. **Inefficient Middle Insertion/Deletion**: Beginners assume insertion is $O(1)$; however, shifting elements requires $O(n)$ time complexity in contiguous storage."
-            )
-            exam_qa = (
-                "1. **Question 1**: An array $A[1..10][1..15]$ is stored in Row-Major order starting at Base Address $1000$. Each element requires $2$ bytes. Compute $\\text{Address}(A[4][6])$.\n"
-                "   - *Answer*: Using $\\text{Address}(A[i][j]) = 1000 + \\big( (4 - 1) \\times 15 + (6 - 1) \\big) \\times 2 = 1000 + (45 + 5) \\times 2 = 1000 + 100 = 1100$.\n\n"
-                "2. **Question 2**: Compare Static Arrays vs Dynamic Arrays in terms of memory overhead and amortized insertion cost.\n"
-                "   - *Answer*: Static arrays have $O(1)$ memory overhead and fixed size. Dynamic arrays (like `std::vector` or Python `list`) double capacity upon exhaustion, yielding an amortized insertion complexity of $O(1)$ per append."
-            )
-        elif "recursion" in topic_lower:
-            math_section = (
-                "### Recurrence Relations & Call Stack Analysis\n"
-                "Recursive algorithms express computational complexity as mathematical recurrences:\n\n"
-                "1. **Linear Recurrence Relation**:\n"
-                "$$T(n) = T(n - 1) + O(1) \\implies T(n) = O(n)$$\n"
-                "2. **Divide-and-Conquer Recurrence (Master Theorem Formulation)**:\n"
-                "$$T(n) = a T(n / b) + f(n)$$\n"
-                "3. **Call Stack Space Complexity Bound**:\n"
-                "$$\\text{Auxiliary Space} = O(d)$$\n"
-                "where $d$ is the maximum depth of the active recursion call tree."
-            )
-            code_section = (
-                "```python\n"
-                "# Step-by-Step Recursion: Factorial & Binary Search with Base Cases\n"
-                "def factorial(n: int) -> int:\n"
-                "    \"\"\"Calculates factorial with base case termination.\"\"\"\n"
-                "    if n <= 1:  # Base condition: terminates recursion\n"
-                "        return 1\n"
-                "    return n * factorial(n - 1)  # Recursive decomposition\n"
-                "\n"
-                "def binary_search_recursive(arr, low: int, high: int, target: int) -> int:\n"
-                "    if low > high:\n"
-                "        return -1  # Base case: element not found\n"
-                "    mid = low + (high - low) // 2\n"
-                "    if arr[mid] == target:\n"
-                "        return mid\n"
-                "    elif arr[mid] > target:\n"
-                "        return binary_search_recursive(arr, low, mid - 1, target)\n"
-                "    else:\n"
-                "        return binary_search_recursive(arr, mid + 1, high, target)\n"
-                "```"
-            )
-            pitfalls = (
-                "1. **Missing or Faulty Base Case**: Omitting the termination condition triggers infinite recursion and `RecursionError: maximum recursion depth exceeded` (Stack Overflow).\n"
-                "2. **Redundant Subproblem Recomputation**: Naive recursive Fibonacci calculates $F(n-2)$ exponentially ($O(2^n)$), requiring memoization to reduce to $O(n)$.\n"
-                "3. **Call Stack Overhead**: Every recursive invocation allocates an activation record (frame) on the call stack, consuming $O(n)$ auxiliary memory."
-            )
-            exam_qa = (
-                "1. **Question 1**: Solve the recurrence $T(n) = 2T(n/2) + O(n)$ using Master Theorem.\n"
-                "   - *Answer*: Here $a = 2, b = 2, k = 1$. Since $\\log_b a = \\log_2 2 = 1 = k$, Case 2 applies: $T(n) = \\Theta(n \\log n)$.\n\n"
-                "2. **Question 2**: What is Tail Recursion and how does the compiler optimize it?\n"
-                "   - *Answer*: A recursive function is tail-recursive when the recursive call is the very last instruction. Optimizing compilers replace it with an iterative jump, reducing auxiliary stack space from $O(n)$ to $O(1)$."
-            )
-        else:
-            math_section = (
-                f"### Theoretical Foundations & Algorithmic Invariants of {clean_topic}\n"
-                f"The formal mathematical behavior of {clean_topic} is characterized by state transitions and complexity invariants:\n\n"
-                f"1. **Asymptotic Recurrence & State Function**:\n"
-                f"$$T(n) = T(n - 1) + c \\implies T(n) = O(n)$$\n"
-                f"2. **Information-Theoretic Lower Bound**:\n"
-                f"$$\\Omega(n \\log n) \\le C_{{\\mathrm{{cmp}}}}(n)$$\n"
-                f"3. **Space Invariant Allocation**:\n"
-                f"$$\\mathcal{{M}}(n) = k \\times n + O(1)$$"
-            )
-            code_section = (
-                f"```python\n"
-                f"# Core Implementation & Invariant Verification for {clean_topic}\n"
-                f"def solve_{re.sub(r'[^a-zA-Z0-9]+', '_', clean_topic.lower())}(data_input):\n"
-                f"    \"\"\"Deterministic implementation with boundary validation.\"\"\"\n"
-                f"    if not data_input:\n"
-                f"        return None\n"
-                f"    \n"
-                f"    # Process elements following standard algorithm steps\n"
-                f"    result = []\n"
-                f"    for item in data_input:\n"
-                f"        if item is not None:\n"
-                f"            result.append(item)\n"
-                f"    return result\n"
-                f"```"
-            )
-            pitfalls = (
-                f"1. **Null Pointer & Null State Dereferencing**: Accessing state before verifying initialization.\n"
-                f"2. **Boundary Condition Neglect**: Empty sequences or singleton inputs failing algorithm invariants.\n"
-                f"3. **Memory Leaks**: Failing to deallocate or unbind dynamically created elements."
-            )
-            exam_qa = (
-                f"1. **Question 1**: Derive the worst-case and best-case time complexity for {clean_topic}.\n"
-                f"   - *Answer*: The worst-case is bounded by $O(n)$, while the best-case achieves $O(1)$ under optimal initial invariant conditions.\n\n"
-                f"2. **Question 2**: Explain the memory representation of {clean_topic} in modern computer architecture.\n"
-                f"   - *Answer*: Structured in contiguous or linked memory blocks with deterministic address translation and cache locality."
-            )
-
-        return (
-            f"# Executive Overview: {clean_topic}\n"
-            f"**Subject Context:** {clean_sub} | **Academic Level:** Undergraduate Engineering (B.Tech CS/IT)\n\n"
-            f"{clean_topic} is a core foundational concept in Computer Science and Data Structures. "
-            f"Mastering {clean_topic} provides the computational basis for structured data representation, memory-efficient algorithm design, and optimal execution throughput. "
-            f"Understanding both physical memory storage and algorithmic operations is vital for software engineering and university examinations.\n\n"
-            f"## Core Concepts & Architectural Foundations\n"
-            f"{math_section}\n\n"
-            f"## Step-by-Step Practical Implementation\n"
-            f"{code_section}\n\n"
-            f"## Complexity Analysis & Big-O Cheatsheet\n"
-            f"| Operation / Case | Best Case | Average Case | Worst Case | Space Complexity |\n"
-            f"| :--- | :--- | :--- | :--- | :--- |\n"
-            f"| Access / Lookup | $O(1)$ | $O(1)$ | $O(1)$ | $O(1)$ |\n"
-            f"| Search | $O(1)$ | $O(n)$ | $O(n)$ | $O(1)$ |\n"
-            f"| Insertion | $O(1)$ | $O(n)$ | $O(n)$ | $O(1)$ |\n"
-            f"| Deletion | $O(1)$ | $O(n)$ | $O(n)$ | $O(1)$ |\n\n"
-            f"## Common Pitfalls & Exam Traps\n"
-            f"{pitfalls}\n\n"
-            f"## University Examination Practice Problems with Model Answers\n"
-            f"{exam_qa}"
-        )
-
-    # Fallback for Core Engineering / Math topics
-    return (
-        f"# Executive Overview: {clean_topic}\n"
-        f"**Subject Context:** {clean_sub} | **Academic Level:** Undergraduate Engineering (B.Tech / University Honors)\n\n"
-        f"{clean_topic} constitutes a fundamental analytical subject within {clean_sub}. "
-        f"Mastering this domain requires understanding its underlying governing principles, conservation laws, "
-        f"and physical/mathematical manifestations.\n\n"
-        f"## Theoretical Derivations & Mathematical Foundations\n"
-        f"1. **Governing State Equation**:\n"
-        f"$$\\frac{{d\\phi}}{{dt}} + \\alpha \\phi = f(t)$$\n"
-        f"2. **Conservation Principle**:\n"
-        f"$$\\int_{{V}} \\nabla \\cdot \\mathbf{{F}} \\, dV = \\oint_{{S}} \\mathbf{{F}} \\cdot d\\mathbf{{A}}$$\n\n"
-        f"## Numerical Formulation & Problem Solution\n"
-        f"Given parameter $\\alpha = 2.0$ with initial condition $\\phi(0) = 5.0$, the analytical trajectory is:\n"
-        f"$$\\phi(t) = \\phi(0) e^{{-\\alpha t}} = 5.0 e^{{-2.0 t}}$$\n\n"
-        f"## Exam Strategy & Scoring Tips\n"
-        f"- Always state assumptions and boundary conditions clearly.\n"
-        f"- Enclose final formulas and solutions in standard LaTeX boxed format."
-    )
 
 def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[str]) -> str:
     clean_code = code.strip().upper()
@@ -759,32 +559,52 @@ def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[
         f"- Course Name: {clean_name}\n"
         f"- Unit: {unit_num} - [{theme}]\n"
         f"- Allowed Topics: [{topics_str}]\n\n"
-        f"## 1. Complete Unit Concept Breakdown\n"
         f"## 1. Core Technical Concept Breakdown\n"
         f"### Specific Notes on Important Topics\n"
         f"**Official Unit {unit_num} Topics Covered:** [{topics_str}]\n\n"
         f"### Technical Formulations & Micro-Architectural Foundations\n"
         f"{math_block}\n\n"
         f"## 2. AKTU Exam Scoring Strategy & Pitfalls\n"
-        f"## 2. Exam Scoring Strategy & Common Pitfalls\n"
         f"### AKTU Exam Scoring Strategy & Common Marking Pitfalls\n"
         f"- **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {unit_num}.\n"
         f"- **High-Yield Areas**: Specific topics within [{topics_str}] tested every year.\n"
         f"- **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.\n"
-        f"- **Common Mistakes**: Frequent student errors specifically in [{topics_str}].\n"
         f"- **Common Deductions**: 3 specific logic or formatting errors students make on these topics:\n"
         f"  1. Missing standard block, circuit, or data flow diagrams required for Section B questions in Unit {unit_num}.\n"
         f"  2. Incomplete intermediate steps or omitting justification of theorem conditions in 10-mark derivations.\n"
         f"  3. Failing to state asymptotic complexity, boundary assumptions, or final boxed units.\n\n"
-        f"## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)\n"
         f"## 3. Section A: 2-Mark Short Questions & Answers\n"
         f"### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)\n"
         f"{sec_a}\n\n"
-        f"## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)\n"
         f"## 4. Section B & C: 10-Mark Long Questions & Answers\n"
         f"### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)\n"
         f"{sec_b}"
     )
+
+def _sync_fetch_gemini_topic_notes(prompt: str) -> Optional[str]:
+    candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+    try:
+        from google.genai import types
+        client = GeminiService.get_client()
+        if not client:
+            return None
+        for model_name in candidate_models:
+            try:
+                resp = client.models.generate_content(
+                    model=model_name,
+                    contents=[TOPIC_SYSTEM_PROMPT, prompt],
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        max_output_tokens=8192,
+                    )
+                )
+                if resp and resp.text and len(resp.text.strip()) > 100:
+                    return GeminiService.sanitize_study_notes(resp.text.strip())
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
 
 @router.post("/api/generate-notes")
 async def generate_topic_notes(req: TopicNoteRequest):
@@ -796,67 +616,118 @@ async def generate_topic_notes(req: TopicNoteRequest):
     domain = detect_query_domain(topic, req.subject)
     user_subject = req.subject.strip() if req.subject and req.subject.strip() not in ("B.Tech Engineering", "") else ""
     subject = user_subject or domain or "Computer Science & Engineering"
+
+    cache_key = f"{topic.lower()}::{subject.lower()}"
+    if cache_key in _TOPIC_NOTES_CACHE:
+        return _TOPIC_NOTES_CACHE[cache_key]
     
     if not config.is_gemini_mocked():
         try:
-            from google.genai import types
-            client = GeminiService.get_client()
-            if client:
-                if "Computer Science" in domain:
-                    domain_instructions = (
-                        f"DOMAIN: COMPUTER SCIENCE / DATA STRUCTURES / ALGORITHMS.\n"
-                        f"CRITICAL RULES: Under NO circumstances include differential equations, control theory, Laplace transforms, thermodynamic equations, or vector calculus.\n"
-                        f"MANDATORY CS FOCUS:\n"
-                        f"- Memory Layout & Address Arithmetic: Explain physical memory layout (contiguous vs heap pointers) and formulas like Address(A[i]) = Base + i * w.\n"
-                        f"- Algorithmic Complexity: Tabulate Best, Average, Worst Time Complexity and Space Complexity in Big-O.\n"
-                        f"- Complete Working Code: Provide robust, bug-free Python or C++ implementations.\n"
-                        f"- Pitfalls: Memory limits, zero-indexing bugs, off-by-one errors, null pointers, stack overflow.\n"
-                        f"- University Exam Problems: Real CS exam questions and numericals specifically testing '{topic}'."
-                    )
-                else:
-                    domain_instructions = (
-                        f"DOMAIN: {domain}.\n"
-                        f"Focus on governing physical laws, theoretical mathematical derivations, and domain-specific worked examples for '{topic}'."
-                    )
-
-                prompt = (
-                    f"Generate authoritative university study notes STRICTLY for the topic: '{topic}'.\n\n"
-                    f"{domain_instructions}\n\n"
-                    f"FORMAT REQUIREMENTS:\n"
-                    f"1. Render ALL mathematical expressions and symbols strictly in LaTeX ($...$ and $$...$$).\n"
-                    f"2. Structure with clean Markdown:\n"
-                    f"   # Executive Overview: {topic}\n"
-                    f"   ## Core Concepts & Architectural / Mathematical Foundations\n"
-                    f"   ## Step-by-Step Practical Implementation & Solved Examples\n"
-                    f"   ## Complexity Analysis / Theoretical State Bounds & Mnemonics\n"
-                    f"   ## Common Pitfalls & Exam Traps\n"
-                    f"   ## University Examination Practice Problems with Model Answers\n"
-                    f"3. Strict Query Binding: Do NOT drift to arbitrary unrelated fields. Every single word must pertain to '{topic}'."
+            if "Computer Science" in domain:
+                domain_instructions = (
+                    f"DOMAIN: COMPUTER SCIENCE / DATA STRUCTURES / ALGORITHMS.\n"
+                    f"CRITICAL RULES: Under NO circumstances include differential equations, control theory, Laplace transforms, thermodynamic equations, or vector calculus.\n"
+                    f"MANDATORY CS FOCUS:\n"
+                    f"- Memory Layout & Address Arithmetic: Explain physical memory layout (contiguous vs heap pointers) and formulas like Address(A[i]) = Base + i * w.\n"
+                    f"- Algorithmic Complexity: Tabulate Best, Average, Worst Time Complexity and Space Complexity in Big-O.\n"
+                    f"- Complete Working Code: Provide robust, bug-free Python or C++ implementations.\n"
+                    f"- Pitfalls: Memory limits, zero-indexing bugs, off-by-one errors, null pointers, stack overflow.\n"
+                    f"- University Exam Problems: Real CS exam questions and numericals specifically testing '{topic}'."
+                )
+            else:
+                domain_instructions = (
+                    f"DOMAIN: {domain}.\n"
+                    f"Focus on governing physical laws, theoretical mathematical derivations, and domain-specific worked examples for '{topic}'."
                 )
 
-                candidate_models = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-flash-latest", "gemini-1.5-pro"]
-                for model_name in candidate_models:
-                    try:
-                        resp = client.models.generate_content(
-                            model=model_name,
-                            contents=[TOPIC_SYSTEM_PROMPT, prompt],
-                            config=types.GenerateContentConfig(
-                                temperature=0.1,  # Strictly 0.1 to prevent drift / hallucinations
-                                max_output_tokens=4000,
-                            )
-                        )
-                        if resp and resp.text and len(resp.text.strip()) > 100:
-                            cleaned = GeminiService.sanitize_study_notes(resp.text.strip())
-                            return {"topic": topic, "subject": subject, "notes": cleaned}
-                    except Exception:
-                        continue
+            prompt = (
+                f"Generate authoritative university study notes STRICTLY for the topic: '{topic}'.\n\n"
+                f"{domain_instructions}\n\n"
+                f"FORMAT REQUIREMENTS:\n"
+                f"1. Render ALL mathematical expressions and symbols strictly in LaTeX ($...$ and $$...$$).\n"
+                f"2. Structure with clean Markdown:\n"
+                f"   # Executive Overview: {topic}\n"
+                f"   ## Core Concepts & Architectural / Mathematical Foundations\n"
+                f"   ## Step-by-Step Practical Implementation & Solved Examples\n"
+                f"   ## Complexity Analysis / Theoretical State Bounds & Mnemonics\n"
+                f"   ## Common Pitfalls & Exam Traps\n"
+                f"   ## University Examination Practice Problems with Model Answers\n"
+                f"3. Strict Query Binding: Do NOT drift to arbitrary unrelated fields. Every single word must pertain to '{topic}'."
+            )
+
+            loop = asyncio.get_running_loop()
+            gemini_notes = await asyncio.wait_for(
+                loop.run_in_executor(_THREAD_POOL, _sync_fetch_gemini_topic_notes, prompt),
+                timeout=3.5
+            )
+            if gemini_notes and len(gemini_notes.strip()) > 100:
+                res = {"topic": topic, "subject": subject, "notes": gemini_notes}
+                _TOPIC_NOTES_CACHE[cache_key] = res
+                return res
         except Exception as e:
             print(f"Gemini topic notes generation notice: {e}")
 
-    # Robust domain-aware fallback
+    # Robust domain-aware fallback (runs in ~1ms)
     fallback = _generate_fallback_topic_notes(topic, subject)
-    return {"topic": topic, "subject": subject, "notes": GeminiService.sanitize_study_notes(fallback)}
+    res = {"topic": topic, "subject": subject, "notes": GeminiService.sanitize_study_notes(fallback)}
+    _TOPIC_NOTES_CACHE[cache_key] = res
+    return res
 
+
+def _is_valid_aktu_notes(text: str, u: int, c: str, n: str) -> bool:
+    required_sections = [
+        "AKTU End-Semester Examination Notes",
+        f"Unit: {u}",
+        "Specific Notes on Important Topics",
+        "AKTU Exam Scoring Strategy & Common Marking Pitfalls",
+        "Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)",
+        "Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)",
+        "1. **Q1", "2. **Q2", "3. **Q3", "4. **Q4", "5. **Q5"
+    ]
+    if not all(sec in text for sec in required_sections):
+        return False
+    lower_name = n.lower()
+    clean_code = c.upper()
+    if clean_code == "KCS301" or "data structure" in lower_name:
+        if u == 2:
+            if any(term in text for term in ["Stack", "Queue", "Circular Queue", "Infix", "Postfix", "Tower of Hanoi", "Hanoi"]):
+                return False
+        elif u == 3:
+            if any(term in text for term in ["Tree", "Graph", "Binary Search Tree", "Dijkstra"]):
+                return False
+    elif "KCS302" in clean_code or "KCS401" in clean_code or "coa" in lower_name or "architecture" in lower_name:
+        if u == 1:
+            if any(term in text for term in ["Amdahl's Law", "State-Space", "Linked List", "Queue"]):
+                return False
+    return True
+
+def _sync_fetch_gemini_unit_notes(prompt: str, u: int, c: str, n: str) -> Optional[str]:
+    candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+    try:
+        from google.genai import types
+        client = GeminiService.get_client()
+        if not client:
+            return None
+        for model_name in candidate_models:
+            try:
+                resp = client.models.generate_content(
+                    model=model_name,
+                    contents=[prompt],
+                    config=types.GenerateContentConfig(
+                        temperature=0.0,
+                        top_p=0.1,
+                        max_output_tokens=8192,
+                    )
+                )
+                if resp and resp.text and len(resp.text.strip()) > 100:
+                    cleaned = GeminiService.sanitize_study_notes(resp.text.strip())
+                    if _is_valid_aktu_notes(cleaned, u, c, n):
+                        return cleaned
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
 
 @router.post("/api/generate-unit-notes")
 async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
@@ -876,6 +747,12 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
 
     if not code or not name:
         raise HTTPException(status_code=400, detail="Subject code and subject name are required.")
+
+    cache_key = f"{code}::unit{unit}::{topics_str.lower()}"
+    if cache_key in _AKTU_UNIT_CACHE:
+        cached = dict(_AKTU_UNIT_CACHE[cache_key])
+        cached["timestamp"] = time.time()
+        return cached
 
     # GROUND-TRUTH ENGINE PROMPT (NO BOILERPLATE TEMPLATES)
     aktu_unit_prompt = f"""
@@ -904,82 +781,60 @@ REQUIRED OUTPUT FORMAT:
 - Unit: {unit}
 - Allowed Topics: [{topics_str}]
 
-## 1. Complete Unit Concept Breakdown
 ## 1. Core Technical Concept Breakdown
 ### Specific Notes on Important Topics
 - Provide exhaustive, step-by-step notes strictly for: [{topics_str}].
 - Include relevant circuit block diagrams, RTL expressions, register transfers, timing models, or assembly instruction formats.
 
 ## 2. AKTU Exam Scoring Strategy & Pitfalls
-## 2. Exam Scoring Strategy & Common Pitfalls
 ### AKTU Exam Scoring Strategy & Common Marking Pitfalls
 - **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {unit}.
 - **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.
 
-## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)
 ## 3. Section A: 2-Mark Short Questions & Answers
 ### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)
-Provide 10 high-frequency, distinct 2-mark short questions with concise, complete answers based strictly on [{topics_str}]:
-1. Q1: [Concept/Definition Question] -> Answer: ...
-2. Q2: [Short Derivation/Expression Question] -> Answer: ...
-3. Q3: [Difference/Comparison Question] -> Answer: ...
-4. Q4: [Short Numerical/Register Operation] -> Answer: ...
-5. Q5: [Logic Gate/Control Signal Question] -> Answer: ...
-6. Q6: [Definition/Property Question] -> Answer: ...
-7. Q7: [Architectural Terminology Question] -> Answer: ...
-8. Q8: [Short Formula/Calculation Question] -> Answer: ...
-9. Q9: [Microoperation/Transfer Question] -> Answer: ...
-10. Q10: [State/Flag/Mode Question] -> Answer: ...
+Provide exactly 5 distinct 2-mark short questions with concise, complete answers based strictly on [{topics_str}].
+You MUST format each question exactly as:
+1. **Q1: [Question text]** -> Answer: ...
+2. **Q2: [Question text]** -> Answer: ...
+3. **Q3: [Question text]** -> Answer: ...
+4. **Q4: [Question text]** -> Answer: ...
+5. **Q5: [Question text]** -> Answer: ...
 
-## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)
 ## 4. Section B & C: 10-Mark Long Questions & Answers
 ### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)
-Provide 5 complete long-form exam questions with thorough, step-by-step derivations, solved numericals, or detailed architectural explanations strictly based on [{topics_str}]:
-1. Q1 (Architectural Design/Trace): ... -> Solution: ...
-2. Q2 (Numerical Calculation/Algorithm Trace): ... -> Solution: ...
-3. Q3 (Circuit Logic/Comparative Analysis): ... -> Solution: ...
-4. Q4 (System Derivation/Execution Flow): ... -> Solution: ...
-5. Q5 (Comprehensive Working Mechanism): ... -> Solution: ...
+Provide exactly 3 complete long-form exam questions with thorough derivations or solved numericals strictly based on [{topics_str}].
+You MUST format each question exactly as:
+1. **Q1: [Question text]** -> Solution: ...
+2. **Q2: [Question text]** -> Solution: ...
+3. **Q3: [Question text]** -> Solution: ...
 """
 
     if not config.is_gemini_mocked():
-        # First attempt: modern google.genai client via GeminiService
         try:
-            from google.genai import types
-            client = GeminiService.get_client()
-            if client:
-                candidate_models = ["gemini-1.5-pro", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
-                for model_name in candidate_models:
-                    try:
-                        resp = client.models.generate_content(
-                            model=model_name,
-                            contents=[aktu_unit_prompt],
-                            config=types.GenerateContentConfig(
-                                temperature=0.0, # Temperature 0.0 strictly prevents hallucinating other units/topics
-                                top_p=0.1,
-                                max_output_tokens=4000,
-                            )
-                        )
-                        if resp and resp.text and len(resp.text.strip()) > 100:
-                            cleaned = GeminiService.sanitize_study_notes(resp.text.strip())
-                            return {
-                                "subject_code": code,
-                                "unit": unit,
-                                "unit_number": unit,
-                                "timestamp": time.time(),
-                                "unit_notes": cleaned,
-                                "notes": cleaned
-                            }
-                    except Exception as mod_err:
-                        print(f"Model {model_name} attempt notice: {mod_err}")
-                        continue
+            loop = asyncio.get_running_loop()
+            gemini_notes = await asyncio.wait_for(
+                loop.run_in_executor(_THREAD_POOL, _sync_fetch_gemini_unit_notes, aktu_unit_prompt, unit, code, name),
+                timeout=3.5
+            )
+            if gemini_notes:
+                res = {
+                    "subject_code": code,
+                    "unit": unit,
+                    "unit_number": unit,
+                    "timestamp": time.time(),
+                    "unit_notes": gemini_notes,
+                    "notes": gemini_notes
+                }
+                _AKTU_UNIT_CACHE[cache_key] = res
+                return res
         except Exception as e:
             print(f"Gemini client AKTU unit notes generation notice: {e}")
 
-    # Robust high-yield AKTU exam unit fallback with LaTeX math
+    # Robust high-yield AKTU exam unit fallback with LaTeX math (runs in <1ms)
     fallback = _generate_fallback_unit_notes(code, name, unit, topics)
     cleaned_fallback = GeminiService.sanitize_study_notes(fallback)
-    return {
+    res = {
         "subject_code": code,
         "unit": unit,
         "unit_number": unit,
@@ -987,4 +842,5 @@ Provide 5 complete long-form exam questions with thorough, step-by-step derivati
         "unit_notes": cleaned_fallback,
         "notes": cleaned_fallback
     }
-
+    _AKTU_UNIT_CACHE[cache_key] = res
+    return res

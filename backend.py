@@ -15,6 +15,8 @@ if os.getenv("GEMINI_API_KEY"):
 
 app = FastAPI(title="OmniLearn Academic Engine", version="2.0.0")
 
+_BACKEND_UNIT_CACHE = {}
+
 class UnitNoteRequest(BaseModel):
     subject_code: str
     subject_name: str
@@ -71,7 +73,14 @@ async def handle_academic_search(q: str = "", query: str = ""):
         if config.is_gemini_mocked():
             raise Exception("Gemini API mock/sandbox mode active")
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        model = None
+        for m_name in candidate_models:
+            try:
+                model = genai.GenerativeModel(m_name)
+                break
+            except Exception:
+                continue
         
         # Scope Check
         check_res = model.generate_content(
@@ -121,10 +130,18 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     
+    cache_key = f"{req.subject_code.upper()}::unit{req.unit_number}::{','.join(req.aktu_syllabus_topics or []).lower()}"
+    if cache_key in _BACKEND_UNIT_CACHE:
+        cached = dict(_BACKEND_UNIT_CACHE[cache_key])
+        cached["timestamp"] = time.time()
+        return cached
+
     try:
         from backend import config
         if config.is_gemini_mocked():
             raise Exception("Gemini API mock/sandbox mode active")
+
+        topics_list = ", ".join(req.aktu_syllabus_topics) if req.aktu_syllabus_topics else f"Core topics for Unit {req.unit_number}"
 
         # Use gemini-1.5-pro with system instructions for hard scope enforcement
         model = genai.GenerativeModel(
@@ -143,8 +160,6 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
                 "4. FORBIDDEN OVERLAP: Do NOT output formulas or algorithms from other units."
             )
         )
-        
-        topics_list = ", ".join(req.aktu_syllabus_topics)
         
         DYNAMIC_PROMPT = f"""
         [Generation Timestamp: {time.time()}]
@@ -172,7 +187,7 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
         - Unit: {req.unit_number}
         - Allowed Topics: [{topics_list}]
 
-        ## 1. Complete Unit Concept Breakdown
+        ## 1. Core Technical Concept Breakdown
         ### Specific Notes on Important Topics
         - Provide exhaustive, step-by-step notes strictly for: [{topics_list}].
         - Include relevant circuit block diagrams, RTL expressions, register transfers, timing models, or assembly instruction formats.
@@ -182,55 +197,81 @@ async def generate_aktu_unit_notes(req: UnitNoteRequest, response: Response):
         - **High-Yield Exam Topics**: Core areas tested frequently in AKTU end-sem exams for Unit {req.unit_number}.
         - **Common Exam Mistakes**: 3 specific logic, step, or diagram errors students make in this unit.
 
-        ## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)
+        ## 3. Section A: 2-Mark Short Questions & Answers
         ### Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)
-        Provide 10 high-frequency, distinct 2-mark short questions with concise, complete answers based strictly on [{topics_list}]:
-        1. Q1: [Concept/Definition Question] -> Answer: ...
-        2. Q2: [Short Derivation/Expression Question] -> Answer: ...
-        3. Q3: [Difference/Comparison Question] -> Answer: ...
-        4. Q4: [Short Numerical/Register Operation] -> Answer: ...
-        5. Q5: [Logic Gate/Control Signal Question] -> Answer: ...
-        6. Q6: [Definition/Property Question] -> Answer: ...
-        7. Q7: [Architectural Terminology Question] -> Answer: ...
-        8. Q8: [Short Formula/Calculation Question] -> Answer: ...
-        9. Q9: [Microoperation/Transfer Question] -> Answer: ...
-        10. Q10: [State/Flag/Mode Question] -> Answer: ...
+        Provide exactly 5 distinct 2-mark short questions with concise, complete answers based strictly on [{topics_list}].
+        You MUST format each question exactly as:
+        1. **Q1: [Question text]** -> Answer: ...
+        2. **Q2: [Question text]** -> Answer: ...
+        3. **Q3: [Question text]** -> Answer: ...
+        4. **Q4: [Question text]** -> Answer: ...
+        5. **Q5: [Question text]** -> Answer: ...
 
-        ## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)
+        ## 4. Section B & C: 10-Mark Long Questions & Answers
         ### Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)
-        Provide 5 complete long-form exam questions with thorough, step-by-step derivations, solved numericals, or detailed architectural explanations strictly based on [{topics_list}]:
-        1. Q1 (Architectural Design/Trace): ... -> Solution: ...
-        2. Q2 (Numerical Calculation/Algorithm Trace): ... -> Solution: ...
-        3. Q3 (Circuit Logic/Comparative Analysis): ... -> Solution: ...
-        4. Q4 (System Derivation/Execution Flow): ... -> Solution: ...
-        5. Q5 (Comprehensive Working Mechanism): ... -> Solution: ...
+        Provide exactly 3 complete long-form exam questions with thorough derivations or solved numericals strictly based on [{topics_list}].
+        You MUST format each question exactly as:
+        1. **Q1: [Question text]** -> Solution: ...
+        2. **Q2: [Question text]** -> Solution: ...
+        3. **Q3: [Question text]** -> Solution: ...
         """
 
         res = model.generate_content(
             DYNAMIC_PROMPT,
-            generation_config={"max_output_tokens": 4000, "temperature": 0.0},
+            generation_config={"max_output_tokens": 8192, "temperature": 0.0},
             request_options={"retry": None, "timeout": 3.0}
         )
         
-        if res and res.text:
-            return {
+        def _is_valid_notes(text: str, u: int, c: str, n: str) -> bool:
+            required_sections = [
+                "AKTU End-Semester Examination Notes",
+                f"Unit: {u}",
+                "Specific Notes on Important Topics",
+                "AKTU Exam Scoring Strategy & Common Marking Pitfalls",
+                "Section A: 2-Mark Short Questions (5 Fully Solved with Solutions)",
+                "Section B/C: 10-Mark Long Questions & Numericals (3 Fully Solved with Solutions)",
+                "1. **Q1", "2. **Q2", "3. **Q3", "4. **Q4", "5. **Q5"
+            ]
+            if not all(sec in text for sec in required_sections):
+                return False
+            lower_name = n.lower()
+            clean_code = c.upper()
+            if clean_code == "KCS301" or "data structure" in lower_name:
+                if u == 2:
+                    if any(term in text for term in ["Stack", "Queue", "Circular Queue", "Infix", "Postfix", "Tower of Hanoi", "Hanoi"]):
+                        return False
+                elif u == 3:
+                    if any(term in text for term in ["Tree", "Graph", "Binary Search Tree", "Dijkstra"]):
+                        return False
+            elif "KCS302" in clean_code or "KCS401" in clean_code or "coa" in lower_name or "architecture" in lower_name:
+                if u == 1:
+                    if any(term in text for term in ["Amdahl's Law", "State-Space", "Linked List", "Queue"]):
+                        return False
+            return True
+
+        if res and res.text and _is_valid_notes(res.text, req.unit_number, req.subject_code, req.subject_name):
+            out = {
                 "subject_code": req.subject_code, 
                 "unit": req.unit_number, 
                 "timestamp": time.time(),
                 "unit_notes": res.text
             }
-        raise Exception("Empty response from Gemini model")
+            _BACKEND_UNIT_CACHE[cache_key] = out
+            return out
+        raise Exception("Model output incomplete or violated constraints")
     except Exception as e:
         try:
             from backend.routes.ai_notes import _generate_fallback_unit_notes
             fallback_notes = _generate_fallback_unit_notes(
                 req.subject_code, req.subject_name, req.unit_number, req.aktu_syllabus_topics
             )
-            return {
+            out = {
                 "subject_code": req.subject_code,
                 "unit": req.unit_number,
                 "timestamp": time.time(),
                 "unit_notes": fallback_notes
             }
+            _BACKEND_UNIT_CACHE[cache_key] = out
+            return out
         except Exception:
             raise HTTPException(status_code=500, detail=str(e))

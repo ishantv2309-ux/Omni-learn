@@ -86,23 +86,11 @@ class CrawlerService:
         source_label = "AI Academic Study Notes"
 
         # 1. Use pre-generated Gemini study notes if provided
-        if pre_generated_notes and len(pre_generated_notes.strip()) > 100:
+        if pre_generated_notes and len(pre_generated_notes.strip()) >= 20:
             notes_text = pre_generated_notes.strip()
             source_label = "Gemini AI Academic Synthesis"
         
-        # 2. Search freeallnotes.com fallback
-        if not notes_text:
-            notes_text = CrawlerService.search_freeallnotes(clean_q)
-            if notes_text:
-                source_label = "freeallnotes.com"
-        
-        # 3. Search Google Custom Search fallback
-        if not notes_text:
-            notes_text = CrawlerService.search_google_notes(clean_q)
-            if notes_text:
-                source_label = "Google Search Engine"
-            
-        # 4. If offline or no external results found, synthesize notes using multi-model Gemini or comprehensive structured notes
+        # 2. If no pre-generated notes, synthesize locally without blocking the search path
         if not notes_text:
             notes_text = CrawlerService._synthesize_local_notes(clean_q, domain)
             source_label = "AI Academic Study Notes"
@@ -163,61 +151,41 @@ class CrawlerService:
         except Exception as e:
             print(f"Gemini crawler notes synthesis notice: {e}")
 
-        # 2. Comprehensive 6-section structured academic revision notes
+        # 2. Comprehensive 8-section structured academic revision notes using topic_notes_engine
+        try:
+            from backend.routes.topic_notes_engine import build_realistic_topic_notes
+            return GeminiService.sanitize_study_notes(build_realistic_topic_notes(title_q, domain_label))
+        except Exception as err:
+            print(f"Crawler topic notes engine fallback notice: {err}")
+
+        # Static safety fallback
         fallback_notes = (
             f"# Executive Overview: Core Definition & Intuition\n"
             f"{title_q} represents a fundamental conceptual and computational subject within {domain_label}. "
             f"Understanding this topic requires analyzing core state representations, invariant guarantees, and algorithmic architectures. "
             f"It serves as a key pillar across university curricula and professional engineering practices.\n\n"
             f"## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\n"
-            f"The core mathematical and operational foundation of {title_q} relies on structured partitioning, determinism, and state machines:\n\n"
-            f"1. **Primary Governing Relation**:\n"
-            f"$$\\mathcal{{S}}(x, t) = \\sum_{{k=1}}^{{N}} \\alpha_k \\cdot \\phi_k(x, t) + \\epsilon(t)$$\n\n"
-            f"2. **Continuous Integration & Recurrence**:\n"
-            f"$$\\int u \\, dv = u \\cdot v - \\int v \\, du$$\n\n"
-            f"3. **Asymptotic Convergence Bound**:\n"
-            f"$$\\lim_{{N \\to \\infty}} \\frac{{1}}{{N}} \\sum_{{i=1}}^{{N}} \\left( x_i - \\mu \\right)^2 = \\sigma^2$$\n\n"
+            f"The core operational foundation of {title_q} relies on structured partitioning, determinism, and state machines.\n\n"
             f"## Syntax & Implementation: Step-by-Step Worked Examples\n"
-            f"### Worked Example 1: Standard Algorithmic Traversal\n"
             f"```python\n"
-            f"# Standard academic implementation framework for {title_q}\n"
-            f"def execute_{re.sub(r'[^a-zA-Z0-9]+', '_', query.lower())}(input_data):\n"
-            f"    # Phase 1: Boundary condition and base case validation\n"
+            f"# Standard implementation for {title_q}\n"
+            f"def process_data(input_data):\n"
             f"    if not input_data:\n"
             f"        return None\n"
-            f"    \n"
-            f"    # Phase 2: Core operational processing\n"
-            f"    result = []\n"
-            f"    for item in input_data:\n"
-            f"        result.append(item)\n"
-            f"        \n"
-            f"    return result\n"
+            f"    return [item for item in input_data if item is not None]\n"
             f"```\n\n"
-            f"### Worked Example 2: Mathematical Integration Step-by-Step\n"
-            f"Compute $\\int x e^x \\, dx$:\n"
-            f"1. Set $u = x \\implies du = dx$, and $dv = e^x dx \\implies v = e^x$.\n"
-            f"2. Substitute: $$\\int x e^x \\, dx = x e^x - \\int e^x \\, dx = e^x(x - 1) + C$$\n\n"
             f"## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\n"
             f"| Operation / Scenario | Time Complexity | Space Complexity |\n"
             f"| :--- | :--- | :--- |\n"
             f"| Best Case | $O(1)$ | $O(1)$ |\n"
             f"| Average Case | $O(\\log N)$ to $O(N)$ | $O(1)$ to $O(N)$ |\n"
             f"| Worst Case | $O(N \\log N)$ | $O(N)$ |\n\n"
-            f"### Cheatsheet Mnemonics & Exam Rules\n"
-            f"- **ILATE Priority Rule**: Inverse Trig $\\to$ Log $\\to$ Algebraic $\\to$ Trig $\\to$ Exponential.\n"
-            f"- **Master Theorem**: Compare $f(n)$ with $n^{{\\log_b a}}$ to rapidly assess recurrence behavior.\n"
-            f"- **Boundary Invariant**: Validate zero-element inputs prior to entering main loops.\n\n"
             f"## Common Mistakes & Exam Pitfalls\n"
             f"- Unhandled Null / Empty Inputs: Forgetting to validate initial state leading to runtime exceptions.\n"
-            f"- Integer Overflow & Index Boundaries: Off-by-one errors when partitioning search or array ranges.\n"
-            f"- Neglecting Integration Constants: Omitting $+ C$ in indefinite integrals on examination papers.\n\n"
+            f"- Integer Overflow & Index Boundaries: Off-by-one errors when partitioning ranges.\n\n"
             f"## University Exam: Practice Problems with Answers & Focus Points\n"
             f"1. **Problem 1**: Solve $T(n) = 2T(n/2) + O(n)$.\n"
-            f"   - *Answer*: By Master Theorem, $T(n) = \\Theta(n \\log n)$.\n\n"
-            f"2. **Problem 2**: Evaluate $\\int_0^1 x^2 \\, dx$.\n"
-            f"   - *Answer*: $\\frac{{1}}{{3}}$.\n\n"
-            f"3. **Problem 3**: What is the auxiliary space complexity of binary search?\n"
-            f"   - *Answer*: $O(1)$ iterative, $O(\\log N)$ recursive."
+            f"   - *Answer*: By Master Theorem, $T(n) = \\Theta(n \\log n)$."
         )
         return GeminiService.sanitize_study_notes(fallback_notes)
 

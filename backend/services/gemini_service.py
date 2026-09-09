@@ -204,189 +204,315 @@ class GeminiService:
         return matched
 
     @staticmethod
-    def _validate_and_sanitize_payload(data: Dict[str, Any], query: str, domain: str) -> Dict[str, Any]:
-        """Validates the payload ensuring zero empty, null, or undefined fields.
-        If any section is missing or brief, synthesizes domain-accurate academic content immediately.
+    def _clean_and_parse_llm_json(raw_text: str) -> Dict[str, Any]:
+        """Safely extracts and parses JSON returned by the LLM, handling markdown code fences
+        and unescaped LaTeX backslashes without syntax errors.
         """
-        clean_q = query.strip()
-        title_q = clean_q.title()
+        text = raw_text.strip()
+        if text.startswith("```"):
+            m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", text, re.DOTALL | re.IGNORECASE)
+            if m:
+                text = m.group(1).strip()
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
 
-        # 1. Validate Overview
-        overview = data.get("overview") if isinstance(data, dict) else None
-        if not overview or not isinstance(overview, str) or len(overview.strip()) < 30:
-            overview = (
-                f"{title_q} constitutes a core academic subject evaluated across university curricula within {domain}. "
-                f"It encompasses foundational mechanics, analytical models, and operational paradigms essential for rigorous engineering analysis. "
-                f"Students and researchers investigate its governing principles to establish mathematical models, optimize system invariants, and resolve real-world quantitative problems. "
-                f"A comprehensive understanding of {clean_q} provides essential preparation for university end-semester examinations and competitive technical evaluations such as GATE."
+    @staticmethod
+    def ensure_math_delimiters(text: str) -> str:
+        """Enforces clean LaTeX math delimiter wrapping and formatting on academic text.
+        Guarantees:
+        1. Literal '\\n' escaped sequences are converted to actual newlines.
+        2. Any C/Python code snippets without markdown code fences are wrapped in ```...```.
+        3. Standalone mathematical formulas with LaTeX commands (\\text, \\frac, \\times, etc.)
+           are wrapped in $$ ... $$, and inline Big-O / variables are wrapped in $ ... $.
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # 1. Unescape literal \n
+        clean = text.replace('\\n', '\n')
+        
+        # 2. Auto-fence code snippets if present
+        if '```' not in clean and any(k in clean for k in ['malloc(', 'sizeof(', 'int main', 'def ', 'class ', '#include']):
+            clean = re.sub(
+                r'((?:(?:int|char|float|double|void|\*|struct)\s+[\w*]+\s*=|if\s*\([^)]+\)\s*\{|malloc\()[^`]+?(?:;\s*\}|;))',
+                r'\n```c\n\1\n```\n',
+                clean
             )
-        else:
-            overview = overview.strip()
+        
+        # 3. Format standalone formulas and equations
+        latex_cmds = [r'\\text\{', r'\\frac\{', r'\\mathcal\{', r'\\pmod', r'\\times', r'\\cdot', r'\\sum', r'\\int', r'\\sqrt', r'\\alpha', r'\\beta', r'\\theta', r'\\Theta', r'\\Omega']
+        has_latex = any(re.search(cmd, clean) for cmd in latex_cmds)
+        
+        if has_latex:
+            lines = clean.split('\n')
+            res_lines = []
+            in_code = False
+            for line in lines:
+                trimmed = line.strip()
+                if trimmed.startswith('```'):
+                    in_code = not in_code
+                    res_lines.append(line)
+                    continue
+                if in_code or not trimmed:
+                    res_lines.append(line)
+                    continue
+                
+                # Check if already wrapped in $$ or $
+                if (trimmed.startswith('$$') and trimmed.endswith('$$')) or (trimmed.startswith('$') and trimmed.endswith('$')):
+                    res_lines.append(line)
+                    continue
+                
+                # Check if line contains standalone LaTeX equation without dollar delimiters
+                if any(re.search(cmd, trimmed) for cmd in latex_cmds):
+                    if '$' not in trimmed:
+                        colon_idx = trimmed.find(':')
+                        if colon_idx != -1 and any(re.search(cmd, trimmed[colon_idx:]) for cmd in latex_cmds):
+                            prefix = trimmed[:colon_idx+1]
+                            eq = trimmed[colon_idx+1:].strip()
+                            res_lines.append(prefix)
+                            res_lines.append(f"$${eq}$$")
+                            continue
+                        elif '=' in trimmed or '\\\\' in trimmed or trimmed.startswith('\\text') or trimmed.startswith('A['):
+                            if '\\\\' in trimmed:
+                                for sub in trimmed.split('\\\\'):
+                                    sub = sub.strip()
+                                    if sub:
+                                        res_lines.append(f"$${sub}$$")
+                                continue
+                            else:
+                                res_lines.append(f"$${trimmed}$$")
+                                continue
+                    else:
+                        # Wrap un-delimited \mathcal{O}(...) with $\mathcal{O}(...)$
+                        line = re.sub(r'(?<!\$)\\mathcal\{[A-Za-z]\}\([a-zA-Z0-9+\-* /]+\)(?!\$)', r'$\g<0>$', line)
+                res_lines.append(line)
+            clean = '\n'.join(res_lines)
 
-        # 2. Validate Theoretical Foundations
-        tf = data.get("theoretical_foundations") if isinstance(data, dict) else None
-        if not tf or not isinstance(tf, str) or len(tf.strip()) < 30:
-            tf = (
-                f"The theoretical foundations of {title_q} are grounded in fundamental analytical and state-space formulations within {domain}. "
-                f"The governing physical and mathematical behavior is characterized by conservation principles, structural invariants, and deterministic boundary conditions. "
-                f"Under standard continuous or discrete operating regimes, {clean_q} exhibits formal convergence properties bounded by analytical limits. "
-                f"Academic derivations focus on decomposing the system into elementary subsystems, tracking state evolution, and proving operational correctness from first principles."
-            )
-        else:
-            tf = tf.strip()
+        clean = re.sub(r'\n{3,}', '\n\n', clean).strip()
+        return clean
 
-        # 3. Validate Core Formulations
-        cf = data.get("core_formulations") if isinstance(data, dict) else None
-        if not cf or not isinstance(cf, str) or len(cf.strip()) < 20:
-            cf = (
-                f"Key mathematical and algorithmic formulations for {title_q}:\n"
-                f"- Primary Governing Equation: $\\mathcal{{S}}(x, t) = \\sum_{{k=1}}^{{N}} \\omega_k \\cdot \\psi_k(x, t) + \\epsilon(t)$\n"
-                f"- State Transition Equation: $\\mathbf{{X}}_{{t+1}} = \\mathbf{{A}}\\mathbf{{X}}_t + \\mathbf{{B}}\\mathbf{{U}}_t$\n"
-                f"- Performance & Cost Criterion: $\\min \\mathcal{{J}} = \\int_{{0}}^{{T}} \\mathcal{{L}}(\\mathbf{{X}}, \\mathbf{{U}}) \\, dt$\n"
-                f"These equations establish the quantitative framework evaluated in university laboratory assignments and theoretical derivations."
-            )
-        else:
-            cf = cf.strip()
+    @staticmethod
+    def _clean_and_parse_llm_json(raw_text: str) -> Dict[str, Any]:
+        """Safely extracts and parses JSON returned by the LLM, handling markdown code fences
+        and unescaped LaTeX backslashes without syntax errors.
+        """
+        text = raw_text.strip()
+        if text.startswith("```"):
+            m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", text, re.DOTALL | re.IGNORECASE)
+            if m:
+                text = m.group(1).strip()
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
 
-        # 4. Validate Difficulty Score & Level
-        diff_score = 7.3
-        if isinstance(data, dict):
-            raw_score = data.get("difficulty_score") or data.get("difficultyScore")
+        # Try self-healing for unescaped LaTeX backslashes inside JSON string values
+        # ONLY preserve valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, or \uXXXX
+        try:
+            healed = re.sub(r'\\(?!(["\\/bfnrt]|u[0-9a-fA-F]{4}))', r'\\\\', text)
+            return json.loads(healed, strict=False)
+        except Exception:
+            pass
+
+        try:
+            # Fallback: escape all backslashes that are not followed by quotes or other backslashes
+            healed2 = re.sub(r'\\(?!["\\])', r'\\\\', text)
+            return json.loads(healed2, strict=False)
+        except Exception as err:
+            print(f"[GeminiService] JSON parse error: {err} | Raw: {text[:200]}")
+            return {}
+
+
+    @staticmethod
+    def generate_topic_details(query: str) -> Dict[str, Any]:
+        """Generates real-time, dynamic academic topic details using Google Gemini LLM SDK.
+        Strictly enforces clean structured JSON with exact required keys:
+        - topic: Searched Topic Name
+        - category: Academic curriculum category
+        - difficulty_score: float (1.0 to 10.0)
+        - difficulty_level: 'Beginner', 'Intermediate', or 'Advanced'
+        - ai_evaluation: 3-sentence technical complexity evaluation
+        - overview: Real academic overview of the topic
+        - theoretical_foundations: Accurate theoretical background
+        - core_formulations: ONLY genuine formulas, algorithms, or code snippets for this topic
+        
+        Zero mock templates. Raises RuntimeError on failure to trigger HTTP 500 error.
+        """
+        clean_q = GeminiService.clean_search_query(query)
+        if not clean_q:
+            clean_q = query.strip()
+
+        if not clean_q:
+            raise ValueError("Query cannot be empty.")
+
+        api_key = config.GEMINI_API_KEY
+        if not api_key:
+            raise RuntimeError("Gemini API key is not configured. Real LLM generation requires GEMINI_API_KEY.")
+
+        detected_domain = GeminiService._detect_academic_domain(clean_q)
+
+        # STRICT LLM Prompt mandating genuine domain formulas and zero fake math/templates
+        prompt = (
+            f"You are a distinguished University Professor and Senior Academic Evaluator.\n"
+            f"Analyze the academic topic: \"{clean_q}\" in the domain: \"{detected_domain}\".\n\n"
+            f"CRITICAL MANDATES:\n"
+            f"1. Return ONLY a valid JSON object matching the exact structure below.\n"
+            f"2. ABSOLUTE ZERO MOCK/TEMPLATE RULE: Do not use generic filler sentences, boilerplate templates, or placeholders.\n"
+            f"3. NO FAKE/GENERIC MATH: In 'core_formulations', include ONLY real equations, algorithmic logic, or code snippets that directly and specifically belong to \"{clean_q}\". NEVER output generic physics/control-system equations (such as state transition equations X_{{t+1}} = AX_t + BU_t or arbitrary wave equations) unless \"{clean_q}\" is explicitly about them!\n"
+            f"4. MANDATORY MATHEMATICAL CONSTRAINTS & FORMATTING:\n"
+            f"   - In JSON strings, ensure any LaTeX backslashes are double-escaped (e.g. \\\\alpha, \\\\frac, \\\\Theta, \\\\mathcal{{O}}).\n"
+            f"   - ALL mathematical expressions, formulas, and asymptotic bounds MUST be wrapped in standard LaTeX math delimiters:\n"
+            f"     * Inline variables, symbols, and bounds MUST use `$ ... $` (e.g., `$A[i]$`, `$\\mathcal{{O}}(1)$`, `$\\mathcal{{O}}(n)$`).\n"
+            f"     * Standalone formulas and equations MUST use `$$ ... $$` on their own line (e.g. `$$\\text{{Address}}(A[i][j]) = \\text{{Base}} + (i \\times N + j) \\times \\text{{Size}}$$`).\n"
+            f"   - NEVER write raw LaTeX commands (such as \\text, \\frac, \\times, \\mathcal, \\sum) without enclosing them in `$` or `$$`!\n"
+            f"   - Wrap code snippets in proper markdown code blocks (```c ... ``` or ```python ... ```).\n\n"
+            f"REQUIRED JSON SCHEMA:\n"
+            f"{{\n"
+            f"  \"topic\": \"{clean_q.title()}\",\n"
+            f"  \"category\": \"{detected_domain}\",\n"
+            f"  \"difficulty_score\": 7.3,\n"
+            f"  \"difficulty_level\": \"Advanced\",\n"
+            f"  \"ai_evaluation\": \"A short, concise 2-3 sentence technical complexity evaluation of {clean_q}...\",\n"
+            f"  \"overview\": \"Accurate academic overview of {clean_q} in university curriculum context...\",\n"
+            f"  \"theoretical_foundations\": \"Accurate theoretical background and key principles with LaTeX $...$ delimiters...\",\n"
+            f"  \"core_formulations\": \"ONLY include real formulas (wrapped in $$...$$), code snippets (in ```...```), or algorithms actually related to {clean_q}. Do not use generic physics equations.\",\n"
+            f"  \"did_you_know\": \"A unique, authentic historical or engineering trivia fact specifically about {clean_q}.\"\n"
+            f"}}"
+        )
+
+        candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+        raw_text = None
+        last_err = None
+
+        # 1. Primary: Use official modern google.genai client
+        client = GeminiService.get_client()
+        if client:
             try:
-                if raw_score is not None:
-                    diff_score = float(raw_score)
-                    if diff_score <= 0 or diff_score > 10:
-                        diff_score = 7.3
-            except (ValueError, TypeError):
-                diff_score = 7.3
+                from google.genai import types
+                for m_name in candidate_models:
+                    try:
+                        response = client.models.generate_content(
+                            model=m_name,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.1,
+                                response_mime_type="application/json",
+                                max_output_tokens=1200
+                            )
+                        )
+                        if response and response.text and response.text.strip():
+                            raw_text = response.text.strip()
+                            break
+                    except Exception as m_err:
+                        last_err = m_err
+                        continue
+            except Exception as client_err:
+                last_err = client_err
 
-        diff_level = "Advanced" if diff_score > 7.0 else ("Intermediate" if diff_score > 4.5 else "Beginner")
+        # 2. Fallback: Try with new client instance if singleton had an issue
+        if not raw_text:
+            try:
+                from google import genai
+                from google.genai import types
+                fresh_client = genai.Client(api_key=api_key)
+                for m_name in candidate_models:
+                    try:
+                        response = fresh_client.models.generate_content(
+                            model=m_name,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.1,
+                                response_mime_type="application/json",
+                                max_output_tokens=1200
+                            )
+                        )
+                        if response and response.text and response.text.strip():
+                            raw_text = response.text.strip()
+                            break
+                    except Exception as m_err:
+                        last_err = m_err
+                        continue
+            except Exception as fresh_err:
+                last_err = fresh_err
 
-        # 5. Validate AI Evaluation / Complexity Trade-offs
-        ai_eval = data.get("ai_evaluation") if isinstance(data, dict) else None
-        if not ai_eval or not isinstance(ai_eval, str) or len(ai_eval.strip()) < 20:
-            ai_eval = (
-                f"Asymptotic and engineering evaluation of {title_q}: Time complexity scales from $O(\\log N)$ in optimized partitioning states to $O(N)$ for general evaluations. "
-                f"Auxiliary space complexity is bounded by $O(1)$ in-place memory or $O(N)$ for state history allocation. "
-                f"The primary engineering trade-off involves balancing computational throughput with structural memory footprints, physical bandwidth limits, and numeric precision."
+        # If LLM failed, raise error (ensures HTTP 500 error instead of failing silently or using mock data)
+        if not raw_text:
+            raise RuntimeError(f"LLM API generation failed for topic '{clean_q}'. Error: {last_err}")
+
+        parsed_data = GeminiService._clean_and_parse_llm_json(raw_text)
+
+        # Enforce required fields
+        topic = parsed_data.get("topic") or clean_q.title()
+        category = parsed_data.get("category") or detected_domain
+        overview = GeminiService.ensure_math_delimiters((parsed_data.get("overview") or "").strip())
+        tf = GeminiService.ensure_math_delimiters((parsed_data.get("theoretical_foundations") or "").strip())
+        cf = GeminiService.ensure_math_delimiters((parsed_data.get("core_formulations") or "").strip())
+        ai_eval = GeminiService.ensure_math_delimiters((parsed_data.get("ai_evaluation") or "").strip())
+
+        if not overview or not tf or not cf:
+            raise RuntimeError(f"LLM generation returned incomplete academic data for '{clean_q}'.")
+
+        # Parse difficulty score and level
+        diff_score = 7.3
+        try:
+            raw_score = parsed_data.get("difficulty_score")
+            if raw_score is not None:
+                diff_score = float(raw_score)
+                if diff_score < 1.0 or diff_score > 10.0:
+                    diff_score = 7.3
+        except (ValueError, TypeError):
+            diff_score = 7.3
+
+        diff_level = parsed_data.get("difficulty_level")
+        if not diff_level or diff_level not in ["Beginner", "Intermediate", "Advanced"]:
+            diff_level = "Advanced" if diff_score > 7.0 else ("Intermediate" if diff_score > 4.5 else "Beginner")
+
+        did_you_know = GeminiService.ensure_math_delimiters((parsed_data.get("did_you_know") or f"Historical and theoretical foundations of {topic}.").strip())
+        raw_notes = parsed_data.get("study_notes")
+        if not raw_notes or len(raw_notes.strip()) < 50:
+            raw_notes = (
+                f"# Executive Overview: {topic}\n\n"
+                f"{overview}\n\n"
+                f"## 1. Key Concepts & Theoretical Foundations\n\n"
+                f"{tf}\n\n"
+                f"## 2. Core Formulations & Algorithms\n\n"
+                f"{cf}\n\n"
+                f"## 3. Complexity & Examination Analysis\n\n"
+                f"{ai_eval}\n\n"
+                f"> **Academic Takeaway & Historical Insight:** {did_you_know}"
             )
-        else:
-            ai_eval = ai_eval.strip()
-
-        # 6. Validate Did You Know / Trivia
-        did_you_know = data.get("did_you_know") or data.get("didYouKnow") if isinstance(data, dict) else None
-        if not did_you_know or not isinstance(did_you_know, str) or len(did_you_know.strip()) < 20:
-            if "python" in clean_q:
-                did_you_know = "Did you know? Python was named after Monty Python's Flying Circus by Guido van Rossum, not the snake!"
-            else:
-                did_you_know = (
-                    f"Did you know? Historical inquiries into {title_q} originated in early academic university research laboratories "
-                    f"and today form an indispensable foundation for high-performance computing, mission-critical infrastructure, and global engineering systems."
-                )
-        else:
-            did_you_know = did_you_know.strip()
-            if "python" in clean_q and "monty python" not in did_you_know.lower():
-                did_you_know += " (Named after the British comedy troupe Monty Python)."
-
-        # 7. Validate Study Notes (6 mandatory structured sections)
-        study_notes = data.get("study_notes") or data.get("notes_content") if isinstance(data, dict) else None
-        if not study_notes or not isinstance(study_notes, str) or len(study_notes.strip()) < 150:
-            study_notes = (
-                f"# Executive Overview: Core Definition & Intuition\n"
-                f"{title_q} represents a foundational pillar within {domain}, universally tested in university engineering curricula and technical examinations. "
-                f"Its core mental model centers on state-space decomposition, structural invariant guarantees, and analytical problem-solving. "
-                f"In practical engineering, {clean_q} provides the formal framework to model complex systems, guarantee operational convergence, and optimize resource throughput.\n\n"
-                f"## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\n"
-                f"The theoretical architecture of {title_q} is governed by analytical state transitions and conservation principles:\n\n"
-                f"1. **Primary Governing Equation**:\n"
-                f"$$\\mathcal{{S}}(x, t) = \\sum_{{k=1}}^{{N}} \\alpha_k \\cdot \\phi_k(x, t) + \\epsilon(t)$$\n\n"
-                f"2. **Continuous State & Derivation Relation**:\n"
-                f"$$\\int u \\, dv = u \\cdot v - \\int v \\, du$$\n"
-                f"Under boundary constraints where $t \\in [0, T]$, the system invariant satisfies:\n"
-                f"$$\\lim_{{N \\to \\infty}} \\frac{{1}}{{N}} \\sum_{{i=1}}^{{N}} \\left( x_i - \\mu \\right)^2 = \\sigma^2$$\n\n"
-                f"3. **Equilibrium State Criterion**:\n"
-                f"$$\\nabla \\mathcal{{J}}(\\mathbf{{w}}) = \\mathbf{{0}} \\implies \\mathbf{{w}}^* = (\\mathbf{{X}}^T\\mathbf{{X}})^{-1}\\mathbf{{X}}^T\\mathbf{{y}}$$\n\n"
-                f"## Syntax & Implementation: Step-by-Step Worked Examples\n"
-                f"### Worked Example 1: Foundational Implementation & Boundary Check\n"
-                f"```python\n"
-                f"def solve_{re.sub(r'[^a-zA-Z0-9]+', '_', clean_q.lower())}_basic(dataset, target):\n"
-                f"    \"\"\"Step-by-step evaluation of {title_q} with boundary handling.\"\"\"\n"
-                f"    if not dataset:\n"
-                f"        return -1  # Edge case: empty input sequence\n"
-                f"    \n"
-                f"    left, right = 0, len(dataset) - 1\n"
-                f"    while left <= right:\n"
-                f"        mid = left + (right - left) // 2\n"
-                f"        if dataset[mid] == target:\n"
-                f"            return mid  # Target match located\n"
-                f"        elif dataset[mid] < target:\n"
-                f"            left = mid + 1\n"
-                f"        else:\n"
-                f"            right = mid - 1\n"
-                f"    return -1  # Target absent from domain\n"
-                f"```\n\n"
-                f"### Worked Example 2: Continuous Mathematical Integration\n"
-                f"Calculate the integrated response for $f(x) = x e^x$:\n"
-                f"1. Choose $u = x \\implies du = dx$, and $dv = e^x dx \\implies v = e^x$.\n"
-                f"2. Substitute into Integration by Parts formula: $$\\int x e^x \\, dx = x e^x - \\int e^x \\, dx = e^x(x - 1) + C$$\n"
-                f"3. Verify by differentiation: $$\\frac{{d}}{{dx}}\\left[e^x(x - 1) + C\\right] = e^x(x - 1) + e^x = x e^x$.\n\n"
-                f"### Worked Example 3: Analytical State Transformation\n"
-                f"Given matrix state $\\mathbf{{A}} = \\begin{{pmatrix}} a & b \\\\ c & d \\end{{pmatrix}}$, the characteristic equation is:\n"
-                f"$$\\det(\\mathbf{{A}} - \\lambda \\mathbf{{I}}) = \\lambda^2 - \\text{{tr}}(\\mathbf{{A}})\\lambda + \\det(\\mathbf{{A}}) = 0$$\n\n"
-                f"## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\n"
-                f"| Operation / Configuration | Best Case | Average Case | Worst Case | Auxiliary Space |\n"
-                f"| :--- | :--- | :--- | :--- | :--- |\n"
-                f"| Baseline Traversal | $O(1)$ | $O(N)$ | $O(N)$ | $O(1)$ |\n"
-                f"| Binary State Partitioning | $O(1)$ | $O(\\log N)$ | $O(\\log N)$ | $O(1)$ |\n"
-                f"| High-Order Analytical Transform | $O(N)$ | $O(N \\log N)$ | $O(N^2)$ | $O(N)$ |\n\n"
-                f"### Essential Cheatsheet Mnemonics\n"
-                f"- **ILATE Priority Rule** (for integration by parts): **I**nverse trigonometric $\\to$ **L**ogarithmic $\\to$ **A**lgebraic $\\to$ **T**rigonometric $\\to$ **E**xponential.\n"
-                f"- **Master Theorem Mnemonic**: Compare $f(n)$ with $n^{{\\log_b a}}$ to immediately determine recurrence asymptotic order.\n"
-                f"- **Invariant Checkpoint**: Verify base cases ($N=0, 1$) prior to entering inductive iterations.\n\n"
-                f"## Common Mistakes & Exam Pitfalls\n"
-                f"1. **Integer Overflow in Partitioning**: Computing `(low + high) // 2` instead of `low + (high - low) // 2` causes integer overflow in fixed-width registers.\n"
-                f"2. **Boundary Off-By-One Errors**: Using `<` instead of `<=` in iterative termination criteria, discarding boundary elements.\n"
-                f"3. **Neglecting Integration Constants**: Omitting $+ C$ in indefinite integrals or neglecting constant of integration boundary conditions.\n"
-                f"4. **Sign Errors in State Derivatives**: Forgetting the chain rule sign flips when differentiating coupled oscillatory states.\n\n"
-                f"## University Exam: Practice Problems with Answers & Focus Points\n"
-                f"1. **Problem 1 (Derivation)**: Derive the recurrence relation $T(n) = 2T(n/2) + O(n)$ and state its closed form asymptotic bound.\n"
-                f"   - *Answer*: Using Master Theorem (Case 2), $a=2, b=2, c=1 \\implies T(n) = \\Theta(n \\log n)$.\n\n"
-                f"2. **Problem 2 (Definite Integral)**: Evaluate $\\int_0^1 x \\sqrt{{1 - x^2}} \\, dx$.\n"
-                f"   - *Answer*: Let $u = 1 - x^2$, then $du = -2x dx$. Evaluation yields $-\\frac{{1}}{{2}} \\int_1^0 u^{{1/2}} du = \\frac{{1}}{{3}}$.\n\n"
-                f"3. **Problem 3 (Asymptotic Optimization)**: For an input array of size $N = 10^6$, compare the worst-case operation count of $O(N^2)$ vs $O(N \\log N)$.\n"
-                f"   - *Answer*: $O(N^2) \\approx 10^{{12}}$ operations (exceeds standard 1-second CPU timeout of $\\sim 10^8$ ops), whereas $O(N \\log_2 N) \\approx 2 \\times 10^7$ ops (executes in $< 0.05$s)."
-            )
-        study_notes = GeminiService.sanitize_study_notes(study_notes)
-
+        study_notes = GeminiService.sanitize_study_notes(GeminiService.ensure_math_delimiters(raw_notes))
         detailed_breakdown = f"### 1. Theoretical Foundations\n\n{tf}\n\n### 2. Core Formulations & Algorithms\n\n{cf}"
 
-        # 5-step curriculum roadmap aligned with GATE and University standards
+        # Dynamic topic-specific curriculum roadmap
         roadmap = [
             {
                 "step": 1,
-                "concept": f"Prerequisites & Mathematical Modeling of {title_q}",
-                "description": f"Core definitions, coordinate frameworks, and prerequisite mathematics essential for {title_q}.",
+                "concept": f"Prerequisites & Foundations of {topic}",
+                "description": f"Core definitions, coordinate frameworks, and prerequisite mathematics essential for {topic}.",
                 "type": "prerequisite",
                 "estimated_time": "1-2 hours"
             },
             {
                 "step": 2,
-                "concept": "Fundamental Invariants & Governing Equations",
-                "description": cf[:140] if len(cf) > 30 else f"Core operational logic and state invariants of {title_q}.",
+                "concept": "Fundamental Invariants & Governing Principles",
+                "description": (cf[:140] + "...") if len(cf) > 140 else cf,
                 "type": "core",
                 "estimated_time": "3-4 hours"
             },
             {
                 "step": 3,
-                "concept": "Analytical Deep Dive & Boundary Conditions",
-                "description": ai_eval[:140] if len(ai_eval) > 30 else f"Formal complexity analysis, equilibrium bounds, and trade-offs for {title_q}.",
+                "concept": "Theoretical Deep Dive & Asymptotics",
+                "description": (ai_eval[:140] + "...") if len(ai_eval) > 140 else ai_eval,
                 "type": "deep_dive",
                 "estimated_time": "3-5 hours"
             },
             {
                 "step": 4,
-                "concept": "GATE & University Past Exam Drills",
-                "description": f"Standard numerical derivations and past university examination problem sets for {title_q}.",
+                "concept": "University & GATE Exam Applications",
+                "description": f"Standard numerical derivations and past university examination problem sets for {topic}.",
                 "type": "practice",
                 "estimated_time": "4 hours"
             },
@@ -400,210 +526,133 @@ class GeminiService:
         ]
 
         return {
-            "title": title_q,
-            "query": clean_q,
-            "overview": overview,
-            "summary": overview,
-            "theoretical_foundations": tf,
-            "core_formulations": cf,
+            # Required exact schema fields
+            "topic": topic,
+            "category": category,
             "difficulty_score": diff_score,
-            "difficultyScore": diff_score,
-            "difficultyLevel": diff_level,
             "difficulty_level": diff_level,
             "ai_evaluation": ai_eval,
-            "aiEvaluation": ai_eval,
+            "overview": overview,
+            "theoretical_foundations": tf,
+            "core_formulations": cf,
+            # Supporting fields for OmniLearn full-stack UI compatibility
+            "title": topic,
+            "query": clean_q,
+            "summary": overview,
+            "detailed_breakdown": detailed_breakdown,
+            "detailedBreakdown": detailed_breakdown,
+            "domain": category,
+            "difficultyScore": diff_score,
+            "difficultyLevel": diff_level,
             "difficulty_reasons": ai_eval,
+            "aiEvaluation": ai_eval,
             "did_you_know": did_you_know,
             "didYouKnow": did_you_know,
             "fun_fact": did_you_know,
             "study_notes": study_notes,
             "notes_content": study_notes,
-            "detailed_breakdown": detailed_breakdown,
-            "detailedBreakdown": detailed_breakdown,
-            "domain": domain,
-            "category": domain,
             "careers": GeminiService.map_topic_to_careers(clean_q),
-            "careerRelevance": f"Applied across engineering systems and research specializations in {domain} relevant to {title_q}.",
+            "careerRelevance": f"Applied across engineering systems and research specializations in {category} relevant to {topic}.",
             "exam_frequency": [10, 14, 18, 22, 25],
             "examFrequency": [10, 14, 18, 22, 25],
             "roadmap": roadmap
         }
 
     @staticmethod
-    def generate_topic_details(query: str) -> Dict[str, Any]:
-        """Generates comprehensive educational content directly via Gemini API.
-        Universal Academic System Prompt across all B.Tech / University engineering curricula.
-        Enforces raw JSON output matching the mandated schema with automatic self-healing payload validation.
-        """
-        clean_q = GeminiService.clean_search_query(query)
-        if not clean_q:
-            clean_q = query.strip()
-
-        domain = GeminiService._detect_academic_domain(clean_q)
-
-        from google.genai import types
-        import time
-
-        client = GeminiService.get_client()
-        if not client:
-            # If client cannot be initialized, use self-healing validator immediately
-            return GeminiService._validate_and_sanitize_payload({}, clean_q, domain)
-
-        prompt = (
-            f"You are a Distinguished Senior University Professor and Lead Examiner across all B.Tech and engineering curricula "
-            f"(Computer Science, IT, Electronics & Communication, Electrical, Mechanical, Civil, AI/ML, Data Science, Applied Mathematics, and Physics). "
-            f"Generate comprehensive, authoritative, graduate-level educational content for the topic: '{clean_q}'. "
-            f"Academic Field: {domain}.\n\n"
-            f"MANDATORY REQUIREMENT: Never return empty strings, placeholder texts, or null fields. "
-            f"Every field must contain dense, precise, authentic technical explanations adhering to university term exam and GATE syllabus standards.\n\n"
-            f"MANDATORY JSON & LATEX ESCAPING RULE: All LaTeX formulas in JSON string values MUST use valid double-escaped formatting (e.g. \\\\nabla, \\\\frac{{a}}{{b}}, \\\\partial, \\\\int, \\\\sum, \\\\sqrt, \\\\alpha, \\\\beta, \\\\sigma, \\\\mathcal{{S}}) so backslashes are preserved intact during JSON parsing without escape corruption or syntax errors.\n\n"
-            f"Return raw JSON ONLY with these exact keys:\n"
-            f"{{\n"
-            f"  'overview': 'Authoritative 3-4 sentence academic breakdown explaining the physical/logical mechanics, foundational principles, and core applications of {clean_q}',\n"
-            f"  'theoretical_foundations': 'Deep, rigorous technical and mathematical exposition of {clean_q}, detailing state representations, physical laws, axioms, and architectural properties',\n"
-            f"  'core_formulations': 'Exact mathematical formulas, governing state equations, circuit laws, pseudo-code, or data structure implementations used in {clean_q}',\n"
-            f"  'difficulty_score': 7.4,\n"
-            f"  'ai_evaluation': 'Specific time/space complexity, physical stability bounds, thermodynamic margins, or operational trade-off analysis for {clean_q}',\n"
-            f"  'did_you_know': 'A unique, fascinating historical discovery or mission-critical industrial trivia fact regarding {clean_q}',\n"
-            f"  'study_notes': 'Comprehensive, exhaustive university revision notes formatted in rich Markdown with standard LaTeX mathematical typography ($...$ for inline formulas, $$...$$ for display block equations). Act as a senior academic professor and department chair. NEVER summarize, abbreviate, or omit derivations. Minimum 800-1500+ words. MUST include these exact markdown sections with dense, rigorous academic content:\\n\\n## Executive Overview: Core Definition & Intuition\\nDeep theoretical breakdown, physical/mathematical mental models, real-world engineering applications.\\n\\n## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\\nGoverning state equations, foundational theorems, and step-by-step analytical derivations formatted strictly in standard LaTeX block equations (e.g. $$\\int u \\, dv = uv - \\int v \\, du$$, $$\\lim_{{N \\to \\infty}} \\dots$$).\\n\\n## Syntax & Implementation: Step-by-Step Worked Examples\\nMinimum 2-3 complete, fully worked-out step-by-step solved academic problems with clean code snippets or mathematical solutions.\\n\\n## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\\nDetailed asymptotic Big-O bounds table for operations/cases, along with bulleted cheatsheet mnemonics and decision rules (e.g. ILATE rule, Master Theorem).\\n\\n## Common Mistakes & Exam Pitfalls\\nCritical edge cases, sign errors, and off-by-one mistakes where students lose marks in university exams.\\n\\n## University Exam: Practice Problems with Answers & Focus Points\\nTop 3 practice examination problems with full numerical/symbolic answers for self-testing, plus top theoretical questions asked in university exams.'\n"
-            f"}}"
-        )
-
-        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.6-flash"]
-        response = None
-        last_err = None
-
-        for model_name in candidate_models:
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.2,
-                        response_mime_type="application/json",
-                        max_output_tokens=8192,
-                    ),
-                )
-                if response and response.text:
-                    break
-            except Exception as err:
-                last_err = err
-                time.sleep(1.0)
-                continue
-
-        parsed_data = {}
-        if response and response.text:
-            res_text = response.text.strip()
-            if res_text.startswith("```"):
-                m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", res_text, re.DOTALL | re.IGNORECASE)
-                if m:
-                    res_text = m.group(1).strip()
-            try:
-                parsed_data = json.loads(res_text)
-            except Exception:
-                try:
-                    # Self-heal invalid single backslashes in JSON (e.g. \nabla, \frac, \partial)
-                    healed_text = re.sub(r'\\([a-zA-Z])', r'\\\\\1', res_text)
-                    parsed_data = json.loads(healed_text)
-                except Exception as e:
-                    print(f"Error parsing Gemini JSON for '{clean_q}': {e}")
-                    parsed_data = {}
-
-        # Run through payload self-healing validator to guarantee 100% complete, non-empty fields
-        return GeminiService._validate_and_sanitize_payload(parsed_data, clean_q, domain)
-
-    @staticmethod
     def generate_detailed_notes(subject_title: str, chapters: str) -> str:
         """Generates comprehensive, multi-section study revision notes (800-1500+ words) using Gemini."""
-        if not config.is_gemini_mocked():
-            try:
-                from google.genai import types
-                
-                client = GeminiService.get_client()
-                if client:
-                    prompt = (
-                        f"Act as a distinguished senior academic professor and department chair. "
-                        f"Create comprehensive, highly detailed, multi-page university study revision notes for:\n"
-                        f"Subject/Unit Name: {subject_title}\n"
-                        f"Topics & Chapters to cover: {chapters}\n\n"
-                        f"Requirements:\n"
-                        f"1. Length & Depth: Exhaustive academic revision notes (minimum 800-1500+ words). Do NOT abbreviate or summarize.\n"
-                        f"2. LaTeX Mathematics: Format ALL formulas and mathematical equations using standard LaTeX ($...$ for inline, $$...$$ for display block equations).\n"
-                        f"3. Structure: Use clean Markdown structure with these exact mandatory sections:\n\n"
-                        f"## Executive Overview: Core Definition & Intuition\n"
-                        f"Deep theoretical breakdown, historical intuition, and real-world engineering applications.\n\n"
-                        f"## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\n"
-                        f"Governing principles and rigorous mathematical derivations formatted in LaTeX display equations.\n\n"
-                        f"## Syntax & Implementation: Step-by-Step Worked Examples\n"
-                        f"Minimum 2-3 complete step-by-step solved academic problems with clean code snippets or detailed mathematical steps.\n\n"
-                        f"## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\n"
-                        f"Asymptotic Big-O breakdown table and cheatsheet rules/mnemonics (e.g., ILATE, Master Theorem).\n\n"
-                        f"## Common Mistakes & Exam Pitfalls\n"
-                        f"Critical edge cases and exam pitfalls where students lose marks.\n\n"
-                        f"## University Exam: Practice Problems with Answers & Focus Points\n"
-                        f"Top 3 practice exam questions with explicit final answers and key exam focus points.\n"
-                    )
-                    candidate_models = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.6-flash"]
-                    for model_name in candidate_models:
+        api_key = config.GEMINI_API_KEY
+        if api_key:
+            prompt = (
+                f"Act as a distinguished senior academic professor and department chair.\n"
+                f"Create comprehensive, highly detailed, multi-page university study revision notes for:\n"
+                f"Subject/Unit Name: {subject_title}\n"
+                f"Topics & Chapters to cover: {chapters}\n\n"
+                f"Requirements:\n"
+                f"1. Length & Depth: Exhaustive academic revision notes. Do NOT abbreviate or summarize.\n"
+                f"2. LaTeX Mathematics: Format formulas using standard LaTeX ($...$ for inline, $$...$$ for display block equations). Include ONLY equations genuinely applicable to {subject_title}.\n"
+                f"3. Structure: Use clean Markdown structure with these exact mandatory sections:\n\n"
+                f"## Executive Overview: Core Definition & Intuition\n"
+                f"Deep theoretical breakdown and real-world engineering applications of {subject_title}.\n\n"
+                f"## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\n"
+                f"Governing principles and rigorous mathematical derivations formatted in LaTeX display equations.\n\n"
+                f"## Syntax & Implementation: Step-by-Step Worked Examples\n"
+                f"Minimum 2-3 complete step-by-step solved academic problems with clean code snippets or detailed mathematical steps.\n\n"
+                f"## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\n"
+                f"Asymptotic Big-O breakdown table and cheatsheet rules/mnemonics.\n\n"
+                f"## Common Mistakes & Exam Pitfalls\n"
+                f"Critical edge cases and exam pitfalls where students lose marks.\n\n"
+                f"## University Exam: Practice Problems with Answers & Focus Points\n"
+                f"Top 3 practice exam questions with explicit final answers and key exam focus points.\n"
+            )
+            candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+            
+            client = GeminiService.get_client()
+            if not client:
+                try:
+                    from google import genai
+                    client = genai.Client(api_key=api_key)
+                except Exception:
+                    client = None
+
+            if client:
+                try:
+                    from google.genai import types
+                    for m_name in candidate_models:
                         try:
                             response = client.models.generate_content(
-                                model=model_name,
+                                model=m_name,
                                 contents=prompt,
-                                config=types.GenerateContentConfig(
-                                    temperature=0.2,
-                                    max_output_tokens=8192,
-                                ),
+                                config=types.GenerateContentConfig(temperature=0.1, max_output_tokens=8192)
                             )
-                            if response and response.text:
+                            if response and response.text and response.text.strip():
                                 return GeminiService.sanitize_study_notes(response.text.strip())
                         except Exception:
                             continue
-            except Exception as e:
-                print(f"Failed to generate notes via Gemini: {e}")
+                except Exception as e:
+                    print(f"Failed to generate notes via Gemini: {e}")
 
+        # Realistic domain-aware fallback using topic_notes_engine
+        try:
+            from backend.routes.topic_notes_engine import build_realistic_topic_notes
+            return GeminiService.sanitize_study_notes(build_realistic_topic_notes(subject_title, chapters))
+        except Exception as err:
+            print(f"Topic notes engine fallback notice: {err}")
+
+        # Static safety fallback
         fallback_notes = (
             f"# Executive Overview: Core Definition & Intuition\n"
-            f"{subject_title} forms a foundational academic curriculum unit within the engineering and scientific disciplines. "
-            f"Mastering this domain requires rigorous comprehension of its governing theoretical mechanics, state-space representations, and analytical structures.\n\n"
+            f"{subject_title} represents a core academic unit focusing on: {chapters}. "
+            f"Mastering this domain requires systematic comprehension of its operational mechanics, algorithmic structures, and mathematical foundations.\n\n"
             f"## Key Concepts & Theoretical Foundations: Fundamental Formulas & Derivations\n"
-            f"Core topics covered in this unit: {chapters}.\n\n"
-            f"1. **Governing Analytical Relation**:\n"
-            f"$$\\mathcal{{S}}(x, t) = \\sum_{{k=1}}^{{N}} \\omega_k \\cdot \\psi_k(x, t) + \\epsilon(t)$$\n\n"
-            f"2. **Fundamental Integration Formula**:\n"
-            f"$$\\int u \\, dv = u \\cdot v - \\int v \\, du$$\n\n"
-            f"3. **Equilibrium State Criterion**:\n"
-            f"$$\\lim_{{N \\to \\infty}} \\frac{{1}}{{N}} \\sum_{{i=1}}^{{N}} \\left( x_i - \\mu \\right)^2 = \\sigma^2$$\n\n"
+            f"Core topics covered in this unit: {chapters}.\n"
+            f"- Foundational Principles: System state transitions, asymptotic invariants, and analytical correctness.\n"
+            f"- Theoretical Properties: Convergence criteria and boundary behaviors governing {subject_title}.\n\n"
             f"## Syntax & Implementation: Step-by-Step Worked Examples\n"
-            f"### Worked Example 1: Computational State Evaluation\n"
+            f"### Worked Example 1: Core Algorithm Evaluation\n"
             f"```python\n"
             f"# Standard formulation for {subject_title}\n"
-            f"def evaluate_state(inputs):\n"
-            f"    if not inputs:\n"
+            f"def evaluate_algorithm(dataset):\n"
+            f"    if not dataset:\n"
             f"        return None\n"
-            f"    return [item for item in inputs if item is not None]\n"
+            f"    return [item for item in dataset if item is not None]\n"
             f"```\n\n"
-            f"### Worked Example 2: Continuous Integration by Parts\n"
-            f"Evaluate $\\int x e^x \\, dx$:\n"
-            f"1. Let $u = x \\implies du = dx$ and $dv = e^x dx \\implies v = e^x$.\n"
-            f"2. Applying the formula: $$\\int x e^x \\, dx = x e^x - \\int e^x \\, dx = e^x(x - 1) + C$$\n\n"
             f"## Complexity Breakdown: Key Rules & Cheatsheet Mnemonics\n"
             f"| Operation / Stage | Time Complexity | Space Complexity |\n"
             f"| :--- | :--- | :--- |\n"
             f"| Primary Operation | $O(N)$ | $O(1)$ |\n"
             f"| Auxiliary Processing | $O(N \\log N)$ | $O(N)$ |\n\n"
             f"### Cheatsheet Mnemonics\n"
-            f"- **ILATE Priority Rule**: Inverse Trig $\\to$ Log $\\to$ Algebraic $\\to$ Trig $\\to$ Exponential.\n"
-            f"- **Master Theorem**: Compare $f(n)$ with $n^{{\\log_b a}}$ to immediately determine asymptotic growth.\n\n"
+            f"- **Master Theorem**: Compare $f(n)$ with $n^{{\\log_b a}}$ to immediately determine asymptotic growth.\n"
+            f"- **Invariant Verification**: Check base cases before recursive termination.\n\n"
             f"## Common Mistakes & Exam Pitfalls\n"
             f"- Forgetting boundary base cases ($N=0$) before loop termination.\n"
-            f"- Omitting the constant of integration $+ C$ in indefinite integrals.\n"
             f"- Confusing time complexity with auxiliary space complexity under recursive calls.\n\n"
             f"## University Exam: Practice Problems with Answers & Focus Points\n"
             f"1. **Problem 1**: Solve the recurrence $T(n) = 2T(n/2) + O(n)$.\n"
             f"   - *Answer*: By Master Theorem Case 2, $T(n) = \\Theta(n \\log n)$.\n\n"
-            f"2. **Problem 2**: Compute $\\int_0^1 x^2 \\, dx$.\n"
-            f"   - *Answer*: $\\left[ \\frac{{x^3}}{{3}} \\right]_0^1 = \\frac{{1}}{{3}}$.\n\n"
-            f"3. **Problem 3**: State the worst-case space complexity of recursive depth $d$.\n"
+            f"2. **Problem 2**: State the worst-case space complexity of recursive depth $d$.\n"
             f"   - *Answer*: $O(d)$ stack frames."
         )
         return GeminiService.sanitize_study_notes(fallback_notes)
+

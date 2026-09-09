@@ -17,7 +17,12 @@ async def gemini_generate_post(payload: GeminiRequest):
     if not target or not target.strip():
         raise HTTPException(status_code=400, detail="Query parameter is required in JSON payload.")
     clean = GeminiService.clean_search_query(target.strip())
-    return GeminiService.generate_topic_details(clean)
+    try:
+        return GeminiService.generate_topic_details(clean)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("")
 async def gemini_generate_get(
@@ -30,4 +35,9 @@ async def gemini_generate_get(
     if not target or not target.strip():
         raise HTTPException(status_code=400, detail="Query parameter 'query' or 'q' is required.")
     clean = GeminiService.clean_search_query(target.strip())
-    return GeminiService.generate_topic_details(clean)
+    try:
+        return GeminiService.generate_topic_details(clean)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
