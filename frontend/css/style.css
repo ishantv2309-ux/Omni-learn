@@ -873,10 +873,12 @@ html.dark #landingScreen p {
 
 html[data-theme="dark"] #mainSearchInput,
 html.dark #mainSearchInput {
-    background: rgba(17, 24, 39, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(14, 23, 42, 0.70) !important;
+    backdrop-filter: blur(14px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
     color: #FFFFFF !important;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
 html[data-theme="dark"] #mainSearchInput::placeholder,
@@ -1186,10 +1188,12 @@ html.light #landingScreen p {
 
 html[data-theme="light"] #mainSearchInput,
 html.light #mainSearchInput {
-    background: #FFFFFF !important;
-    border: 1px solid #CBD5E1 !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(14px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
     color: #0F172A !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
 html[data-theme="light"] #navSearchInput,
@@ -2087,4 +2091,332 @@ html[data-theme="light"] #mainSearchInput:focus,
 html.light #mainSearchInput:focus {
     border-color: #4F46E5 !important;
     box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.15), 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* ==========================================================================
+   SEARCH & POPULAR TOPICS FROSTED GLASS EFFECT
+   ========================================================================== */
+.search-topics-glass-card {
+    position: relative;
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border-radius: 26px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode Frosted Glass Deck */
+html[data-theme="dark"] .search-topics-glass-card,
+html.dark .search-topics-glass-card {
+    background: linear-gradient(135deg, rgba(22, 33, 54, 0.52) 0%, rgba(13, 21, 38, 0.62) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55), 
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 1px rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Light Mode Frosted Glass Deck */
+html[data-theme="light"] .search-topics-glass-card,
+html.light .search-topics-glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(241, 245, 249, 0.58) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    box-shadow: 0 24px 50px -12px rgba(100, 116, 139, 0.16), 
+                0 0 0 1px rgba(255, 255, 255, 0.9),
+                inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Frosted Glass Pills inside Search Topics Deck */
+html[data-theme="dark"] .search-topics-glass-card .omni-pill,
+html.dark .search-topics-glass-card .omni-pill {
+    background: rgba(255, 255, 255, 0.07) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="dark"] .search-topics-glass-card .omni-pill:hover,
+html.dark .search-topics-glass-card .omni-pill:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
+}
+
+html[data-theme="light"] .search-topics-glass-card .omni-pill,
+html.light .search-topics-glass-card .omni-pill {
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+}
+
+html[data-theme="light"] .search-topics-glass-card .omni-pill:hover,
+html.light .search-topics-glass-card .omni-pill:hover {
+    background: #FFFFFF !important;
+    border-color: #4F46E5 !important;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.16) !important;
+}
+
+/* ==========================================================================
+   OMNILEARN SCHOLASTIC PRELOADER ANIMATION
+   ========================================================================== */
+.omni-preloader {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), 
+                filter 0.65s ease;
+    will-change: opacity, transform, filter;
+    overflow: hidden;
+}
+
+/* Dark Theme Preloader Background */
+html[data-theme="dark"] .omni-preloader,
+html.dark .omni-preloader {
+    background: radial-gradient(circle at 50% 45%, #16243B 0%, #0D172A 50%, #070B18 100%);
+    color: #F8FAFC;
+}
+
+/* Light Theme Preloader Background */
+html[data-theme="light"] .omni-preloader,
+html.light .omni-preloader {
+    background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #F1F5F9 60%, #E2E8F0 100%);
+    color: #0F172A;
+}
+
+/* Hidden State (Cinematic Exit) */
+.omni-preloader.preloader-hidden {
+    opacity: 0 !important;
+    transform: scale(1.05) !important;
+    filter: blur(10px) !important;
+    pointer-events: none !important;
+}
+
+/* Ambient Pulsing Aura */
+.preloader-aura {
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(80px);
+    animation: omniAuraPulse 3s ease-in-out infinite alternate;
+}
+
+html[data-theme="dark"] .preloader-aura,
+html.dark .preloader-aura {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(195, 142, 180, 0.25) 60%, transparent 80%);
+}
+
+html[data-theme="light"] .preloader-aura,
+html.light .preloader-aura {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(195, 142, 180, 0.20) 60%, transparent 80%);
+}
+
+/* Orbital Container */
+.preloader-core-container {
+    width: 170px;
+    height: 170px;
+}
+
+/* Orbital Ring */
+.preloader-orbital-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(165, 180, 252, 0.35);
+    animation: omniOrbitRotate 14s linear infinite;
+    pointer-events: none;
+}
+
+html[data-theme="light"] .preloader-orbital-ring,
+html.light .preloader-orbital-ring {
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+/* Orbital Glyphs (6 Disciplines) */
+.orbit-glyph {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    margin-top: -14px;
+    margin-left: -14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: "Fira Code", monospace, sans-serif;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    animation: omniCounterRotate 14s linear infinite;
+}
+
+html[data-theme="light"] .orbit-glyph,
+html.light .orbit-glyph {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.25);
+    color: #334155;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+}
+
+/* Glyphs circular distribution (r = 85px) */
+.orbit-glyph-1 { transform: rotate(0deg) translate(85px) rotate(0deg); color: #86A8CF; }
+.orbit-glyph-2 { transform: rotate(60deg) translate(85px) rotate(-60deg); color: #C38EB4; }
+.orbit-glyph-3 { transform: rotate(120deg) translate(85px) rotate(-120deg); color: #A5B4FC; }
+.orbit-glyph-4 { transform: rotate(180deg) translate(85px) rotate(-180deg); color: #6EE7B7; }
+.orbit-glyph-5 { transform: rotate(240deg) translate(85px) rotate(-240deg); color: #FCD34D; }
+.orbit-glyph-6 { transform: rotate(300deg) translate(85px) rotate(-300deg); color: #F472B6; }
+
+/* Central Emblem Box */
+.preloader-emblem-box {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    position: relative;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+html[data-theme="dark"] .preloader-emblem-box,
+html.dark .preloader-emblem-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 2px solid rgba(165, 180, 252, 0.4);
+    box-shadow: 0 0 35px rgba(99, 102, 241, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="light"] .preloader-emblem-box,
+html.light .preloader-emblem-box {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+.preloader-icon-cap {
+    animation: omniCapPulse 2.4s ease-in-out infinite;
+}
+
+html[data-theme="dark"] .preloader-icon-cap,
+html.dark .preloader-icon-cap {
+    filter: drop-shadow(0 4px 12px rgba(134, 168, 207, 0.5));
+}
+
+html[data-theme="light"] .preloader-icon-cap,
+html.light .preloader-icon-cap {
+    color: #4F46E5 !important;
+    filter: drop-shadow(0 4px 12px rgba(79, 70, 229, 0.3));
+}
+
+/* Brand Title */
+.preloader-brand-title {
+    background: linear-gradient(135deg, #FFFFFF 20%, #C7D2FE 50%, #E1CBD7 80%, #818CF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+}
+
+html[data-theme="light"] .preloader-brand-title,
+html.light .preloader-brand-title {
+    background: linear-gradient(135deg, #0F172A 20%, #4F46E5 60%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+}
+
+/* Status Text */
+.preloader-status-text {
+    transition: opacity 0.2s ease;
+}
+
+html[data-theme="dark"] .preloader-status-text,
+html.dark .preloader-status-text {
+    color: #94A3B8;
+}
+
+html[data-theme="light"] .preloader-status-text,
+html.light .preloader-status-text {
+    color: #475569;
+}
+
+/* Precision Progress Track */
+.preloader-track {
+    width: 250px;
+    height: 6px;
+}
+
+html[data-theme="dark"] .preloader-track,
+html.dark .preloader-track {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="light"] .preloader-track,
+html.light .preloader-track {
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.preloader-bar-fill {
+    background: linear-gradient(90deg, #4F46E5 0%, #7C3AED 50%, #C38EB4 100%);
+    box-shadow: 0 0 14px rgba(124, 58, 237, 0.7);
+    position: relative;
+}
+
+.preloader-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 14px;
+    background: #FFFFFF;
+    border-radius: 9999px;
+    box-shadow: 0 0 10px #FFFFFF, 0 0 20px #818CF8;
+    opacity: 0.85;
+}
+
+/* Keyframe Animations */
+@keyframes omniOrbitRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes omniCounterRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-360deg); }
+}
+
+@keyframes omniCapPulse {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-5px) scale(1.05);
+    }
+}
+
+@keyframes omniAuraPulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.25;
+    }
+    100% {
+        transform: scale(1.15);
+        opacity: 0.45;
+    }
 }

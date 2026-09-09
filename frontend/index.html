@@ -56,7 +56,7 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="stylesheet" href="css/style.css?v=3.2">
     <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
     <script>
       (function() {
@@ -68,6 +68,52 @@
       })();
     </script>
 <body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <!-- OmniLearn Scholastic Preloader Overlay -->
+    <div id="omniPreloader" class="omni-preloader fixed inset-0 z-[99999] flex flex-col items-center justify-center select-none" aria-label="Loading OmniLearn">
+        <!-- Ambient Glowing Aura -->
+        <div class="preloader-aura"></div>
+
+        <!-- Scholastic Orbital Core -->
+        <div class="preloader-core-container relative flex items-center justify-center mb-7">
+            <!-- Orbital Ring with Academic Glyphs -->
+            <div class="preloader-orbital-ring">
+                <span class="orbit-glyph orbit-glyph-1" title="Physics">⚛️</span>
+                <span class="orbit-glyph orbit-glyph-2" title="Mathematics">∫</span>
+                <span class="orbit-glyph orbit-glyph-3" title="Computer Science">💻</span>
+                <span class="orbit-glyph orbit-glyph-4" title="Biology">🧬</span>
+                <span class="orbit-glyph orbit-glyph-5" title="Law">⚖️</span>
+                <span class="orbit-glyph orbit-glyph-6" title="Logic">π</span>
+            </div>
+
+            <!-- Central Educational Emblem Box -->
+            <div class="preloader-emblem-box flex items-center justify-center shadow-2xl">
+                <i class="fa-solid fa-graduation-cap text-4xl sm:text-5xl text-indigo-400 preloader-icon-cap"></i>
+            </div>
+        </div>
+
+        <!-- Brand Name & Animated Progress -->
+        <div class="text-center relative z-10 px-4 w-full max-w-xs">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight preloader-brand-title mb-2">
+                OmniLearn
+            </h1>
+            <p id="preloaderStatusText" class="text-xs sm:text-sm font-medium preloader-status-text tracking-wide mb-5">
+                Calibrating academic domain matrices...
+            </p>
+
+            <!-- Precision Progress Bar -->
+            <div class="preloader-track mx-auto relative overflow-hidden rounded-full">
+                <div id="preloaderFill" class="preloader-bar-fill h-full rounded-full transition-all duration-100 ease-out" style="width: 0%;"></div>
+            </div>
+
+            <!-- Percentage Counter -->
+            <div class="mt-3 flex items-center justify-between max-w-[250px] mx-auto text-[11px] font-mono preloader-meta opacity-80">
+                <span class="tracking-wider uppercase">Academic Hub</span>
+                <span id="preloaderPercent" class="font-bold text-indigo-400">0%</span>
+            </div>
+        </div>
+    </div>
+    <script src="js/preloader.js?v=3.2"></script>
 
     <!-- Interactive Background Educational Constellation Layer -->
     <div id="eduBackgroundLayer" aria-hidden="true">
@@ -123,42 +169,45 @@
                 Eliminate tab-switching. Enter any academic topic to aggregate notes, video lectures, exam papers, analytics, and roadmaps instantly.
             </p>
             
-            <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative max-w-2xl mx-auto shadow-2xl rounded-2xl search-form-wrapper group">
-                <input type="text" id="mainSearchInput" placeholder="" 
-                       class="w-full pl-12 sm:pl-14 pr-28 sm:pr-32 py-4 sm:py-4.5 rounded-2xl text-base sm:text-lg transition font-medium" autocomplete="off">
-                <span class="absolute left-4 sm:left-5 top-4 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
-                    <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
-                </span>
-                <div class="absolute right-2.5 top-2.5 bottom-2.5 flex items-center">
-                    <button type="submit" id="mainSearchSubmitBtn" class="search-btn-modern h-full px-5 sm:px-6 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer shadow-md">
-                        <i id="mainSearchBtnIcon" class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-                        <span id="mainSearchBtnText">Search</span>
+            <!-- Search & Popular Topics Frosted Glass Deck -->
+            <div class="search-topics-glass-card max-w-2xl mx-auto rounded-3xl p-5 sm:p-7 relative transition-all duration-300 shadow-2xl">
+                <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full shadow-lg rounded-2xl search-form-wrapper group">
+                    <input type="text" id="mainSearchInput" placeholder="" 
+                           class="w-full pl-12 sm:pl-14 pr-28 sm:pr-32 py-4 sm:py-4.5 rounded-2xl text-base sm:text-lg transition font-medium" autocomplete="off">
+                    <span class="absolute left-4 sm:left-5 top-4 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+                    </span>
+                    <div class="absolute right-2.5 top-2.5 bottom-2.5 flex items-center">
+                        <button type="submit" id="mainSearchSubmitBtn" class="search-btn-modern h-full px-5 sm:px-6 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                            <i id="mainSearchBtnIcon" class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                            <span id="mainSearchBtnText">Search</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Quick Suggestions -->
+                <div class="mt-5 flex flex-wrap justify-center items-center gap-2">
+                    <span class="omni-popular-label self-center mr-1 text-xs sm:text-sm font-semibold">Popular Topics:</span>
+                    <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="omni-pill omni-pill-periwinkle">
+                        ⚡ Newton's Laws
+                    </button>
+                    <button onclick="fillAndSearch('Linked List Inversion')" class="omni-pill omni-pill-mauve">
+                        🔗 Linked List Inversion
+                    </button>
+                    <button onclick="fillAndSearch('Integration Techniques')" class="omni-pill omni-pill-blush">
+                        ∫ Integration Calculus
+                    </button>
+                    <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="omni-pill omni-pill-prussian">
+                        🗺️ Dijkstra's Algorithm
+                    </button>
+                    <button onclick="fillAndSearch('Quantum Mechanics')" class="omni-pill omni-pill-night">
+                        ⚛️ Quantum Mechanics
                     </button>
                 </div>
-            </form>
-
-            <!-- Quick Suggestions -->
-            <div class="mt-8 flex flex-wrap justify-center gap-2.5">
-                <span class="omni-popular-label self-center mr-2 text-sm font-semibold">Popular Topics:</span>
-                <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="omni-pill omni-pill-periwinkle">
-                    ⚡ Newton's Laws
-                </button>
-                <button onclick="fillAndSearch('Linked List Inversion')" class="omni-pill omni-pill-mauve">
-                    🔗 Linked List Inversion
-                </button>
-                <button onclick="fillAndSearch('Integration Techniques')" class="omni-pill omni-pill-blush">
-                    ∫ Integration Calculus
-                </button>
-                <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="omni-pill omni-pill-prussian">
-                    🗺️ Dijkstra's Algorithm
-                </button>
-                <button onclick="fillAndSearch('Quantum Mechanics')" class="omni-pill omni-pill-night">
-                    ⚛️ Quantum Mechanics
-                </button>
             </div>
 
             <!-- Interactive Academic Knowledge Panel (Changes Dynamically) -->
-            <div id="interactiveStudyPanel" class="mt-10 max-w-2xl mx-auto rounded-2xl p-5 edu-panel-omni text-left relative overflow-hidden transition-all duration-500 shadow-xl">
+            <div id="interactiveStudyPanel" class="mt-6 max-w-2xl mx-auto rounded-2xl p-5 edu-panel-omni text-left relative overflow-hidden transition-all duration-500 shadow-xl">
                 <div class="absolute top-0 left-0 right-0 h-1 bg-slate-700/30 overflow-hidden">
                     <div id="eduTimerProgress" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
                 </div>
@@ -639,8 +688,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=3.0"></script>
-    <script src="app.js?v=3.0"></script>
-    <script src="main.js?v=3.0"></script>
+    <script src="js/edu_canvas.js?v=3.2"></script>
+    <script src="app.js?v=3.2"></script>
+    <script src="main.js?v=3.2"></script>
 </body>
 </html>
