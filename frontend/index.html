@@ -8,8 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- favicon icon -->
-    <link rel="icon" type="image/png" href="icons8-graduation-cap-16 (1).png">
+    <!-- Modern High-Res Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <!-- Google Fonts for Handwritten Notes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,164 +56,162 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
+    <script>
+      (function() {
+        try {
+          const t = localStorage.getItem('omni_theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.classList.add(t);
+        } catch(e) {}
+      })();
+    </script>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <!-- Interactive Background Educational Constellation Layer -->
+    <div id="eduBackgroundLayer" aria-hidden="true">
+        <canvas id="eduConstellationCanvas"></canvas>
+        <div id="ambientAura1" class="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-25 transition-all duration-1000 pointer-events-none"></div>
+        <div id="ambientAura2" class="absolute -bottom-32 -right-32 w-[32rem] h-[32rem] rounded-full blur-3xl opacity-20 transition-all duration-1000 pointer-events-none"></div>
+    </div>
 
     <!-- Navbar -->
-    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+    <header class="navbar-omni shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
             <div class="flex items-center space-x-3 cursor-pointer" onclick="resetSearch()">
-                <i class="fa-solid fa-graduation-cap text-3xl text-yellow-300"></i>
-                <span class="text-xl font-bold tracking-tight">OmniLearn</span>
+                <span class="omni-nav-icon"><i class="fa-solid fa-graduation-cap text-2xl"></i></span>
+                <span class="text-xl font-extrabold tracking-tight omni-brand-text">OmniLearn</span>
             </div>
             
             <!-- Navbar Search Bar (Visible after search is initiated) -->
             <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-8">
                 <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
-                           class="w-full bg-indigo-700 text-white placeholder-indigo-200 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-300 transition border border-indigo-500">
-                    <span class="absolute left-3 top-2.5 text-indigo-200">
+                           class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-10 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700">
+                    <span class="absolute left-3 top-2.5 text-slate-300">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
                 </form>
             </div>
             
             <div class="flex items-center space-x-3">
-                <button onclick="toggleBookmarksSidebar()" class="relative glass-btn glass-nav-btn px-4 py-2 rounded-xl flex items-center space-x-2 shadow-sm" title="Your Saved Bookmarks">
-                    <i class="fa-solid fa-bookmark text-yellow-300"></i>
-                    <span class="hidden sm:inline">Bookmarks</span>
-                    <span id="bookmarkCount" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">0</span>
+                <!-- Theme Toggle Button -->
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="nav-control-btn" title="Toggle Light / Dark Mode">
+                    <i id="themeToggleIcon" class="fa-solid fa-moon text-amber-300"></i>
+                    <span id="themeToggleText" class="text-xs font-bold hidden sm:inline">Dark</span>
+                </button>
+
+                <!-- Bookmarks Button -->
+                <button id="bookmarksNavBtn" onclick="toggleBookmarksSidebar()" class="nav-control-btn" title="Your Saved Bookmarks">
+                    <i class="fa-solid fa-bookmark text-indigo-400"></i>
+                    <span id="bookmarksNavText" class="text-xs font-bold hidden sm:inline">Bookmarks</span>
+                    <span id="bookmarkCount" class="nav-counter-badge">0</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col justify-center">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
 
         <!-- 1. Landing Screen (Search Bar Centered) -->
-        <div id="landingScreen" class="py-12 md:py-24 text-center max-w-2xl mx-auto transition-all duration-300">
-            <i class="fa-solid fa-graduation-cap text-7xl text-indigo-600 mb-6 animate-bounce"></i>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4">OmniLearn</h1>
-            <p class="text-lg text-slate-600 mb-8">
+        <div id="landingScreen" class="py-12 md:py-24 text-center max-w-2xl mx-auto my-auto transition-all duration-300">
+            <i class="fa-solid fa-graduation-cap text-7xl mb-6 animate-bounce omni-hero-cap"></i>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">OmniLearn</h1>
+            <p class="text-lg mb-8">
                 Eliminate tab-switching. Enter any academic topic to aggregate notes, video lectures, exam papers, analytics, and roadmaps instantly.
             </p>
             
-            <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative max-w-xl mx-auto shadow-lg rounded-xl">
-                <input type="text" id="mainSearchInput" placeholder="Search topic (e.g., Newton's Laws of Motion, Linked List Inversion)..." 
-                       class="w-full pl-12 pr-28 py-4 rounded-xl text-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner">
-                <span class="absolute left-4 top-5 text-slate-400">
-                    <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative max-w-2xl mx-auto shadow-2xl rounded-2xl search-form-wrapper group">
+                <input type="text" id="mainSearchInput" placeholder="" 
+                       class="w-full pl-12 sm:pl-14 pr-28 sm:pr-32 py-4 sm:py-4.5 rounded-2xl text-base sm:text-lg transition font-medium" autocomplete="off">
+                <span class="absolute left-4 sm:left-5 top-4 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
                 </span>
-                <button type="submit" class="absolute right-2 top-2 glass-btn glass-btn-primary px-6 py-2.5 rounded-xl font-semibold shadow-md">
-                    Search
-                </button>
+                <div class="absolute right-2.5 top-2.5 bottom-2.5 flex items-center">
+                    <button type="submit" id="mainSearchSubmitBtn" class="search-btn-modern h-full px-5 sm:px-6 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                        <i id="mainSearchBtnIcon" class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                        <span id="mainSearchBtnText">Search</span>
+                    </button>
+                </div>
             </form>
 
             <!-- Quick Suggestions -->
-            <div class="mt-8 flex flex-wrap justify-center gap-2">
-                <span class="text-slate-500 self-center mr-2 text-sm font-medium">Popular Topics:</span>
-                <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
+            <div class="mt-8 flex flex-wrap justify-center gap-2.5">
+                <span class="omni-popular-label self-center mr-2 text-sm font-semibold">Popular Topics:</span>
+                <button onclick="fillAndSearch('Newton\'s Laws of Motion')" class="omni-pill omni-pill-periwinkle">
                     ⚡ Newton's Laws
                 </button>
-                <button onclick="fillAndSearch('Linked List Inversion')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
+                <button onclick="fillAndSearch('Linked List Inversion')" class="omni-pill omni-pill-mauve">
                     🔗 Linked List Inversion
                 </button>
-                <button onclick="fillAndSearch('Integration Techniques')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
+                <button onclick="fillAndSearch('Integration Techniques')" class="omni-pill omni-pill-blush">
                     ∫ Integration Calculus
                 </button>
-                <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
+                <button onclick="fillAndSearch('Dijkstra\'s Algorithm')" class="omni-pill omni-pill-prussian">
                     🗺️ Dijkstra's Algorithm
                 </button>
-                <button onclick="fillAndSearch('Quantum Mechanics')" class="glass-badge glass-badge-indigo px-3 py-1.5 text-xs font-semibold cursor-pointer">
+                <button onclick="fillAndSearch('Quantum Mechanics')" class="omni-pill omni-pill-night">
                     ⚛️ Quantum Mechanics
                 </button>
             </div>
 
-            <!-- Year-wise Notes Library -->
-            <div class="mt-16 text-left max-w-4xl mx-auto">
-                <div class="border-t border-slate-200/80 pt-8 mb-6 text-center">
-                    <span class="glass-badge glass-badge-indigo px-3 py-1 text-xs font-bold uppercase tracking-wider font-sans">Notes Library</span>
-                    <h2 class="text-2xl font-bold text-slate-800 mt-3 font-sans">Browse Engineering Notes Year-Wise</h2>
-                    <p class="text-sm text-slate-500 mt-1 font-sans">Select your academic year to explore core syllabus topics and learning guides.</p>
+            <!-- Interactive Academic Knowledge Panel (Changes Dynamically) -->
+            <div id="interactiveStudyPanel" class="mt-10 max-w-2xl mx-auto rounded-2xl p-5 edu-panel-omni text-left relative overflow-hidden transition-all duration-500 shadow-xl">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-slate-700/30 overflow-hidden">
+                    <div id="eduTimerProgress" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
                 </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Year 1 -->
-                    <div onclick="selectYearNotes(1)" class="bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-md rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between group">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-slate-400">01</span>
-                                <span class="glass-badge glass-badge-indigo px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Foundation</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">First Year Notes</h3>
-                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Common engineering subjects like Physics, Chemistry, Calculus, and Basic Electrical.</p>
-                        </div>
-                        <span class="text-[11px] font-semibold text-indigo-600 mt-4 flex items-center group-hover:underline font-sans">
-                            Browse Year 1 <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover:translate-x-1"></i>
+                <!-- Panel Header & Domain Badge -->
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                        <span id="eduDomainBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full edu-domain-pill shrink-0">
+                            ⚛️ Quantum Physics & Cosmology
                         </span>
+                        <span class="text-[11px] font-semibold text-slate-400 hidden sm:inline truncate">Live Study Pulse</span>
                     </div>
-
-                    <!-- Year 2 -->
-                    <div onclick="selectYearNotes(2)" class="bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-md rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between group">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-slate-400">02</span>
-                                <span class="glass-badge glass-badge-purple px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Core Prep</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Second Year Notes</h3>
-                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Core topics including Data Structures, OOPs, Thermodynamics, and Material Science.</p>
-                        </div>
-                        <span class="text-[11px] font-semibold text-indigo-600 mt-4 flex items-center group-hover:underline font-sans">
-                            Browse Year 2 <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover:translate-x-1"></i>
-                        </span>
-                    </div>
-
-                    <!-- Year 3 -->
-                    <div onclick="selectYearNotes(3)" class="bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-md rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between group">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-slate-400">03</span>
-                                <span class="glass-badge glass-badge-amber px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Advanced</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Third Year Notes</h3>
-                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Advanced core concepts like DBMS, Operating Systems, Networks, and Algorithms.</p>
-                        </div>
-                        <span class="text-[11px] font-semibold text-indigo-600 mt-4 flex items-center group-hover:underline font-sans">
-                            Browse Year 3 <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover:translate-x-1"></i>
-                        </span>
-                    </div>
-
-                    <!-- Year 4 -->
-                    <div onclick="selectYearNotes(4)" class="bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-md rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between group">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-xs font-bold text-slate-400">04</span>
-                                <span class="glass-badge glass-badge-emerald px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Final Year</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition font-sans">Fourth Year Notes</h3>
-                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed font-sans">Elective courses: Machine Learning, Cloud Computing, and Security.</p>
-                        </div>
-                        <span class="text-[11px] font-semibold text-indigo-600 mt-4 flex items-center group-hover:underline font-sans">
-                            Browse Year 4 <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover:translate-x-1"></i>
-                        </span>
+                    <!-- Controls: Prev, Play/Pause, Next -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="prevEduConcept()" class="edu-nav-btn w-7 h-7 rounded-lg flex items-center justify-center text-xs transition cursor-pointer" title="Previous Concept">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button type="button" id="eduPlayPauseBtn" onclick="toggleEduRotation()" class="edu-nav-btn w-7 h-7 rounded-lg flex items-center justify-center text-xs transition cursor-pointer" title="Pause / Resume Rotation">
+                            <i id="eduPlayPauseIcon" class="fa-solid fa-pause"></i>
+                        </button>
+                        <button type="button" onclick="nextEduConcept()" class="edu-nav-btn w-7 h-7 rounded-lg flex items-center justify-center text-xs transition cursor-pointer" title="Next Concept">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Subject Selection Panel -->
-                <div id="yearSubjectsPanel" class="hidden mt-6 bg-white border border-slate-200 rounded-xl p-6 shadow-sm animate-fade-in">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                        <h4 id="selectedYearTitle" class="font-bold text-slate-800 text-sm font-sans">Select Subject</h4>
-                        <button onclick="closeYearSubjects()" class="text-slate-400 hover:text-slate-600 text-xs flex items-center font-sans">
-                            <i class="fa-solid fa-xmark mr-1"></i> Close
-                        </button>
+                <!-- Concept Content (Fades smoothly on change) -->
+                <div id="eduConceptCard" class="transition-all duration-300">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-1.5">
+                        <h3 id="eduConceptTitle" class="text-base sm:text-lg font-extrabold text-slate-100 tracking-tight">
+                            Heisenberg's Uncertainty Principle
+                        </h3>
+                        <span id="eduConceptFormula" class="font-mono text-xs sm:text-sm font-bold text-indigo-300 shrink-0">
+                            $$\Delta x \cdot \Delta p \ge \frac{\hbar}{2}$$
+                        </span>
                     </div>
-                    <div id="yearSubjectsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        <!-- Subjects populated dynamically -->
+                    <p id="eduConceptInsight" class="text-xs sm:text-sm leading-relaxed text-slate-300 mb-3">
+                        Physical precision has fundamental limits: determining a particle's exact position intrinsically increases the uncertainty of its linear momentum.
+                    </p>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                        <span class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-[10px] text-indigo-400"></i>
+                            <span id="eduRotationHint">Auto-morphs every 10s</span>
+                        </span>
+                        <button type="button" id="eduExploreBtn" onclick="exploreCurrentEduConcept()" class="px-3 py-1 text-xs font-bold rounded-lg edu-explore-btn flex items-center gap-1.5 transition-all cursor-pointer">
+                            <span>Explore in OmniLearn</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- 2. Loading Spinner -->
@@ -224,26 +225,72 @@
         <div id="dashboardScreen" class="hidden flex flex-col space-y-6 animate-fade-in">
             
             <!-- Top Banner: Topic Summary & Difficulty Gauge -->
-            <div id="overviewHeroSection" class="hero-section flex flex-col md:flex-row gap-6 items-start w-full transition-colors duration-200" style="align-items: flex-start;">
+            <div id="overviewHeroSection" class="hero-section flex flex-col lg:flex-row gap-6 items-stretch w-full transition-colors duration-200">
                 <!-- AI Real-Time Overview (Left Card) -->
-                <div class="overview-card flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col justify-start" style="padding: 20px 24px 16px 24px; height: auto; min-height: 0; margin-bottom: 0;">
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div class="flex items-center justify-between" style="margin-bottom: 0;">
-                            <div class="flex flex-wrap items-center gap-2">
+                <div class="overview-card flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-start p-6">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-wrap items-center gap-2.5">
                                 <span class="glass-badge glass-badge-indigo">
-                                    <i class="fa-solid fa-sparkles mr-1 text-indigo-600"></i>AI Real-Time Overview
+                                    <i class="fa-solid fa-sparkles mr-1.5 text-indigo-400"></i>AI Real-Time Overview
                                 </span>
                                 <span id="summaryDomainBadge" class="glass-badge glass-badge-purple">
                                     Academic Domain
                                 </span>
-                                <h2 id="summaryTopicTitle" class="text-2xl font-bold text-slate-800 capitalize">Topic Name</h2>
+                                <h2 id="summaryTopicTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 capitalize tracking-tight">Topic Name</h2>
                             </div>
-                            <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="glass-btn-icon" title="Bookmark this topic">
+                            <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="glass-btn-icon rounded-xl" title="Bookmark this topic">
                                 <i class="fa-regular fa-bookmark text-base"></i>
                             </button>
                         </div>
-                        <div id="summaryText" data-alias="overview-text" class="overview-text text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none" style="margin-bottom: 12px;">
+                        <div id="summaryText" data-alias="overview-text" class="overview-text text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none">
                             <div id="overview-text">Loading summary...</div>
+                        </div>
+
+                        <!-- Explainable Real-World Example & Practical Walkthrough Section (No Code) -->
+                        <div id="quickExampleSection" class="hidden my-3 rounded-xl overflow-hidden example-card-omni shadow-md transition-all">
+                            <div class="flex items-center justify-between px-4 py-2.5 example-card-header">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-6 h-6 rounded-md flex items-center justify-center example-icon-badge shrink-0">
+                                        <i class="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
+                                    </span>
+                                    <span class="text-xs font-bold uppercase tracking-wider example-label shrink-0">
+                                        Practical Example
+                                    </span>
+                                    <span id="quickExampleTitle" class="text-xs font-semibold example-title truncate max-w-[160px] sm:max-w-xs md:max-w-sm"></span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span id="quickExampleBadge" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full example-badge">Case Study</span>
+                                    <button id="copyExampleBtn" onclick="copyQuickExampleContent()" class="example-copy-btn px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm" title="Copy example">
+                                        <i id="copyExampleIcon" class="fa-regular fa-clone text-[11px]"></i>
+                                        <span id="copyExampleText">Copy</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-3 example-card-body">
+                                <!-- Real-World Scenario -->
+                                <div id="quickExampleScenarioBlock" class="example-scenario-box p-3 rounded-lg">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead mb-1 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-compass text-indigo-400"></i> Real-World Scenario / Setup
+                                    </div>
+                                    <div id="quickExampleScenario" class="text-xs md:text-sm leading-relaxed example-body-text"></div>
+                                </div>
+                                <!-- Step-by-Step Breakdown -->
+                                <div id="quickExampleBreakdownBlock" class="space-y-1.5">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center gap-1.5">
+                                        <i class="fa-solid fa-list-check text-emerald-400"></i> Step-by-Step Breakdown & Explanation
+                                    </div>
+                                    <div id="quickExampleBreakdown" class="text-xs md:text-sm leading-relaxed example-body-text prose prose-sm max-w-none"></div>
+                                </div>
+                                <!-- Key Takeaway Callout -->
+                                <div id="quickExampleTakeawayBlock" class="p-3 rounded-lg example-takeaway-box flex items-start gap-2.5">
+                                    <i class="fa-solid fa-circle-check text-indigo-400 text-sm mt-0.5 shrink-0"></i>
+                                    <div>
+                                        <span class="text-[11px] font-bold uppercase tracking-wider block example-takeaway-title mb-0.5">Key Takeaway</span>
+                                        <div id="quickExampleTakeaway" class="text-xs md:text-sm font-medium leading-relaxed example-takeaway-text"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -256,34 +303,34 @@
                             <i id="toggleDetailBtnIcon" class="fa-solid fa-chevron-down text-[10px] text-indigo-500 transition-transform duration-300 ml-1"></i>
                         </button>
                         
-                        <div id="detailedBreakdownContainer" class="hidden mt-3 p-4 bg-slate-50/90 rounded-xl border border-slate-200/80 text-sm text-slate-700 leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar prose prose-slate max-w-none shadow-inner animate-fade-in">
+                        <div id="detailedBreakdownContainer" class="hidden mt-3 p-5 bg-slate-50/90 rounded-xl border border-slate-200/80 text-sm text-slate-700 leading-relaxed max-h-[500px] overflow-y-auto custom-scrollbar prose prose-slate max-w-none shadow-inner animate-fade-in">
                             <!-- In-depth multi-section notes rendered dynamically -->
                         </div>
                     </div>
                 </div>
                 
                 <!-- Difficulty Meter (Right Card) -->
-                <div class="difficulty-card w-full md:w-72 bg-white rounded-xl p-5 flex flex-col justify-between border border-slate-100 shadow-sm" style="height: auto; min-height: 0;">
+                <div class="difficulty-card w-full lg:w-80 bg-white rounded-2xl p-6 flex flex-col justify-between border border-slate-100 shadow-sm flex-shrink-0">
                     <div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Difficulty Meter</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Difficulty Gauge</span>
                             <span id="difficultyLevelBadge" class="glass-badge glass-badge-amber text-[10px]">Moderate</span>
                         </div>
-                        <div class="flex items-baseline space-x-1 mt-2">
-                            <span id="difficultyNumber" class="text-3xl font-extrabold text-slate-800">0.0</span>
+                        <div class="flex items-baseline space-x-1.5 mt-3">
+                            <span id="difficultyNumber" class="text-4xl font-black text-slate-900 tracking-tight">0.0</span>
                             <span class="text-slate-400 text-sm font-semibold">/ 10</span>
                         </div>
                         <!-- Color-coded Progress Bar -->
-                        <div class="w-full bg-slate-200 rounded-full h-3 mt-3 overflow-hidden shadow-inner">
-                            <div id="difficultyBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        <div class="w-full bg-slate-200/60 rounded-full h-2.5 mt-3.5 overflow-hidden shadow-inner">
+                            <div id="difficultyBar" class="h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
                         </div>
                     </div>
                     
-                    <div class="mt-4 pt-3 border-t border-slate-100">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1 flex items-center">
-                            <i class="fa-solid fa-brain mr-1.5 text-indigo-500"></i>AI Evaluation
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center">
+                            <i class="fa-solid fa-brain mr-1.5 text-indigo-500"></i>Academic Evaluation
                         </span>
-                        <p id="difficultyVerdict" class="text-xs text-slate-600 leading-relaxed max-h-[220px] overflow-y-auto custom-scrollbar">
+                        <p id="difficultyVerdict" class="text-xs text-slate-600 leading-relaxed max-h-[180px] overflow-y-auto custom-scrollbar">
                             Loading reasons...
                         </p>
                     </div>
@@ -294,8 +341,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 <!-- LEFT PANEL: Handwritten Notes & Viewer (3 Cols) -->
-                <div class="lg:col-span-3 flex flex-col space-y-6">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 flex flex-col h-full min-h-[400px] transition-colors duration-200">
+                <div class="lg:col-span-3 flex flex-col space-y-6 min-w-0">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col h-full min-h-[400px] transition-colors duration-200 min-w-0">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                             <h3 class="font-bold text-slate-800 flex items-center">
                                 <i class="fa-solid fa-file-invoice text-indigo-500 mr-2"></i>Notes
@@ -322,9 +369,9 @@
                 </div>
 
                 <!-- CENTER PANEL: YouTube Guides & Web Resource Links (5 Cols) -->
-                <div class="lg:col-span-5 flex flex-col space-y-6">
+                <div class="lg:col-span-5 flex flex-col space-y-6 min-w-0">
                     <!-- Career Relevance (roadmap.sh) -->
-                    <div id="careersContainerCard" class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 hidden transition-colors duration-200">
+                    <div id="careersContainerCard" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 hidden transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-4 flex items-center">
                             <i class="fa-solid fa-compass text-rose-500 mr-2"></i>Career & Role Relevance (roadmap.sh)
                         </h3>
@@ -334,7 +381,7 @@
                     </div>
 
                     <!-- YouTube Videos -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 transition-colors duration-200">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-4 flex items-center">
                             <i class="fa-brands fa-youtube text-red-500 mr-2"></i>Curated Video Guides
                         </h3>
@@ -344,7 +391,7 @@
                     </div>
 
                     <!-- Web Resource Links -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 transition-colors duration-200">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-4 flex items-center">
                             <i class="fa-solid fa-link text-blue-500 mr-2"></i>Web Resource Links
                         </h3>
@@ -355,10 +402,10 @@
                 </div>
 
                 <!-- RIGHT PANEL: PYQ Analytics, Graph & Roadmap (4 Cols) -->
-                <div class="lg:col-span-4 flex flex-col space-y-6">
+                <div class="lg:col-span-4 flex flex-col space-y-6 min-w-0">
                     
                     <!-- Topic Frequency Graph -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 transition-colors duration-200">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-2 flex items-center">
                             <i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>Topic Exam Frequency
                         </h3>
@@ -369,7 +416,7 @@
                     </div>
 
                     <!-- Did You Know? / Fun Facts -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 transition-colors duration-200">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-3 flex items-center">
                             <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>Did You Know?
                         </h3>
@@ -384,7 +431,7 @@
                     </div>
 
                     <!-- AI Study Roadmap -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 transition-colors duration-200">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0 overflow-hidden">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                             <h3 class="font-bold text-slate-800 flex items-center">
                                 <i class="fa-solid fa-route text-purple-500 mr-2"></i>Topic Study Roadmap
@@ -393,7 +440,7 @@
                                 0 / 5 Done
                             </span>
                         </div>
-                        <div id="roadmapTimeline" class="space-y-4 relative border-l-2 border-indigo-100 ml-3 pl-4">
+                        <div id="roadmapTimeline" class="space-y-4 relative border-l-2 border-indigo-100 ml-3 pl-4 min-w-0 max-w-full">
                             <!-- Timeline steps with interactive checkboxes -->
                         </div>
                     </div>
@@ -403,7 +450,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 transition-colors duration-200">
+    <footer class="footer-omni py-6 text-center text-xs transition-colors duration-200">
         <p>&copy; 2026 OmniLearn Learning Hub. Designed for students globally.</p>
     </footer>
 
@@ -592,7 +639,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="app.js"></script>
-    <script src="main.js"></script>
+    <script src="js/edu_canvas.js?v=3.0"></script>
+    <script src="app.js?v=3.0"></script>
+    <script src="main.js?v=3.0"></script>
 </body>
 </html>

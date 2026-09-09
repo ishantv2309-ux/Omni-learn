@@ -524,32 +524,44 @@ def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[
                     f"   - *Solution*: Construct a rigorous comparative analysis covering design complexity, hardware cost, fault tolerance, and asymptotic performance."
                 )
         else:
+            from backend.routes.topic_notes_engine import build_realistic_topic_notes
+            full_topic = f"{clean_name}: {primary_topic}"
+            raw_academic_notes = build_realistic_topic_notes(full_topic, clean_name)
+            if raw_academic_notes and len(raw_academic_notes) > 200:
+                header = (
+                    f"# {clean_code}: Unit {unit_num} - Comprehensive Revision & Exam Guide\n\n"
+                    f"### AKTU End-Semester Examination Notes\n"
+                    f"- Course Code: {clean_code}\n"
+                    f"- Course Name: {clean_name}\n"
+                    f"- Unit: {unit_num} - [{primary_topic}]\n"
+                    f"- Allowed Topics: [{topics_str}]\n\n"
+                )
+                return header + raw_academic_notes
+
             math_block = (
-                f"#### 1. Mathematical Formulation for Unit {unit_num} ({primary_topic})\n"
-                f"The primary analytical governing equation tested under Unit {unit_num} of {clean_name} is formulated as:\n\n"
-                f"$$\\mathcal{{L}}[\\Phi(t)] = \\int_{{0}}^{{\\infty}} \\Phi(t) e^{{-st}} \\, dt$$\n\n"
-                f"Under Dirichlet boundary constraints across domain $\\Omega$:\n"
-                f"$$\\nabla^2 \\Psi(\\mathbf{{r}}) + k^2 \\Psi(\\mathbf{{r}}) = 0$$"
+                f"#### 1. Universal Engineering Foundations for Unit {unit_num} ({primary_topic})\n"
+                f"Governing system state balance for {clean_name}:\n\n"
+                f"$$\\frac{{d \\mathbf{{x}}(t)}}{{dt}} = \\mathbf{{A}} \\mathbf{{x}}(t) + \\mathbf{{B}} \\mathbf{{u}}(t)$$"
             )
             sec_a = (
                 f"1. **Q1: Define {primary_topic} as examined in Unit {unit_num} of {clean_name}.**\n"
-                f"   - *Answer:* {primary_topic} represents the central governing principle of Unit {unit_num}, defining state response and conservation under physical/system constraints.\n\n"
-                f"2. **Q2: State the governing relation or condition for {secondary_topic}.**\n"
-                f"   - *Answer:* It enforces equilibrium invariance such that the total state variance remains bounded within prescribed system tolerances.\n\n"
+                f"   - *Answer:* Fundamental governing principle in {clean_name}.\n\n"
+                f"2. **Q2: State the primary operational objective of {secondary_topic}.**\n"
+                f"   - *Answer:* Coordinates state transitions and enforces equilibrium.\n\n"
                 f"3. **Q3: What are the key boundary conditions applicable to Unit {unit_num}?**\n"
-                f"   - *Answer:* Standard Dirichlet (fixed boundary value) and Neumann (specified gradient normal to boundary) conditions.\n\n"
+                f"   - *Answer:* Standard Dirichlet and Neumann boundary conditions.\n\n"
                 f"4. **Q4: List two practical engineering applications of {primary_topic}.**\n"
-                f"   - *Answer:* Real-time state estimation and optimization of parameter trajectories in industrial engineering systems.\n\n"
-                f"5. **Q5: State the dimensional formula and SI unit of the primary coefficient in {primary_topic}.**\n"
-                f"   - *Answer:* Standard SI units derived from fundamental dimensional quantities $[M^a L^b T^c I^d]$ ensuring dimensional homogeneity across governing state equations."
+                f"   - *Answer:* Real-time parameter estimation and process control.\n\n"
+                f"5. **Q5: State the dimension and SI unit of the primary coefficient in {primary_topic}.**\n"
+                f"   - *Answer:* Standard SI units derived from fundamental dimensional quantities.\n"
             )
             sec_b = (
-                f"1. **Q1 (Numerical / Derivation): Derive the fundamental governing formulation of {primary_topic} from first principles for Unit {unit_num} (10 Marks).**\n"
-                f"   - *Solution*: Establish the differential control volume $dV$. Formulate the rate of influx, generation, and accumulation. Invoke Gauss's divergence theorem to transform flux into spatial gradient form and deduce the universal characteristic differential equation.\n\n"
-                f"2. **Q2 (Numerical / Derivation): Solve the comprehensive analytical problem on {secondary_topic} according to AKTU marking standards (10 Marks).**\n"
-                f"   - *Solution*: State boundary values and given parameters clearly. Execute step-by-step algebraic substitution, state intermediate assumptions, and enclose the final numerical evaluation in standard boxed form.\n\n"
-                f"3. **Q3 (System / Comparative): Discuss the frequency-domain transient response and stability bounds for Unit {unit_num} governing systems (10 Marks).**\n"
-                f"   - *Solution*: Transform state equations to Laplace domain $\\Phi(s) = \\frac{{N(s)}}{{D(s)}}$. Apply Routh-Hurwitz criterion to denominator polynomial $D(s)$ to establish stable parameter ranges."
+                f"1. **Q1 (Derivation): Formulate the governing system equation of {primary_topic} from first principles for Unit {unit_num} (10 Marks).**\n"
+                f"   - *Solution*: Apply conservation laws across differential volume $dV$ and deduce the governing equations.\n\n"
+                f"2. **Q2 (Numerical): Solve the analytical problem on {secondary_topic} according to AKTU standards (10 Marks).**\n"
+                f"   - *Solution*: Substitute boundary conditions and state intermediate steps clearly.\n\n"
+                f"3. **Q3 (System): Analyze the transient response and stability bounds for Unit {unit_num} (10 Marks).**\n"
+                f"   - *Solution*: Construct the characteristic transfer function and apply stability criteria.\n"
             )
 
     return (
@@ -582,7 +594,7 @@ def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[
     )
 
 def _sync_fetch_gemini_topic_notes(prompt: str) -> Optional[str]:
-    candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+    candidate_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
     try:
         from google.genai import types
         client = GeminiService.get_client()
@@ -702,7 +714,7 @@ def _is_valid_aktu_notes(text: str, u: int, c: str, n: str) -> bool:
     return True
 
 def _sync_fetch_gemini_unit_notes(prompt: str, u: int, c: str, n: str) -> Optional[str]:
-    candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
+    candidate_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
     try:
         from google.genai import types
         client = GeminiService.get_client()

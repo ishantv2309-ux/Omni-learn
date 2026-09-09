@@ -42,17 +42,15 @@ def is_inappropriate_topic(topic: str) -> bool:
     return False
 
 def is_non_btech_topic(topic: str) -> bool:
-    """Checks whether query falls outside B.Tech Engineering & Applied Sciences."""
+    """Checks whether query is non-academic (entertainment, gossip, recipes, etc.)."""
     t = topic.strip().lower()
-    non_btech_keywords = [
-        "damnum sine injuria", "injuria sine damno", "volenti non fit",
-        "res ipsa loquitur", "legal maxim", "tort", "law of torts",
-        "ipc section", "criminal law", "civil litigation", "medical advice",
-        "paracetamol", "symptoms of", "diagnosis", "disease treatment",
+    non_academic_keywords = [
         "cooking", "recipe", "baking cake", "pasta sauce", "entertainment",
-        "bollywood", "celebrity gossip", "horoscope", "astrology", "ipl score"
+        "bollywood", "hollywood", "celebrity gossip", "horoscope", "astrology",
+        "ipl score", "cricket score", "movie download", "video game cheat",
+        "dating advice"
     ]
-    for kw in non_btech_keywords:
+    for kw in non_academic_keywords:
         if kw in t:
             return True
     return False
@@ -67,7 +65,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     if is_non_btech_topic(clean_query):
         raise HTTPException(
             status_code=400,
-            detail="This topic is outside your academic syllabus. Only B.Tech & Engineering topics are allowed here."
+            detail="This search query is outside academic curricula. Please search for educational subjects, science, engineering, mathematics, law, or economics."
         )
 
     if is_inappropriate_topic(clean_query):
@@ -99,6 +97,15 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                 and cached_json.get("exam_frequency")
                 and (cached_json.get("did_you_know") or cached_json.get("fun_fact"))):
                 print(f"Serving cached search results for: '{clean_query}'")
+                if not cached_json.get("quick_example") and not cached_json.get("quickExample"):
+                    cached_qe = GeminiService.build_quick_example(
+                        cached_json.get("topic") or cached_json.get("title") or clean_query,
+                        cached_json.get("category") or cached_json.get("domain") or "Academic Curriculum",
+                        cached_json.get("core_formulations") or "",
+                        cached_json.get("overview") or cached_json.get("summary") or ""
+                    )
+                    cached_json["quick_example"] = cached_qe
+                    cached_json["quickExample"] = cached_qe
                 return SearchResponse.model_validate(cached_json)
 
     print(f"Cache miss. Performing live aggregation for: '{clean_query}'")
@@ -286,7 +293,8 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         exam_freq_list = [11 + (base_hash % 7), 14 + ((base_hash + 1) % 8), 17 + ((base_hash + 2) % 9), 22 + ((base_hash + 3) % 10), 26 + ((base_hash + 4) % 12)]
         exam_freq_dicts = [{"year": 2021 + i, "count": c} for i, c in enumerate(exam_freq_list)]
 
-    overview_text = gemini_data.get("overview") or gemini_data.get("summary") or ""
+    raw_overview = gemini_data.get("overview") or gemini_data.get("summary") or ""
+    overview_text = GeminiService.clean_context_boilerplate(raw_overview)
     diff_score = float(gemini_data.get("difficultyScore") or gemini_data.get("difficulty_score") or 6.5)
     diff_level = gemini_data.get("difficultyLevel") or ("Advanced" if diff_score > 7 else ("Intermediate" if diff_score > 4 else "Beginner"))
     ai_eval = gemini_data.get("ai_evaluation") or gemini_data.get("aiEvaluation") or gemini_data.get("difficulty_reasons") or ""
@@ -326,6 +334,8 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         "ai_evaluation": ai_eval,
         "theoretical_foundations": gemini_data.get("theoretical_foundations") or "",
         "core_formulations": gemini_data.get("core_formulations") or "",
+        "quick_example": gemini_data.get("quick_example") or gemini_data.get("quickExample") or GeminiService.build_quick_example(canonical_topic, category_name, gemini_data.get("core_formulations") or "", overview_text, llm_example=gemini_data.get("quick_example") or gemini_data.get("quickExample")),
+        "quickExample": gemini_data.get("quickExample") or gemini_data.get("quick_example") or GeminiService.build_quick_example(canonical_topic, category_name, gemini_data.get("core_formulations") or "", overview_text, llm_example=gemini_data.get("quickExample") or gemini_data.get("quick_example")),
         "study_notes": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or (note_responses[0].ocr_text if note_responses else "")),
         "notes_content": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or gemini_data.get("notes_content") or (note_responses[0].ocr_text if note_responses else "")),
         "exam_frequency": exam_freq_dicts,

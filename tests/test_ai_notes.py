@@ -364,3 +364,51 @@ def test_exact_aktu_exam_specialist_output_structure():
         assert ("## 2. AKTU Exam Scoring Strategy & Pitfalls" in notes or "## 2. Exam Scoring Strategy & Common Pitfalls" in notes)
         assert ("## 3. Section A: 2-Mark Short Answer Questions (10 Fully Solved Questions)" in notes or "## 3. Section A: 2-Mark Short Questions & Answers" in notes)
         assert ("## 4. Section B & C: 10-Mark Long Questions & Numericals (5 Fully Solved Questions)" in notes or "## 4. Section B & C: 10-Mark Long Questions & Answers" in notes)
+
+
+def test_cross_discipline_physics_chemistry_notes_no_cs_bleed():
+    """Verify topic notes and unit notes dynamically adapt to discipline with zero CS template bleed."""
+    # 1. Topic Notes for Gravity
+    res = client.post("/api/generate-notes", json={
+        "topic": "gravity",
+        "subject": "Engineering Physics"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    notes = data.get("notes") or ""
+    
+    assert "Physics" in notes
+    assert ("6.67" in notes or "GM" in notes or "Universal Gravitation" in notes or "escape velocity" in notes.lower())
+    # Verify complete absence of CS templates
+    assert "Address(A[i])" not in notes
+    assert "BaseAddress" not in notes
+    assert "Pointer Synchronization" not in notes
+    assert "contiguous blocks or heap-allocated pointer chains" not in notes
+
+    # 2. Unit Notes for Engineering Physics (Unit 1: Relativistic Mechanics)
+    res_phys = client.post("/api/generate-unit-notes", json={
+        "subject_code": "KAS101T",
+        "subject_name": "Engineering Physics",
+        "unit_number": 1,
+        "aktu_syllabus_topics": ["Relativistic Mechanics", "Michelson-Morley", "Lorentz Transformation"]
+    })
+    assert res_phys.status_code == 200
+    phys_notes = res_phys.json().get("unit_notes") or res_phys.json().get("notes")
+    assert ("Lorentz" in phys_notes or "Relativistic" in phys_notes or "Michelson" in phys_notes)
+    assert "Address(A[i])" not in phys_notes
+    assert "Linked List" not in phys_notes
+    assert "Booth" not in phys_notes
+
+    # 3. Unit Notes for Engineering Chemistry (Unit 3: Electrochemistry & Corrosion)
+    res_chem = client.post("/api/generate-unit-notes", json={
+        "subject_code": "KAS102T",
+        "subject_name": "Engineering Chemistry",
+        "unit_number": 3,
+        "aktu_syllabus_topics": ["Electrochemistry", "Nernst equation", "Corrosion"]
+    })
+    assert res_chem.status_code == 200
+    chem_notes = res_chem.json().get("unit_notes") or res_chem.json().get("notes")
+    assert ("Nernst" in chem_notes or "Corrosion" in chem_notes or "galvanic" in chem_notes.lower())
+    assert "Address(A[i])" not in chem_notes
+    assert "Binary Search" not in chem_notes
+

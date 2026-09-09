@@ -98,4 +98,6 @@ class SearchResponse(BaseModel):
     notes_content: Optional[str] = None
     exam_frequency: Optional[Any] = None
     examFrequency: Optional[List[int]] = None
+    quick_example: Optional[Dict[str, Any]] = None
+    quickExample: Optional[Dict[str, Any]] = None
 

@@ -707,9 +707,8 @@ input:focus, select:focus {
 
 /* Glass Navbar Buttons (Bookmarks, Settings) */
 .glass-nav-btn {
-    background: rgba(255, 255, 255, 0.16) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
@@ -778,3 +777,1314 @@ input:focus, select:focus {
     line-height: 1.5 !important;
 }
 
+/* ==========================================================================
+   OmniLearn Ultra-Modern Theme System (Clean, Crisp, Professional)
+   Designed for High Contrast, Sleek Surfaces, and Zero Clutter
+   ========================================================================== */
+
+:root {
+    --omni-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   GLOBAL NAVBAR (Clean, Translucent, Always High Contrast)
+   ========================================================================== */
+.navbar-omni {
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    transition: var(--transition-smooth) !important;
+}
+
+.omni-brand-text {
+    font-weight: 800 !important;
+    letter-spacing: -0.025em !important;
+    font-size: 1.25rem !important;
+}
+
+/* ==========================================================================
+   DARK MODE (Deep Luxury Carbon & Sapphire Obsidian)
+   ========================================================================== */
+html[data-theme="dark"], html.dark {
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html.dark body {
+    background-color: #0A0E17 !important;
+    background-image: 
+        radial-gradient(at 50% 0%, rgba(30, 58, 102, 0.25) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(20, 30, 50, 0.3) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, rgba(25, 40, 65, 0.2) 0px, transparent 50%) !important;
+    background-attachment: fixed !important;
+    color: #F1F5F9 !important;
+}
+
+/* Navbar in Dark Mode */
+html[data-theme="dark"] .navbar-omni,
+html.dark .navbar-omni {
+    background: rgba(10, 14, 23, 0.88) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
+}
+
+html[data-theme="dark"] .omni-brand-text,
+html.dark .omni-brand-text {
+    background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 50%, #93C5FD 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+html[data-theme="dark"] #navSearchInput,
+html.dark #navSearchInput {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="dark"] #navSearchInput:focus,
+html.dark #navSearchInput:focus {
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: #60A5FA !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important;
+}
+
+/* Landing Screen in Dark Mode */
+html[data-theme="dark"] .omni-hero-cap,
+html.dark .omni-hero-cap {
+    color: #60A5FA !important;
+    filter: drop-shadow(0 0 30px rgba(96, 165, 250, 0.45)) !important;
+}
+
+html[data-theme="dark"] #landingScreen h1,
+html.dark #landingScreen h1 {
+    color: #FFFFFF !important;
+    background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 45%, #93C5FD 80%, #C084FC 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+html[data-theme="dark"] #landingScreen p,
+html.dark #landingScreen p {
+    color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] #mainSearchInput,
+html.dark #mainSearchInput {
+    background: rgba(17, 24, 39, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme="dark"] #mainSearchInput::placeholder,
+html.dark #mainSearchInput::placeholder {
+    color: #64748B !important;
+}
+
+html[data-theme="dark"] #mainSearchInput:focus,
+html.dark #mainSearchInput:focus {
+    border-color: #60A5FA !important;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(96, 165, 250, 0.3) !important;
+}
+
+html[data-theme="dark"] .omni-popular-label,
+html.dark .omni-popular-label {
+    color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .omni-pill,
+html.dark .omni-pill {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #E2E8F0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: var(--transition-smooth);
+}
+
+html[data-theme="dark"] .omni-pill:hover,
+html.dark .omni-pill:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+    border-color: #60A5FA !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================================================
+   DARK MODE DASHBOARD CARDS & CONTAINERS (Eliminates Trash White Boxes)
+   ========================================================================== */
+
+/* Main outer cards */
+html[data-theme="dark"] .bg-white,
+html.dark .bg-white,
+html[data-theme="dark"] .overview-card,
+html.dark .overview-card,
+html[data-theme="dark"] .difficulty-card,
+html.dark .difficulty-card {
+    background: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+    border-radius: 16px !important;
+}
+
+/* Headings & Dividers */
+html[data-theme="dark"] h2, html.dark h2,
+html[data-theme="dark"] h3, html.dark h3,
+html[data-theme="dark"] h4, html.dark h4,
+html[data-theme="dark"] .text-slate-800, html.dark .text-slate-800,
+html[data-theme="dark"] .text-slate-900, html.dark .text-slate-900 {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .border-slate-100, html.dark .border-slate-100,
+html[data-theme="dark"] .border-slate-200, html.dark .border-slate-200,
+html[data-theme="dark"] .border-slate-200\/80, html.dark .border-slate-200\/80,
+html[data-theme="dark"] .border-slate-200\/70, html.dark .border-slate-200\/70,
+html[data-theme="dark"] .border-slate-200\/60, html.dark .border-slate-200\/60 {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Body & Subtitle Text */
+html[data-theme="dark"] .text-slate-600, html.dark .text-slate-600,
+html[data-theme="dark"] .text-slate-500, html.dark .text-slate-500,
+html[data-theme="dark"] .text-slate-400, html.dark .text-slate-400,
+html[data-theme="dark"] .overview-text, html.dark .overview-text,
+html[data-theme="dark"] #difficultyVerdict, html.dark #difficultyVerdict {
+    color: #94A3B8 !important;
+}
+
+/* CRITICAL FIX: All Inner Nested Cards (Notes, Careers, Videos, Links) */
+html[data-theme="dark"] .bg-slate-50,
+html.dark .bg-slate-50,
+html[data-theme="dark"] #notesList > div,
+html.dark #notesList > div,
+html[data-theme="dark"] #careersContainer > div,
+html.dark #careersContainer > div,
+html[data-theme="dark"] #videoContainer > div,
+html.dark #videoContainer > div,
+html[data-theme="dark"] #resourcesContainer > div,
+html.dark #resourcesContainer > div {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    color: #E2E8F0 !important;
+    border-radius: 12px !important;
+    transition: var(--transition-smooth);
+}
+
+html[data-theme="dark"] .bg-slate-50:hover,
+html.dark .bg-slate-50:hover,
+html[data-theme="dark"] #notesList > div:hover,
+html.dark #notesList > div:hover,
+html[data-theme="dark"] #careersContainer > div:hover,
+html.dark #careersContainer > div:hover,
+html[data-theme="dark"] #videoContainer > div:hover,
+html.dark #videoContainer > div:hover,
+html[data-theme="dark"] #resourcesContainer > div:hover,
+html.dark #resourcesContainer > div:hover {
+    background: rgba(255, 255, 255, 0.065) !important;
+    border-color: rgba(147, 197, 253, 0.3) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Search inside notes input */
+html[data-theme="dark"] #noteSearchInput,
+html.dark #noteSearchInput {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] #noteSearchInput::placeholder,
+html.dark #noteSearchInput::placeholder {
+    color: #64748B !important;
+}
+
+/* Career Relevance Pathway Box */
+html[data-theme="dark"] .bg-indigo-50\/70,
+html.dark .bg-indigo-50\/70,
+html[data-theme="dark"] .border-indigo-100,
+html.dark .border-indigo-100 {
+    background: rgba(99, 102, 241, 0.08) !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+    color: #C7D2FE !important;
+}
+
+html[data-theme="dark"] .text-indigo-800,
+html.dark .text-indigo-800 {
+    color: #A5B4FC !important;
+}
+
+/* Did You Know Box */
+html[data-theme="dark"] .bg-amber-50\/60,
+html.dark .bg-amber-50\/60,
+html[data-theme="dark"] .border-amber-100\/70,
+html.dark .border-amber-100\/70 {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    color: #FDE68A !important;
+}
+
+/* Detailed Academic Notes Container */
+html[data-theme="dark"] #detailedBreakdownContainer,
+html.dark #detailedBreakdownContainer {
+    background: #080C14 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+    border-radius: 12px !important;
+}
+
+/* Quick Example Code Terminal Box */
+#quickExampleSection {
+    background: #080C14 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+#quickExampleSection > div:first-child {
+    background: #0D1321 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#quickExampleLangBadge {
+    background: rgba(96, 165, 250, 0.15) !important;
+    color: #93C5FD !important;
+    border: 1px solid rgba(96, 165, 250, 0.3) !important;
+}
+
+#quickExampleExplanation {
+    background: rgba(13, 19, 33, 0.8) !important;
+    color: #94A3B8 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Progress Bars & Badges */
+#difficultyBar {
+    background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%) !important;
+    border-radius: 9999px;
+}
+
+.glass-badge-indigo {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #A5B4FC !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.glass-badge-purple {
+    background: rgba(168, 85, 247, 0.15) !important;
+    color: #D8B4FE !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+}
+
+.glass-badge-amber {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #FCD34D !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+.glass-badge-emerald {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #6EE7B7 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Modals & Popups in Dark Mode */
+html[data-theme="dark"] .glass-modal-container,
+html.dark .glass-modal-container {
+    background: #0F172A !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 20px !important;
+}
+
+html[data-theme="dark"] .glass-modal-header,
+html.dark .glass-modal-header {
+    background: #090E17 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .glass-modal-container input,
+html.dark .glass-modal-container input,
+html[data-theme="dark"] .glass-modal-container textarea,
+html.dark .glass-modal-container textarea {
+    background: #090E17 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+}
+
+/* Bookmarks Sidebar */
+html[data-theme="dark"] #bookmarksSidebar,
+html.dark #bookmarksSidebar {
+    background: rgba(15, 23, 42, 0.98) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .bookmark-card,
+html.dark .bookmark-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #F8FAFC !important;
+}
+
+/* Footer in Dark Mode */
+html[data-theme="dark"] .footer-omni,
+html.dark .footer-omni {
+    background: rgba(10, 14, 23, 0.9) !important;
+    color: #64748B !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   LIGHT MODE (Clean, Bright, Apple/Linear High-End Porcelain)
+   ========================================================================== */
+html[data-theme="light"], html.light {
+    color-scheme: light;
+}
+
+html[data-theme="light"] body,
+html.light body {
+    background: #F8FAFC !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .navbar-omni,
+html.light .navbar-omni {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+html[data-theme="light"] .omni-brand-text,
+html.light .omni-brand-text {
+    color: #0F172A !important;
+    -webkit-text-fill-color: #0F172A !important;
+}
+
+html[data-theme="light"] .omni-hero-cap,
+html.light .omni-hero-cap {
+    color: #2563EB !important;
+    filter: drop-shadow(0 6px 18px rgba(37, 99, 235, 0.2)) !important;
+}
+
+html[data-theme="light"] #landingScreen h1,
+html.light #landingScreen h1 {
+    color: #0F172A !important;
+    -webkit-text-fill-color: #0F172A !important;
+}
+
+html[data-theme="light"] #landingScreen p,
+html.light #landingScreen p {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] #mainSearchInput,
+html.light #mainSearchInput {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] #navSearchInput,
+html.light #navSearchInput {
+    background: #F1F5F9 !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .bg-white,
+html.light .bg-white,
+html[data-theme="light"] .overview-card,
+html.light .overview-card,
+html[data-theme="light"] .difficulty-card,
+html.light .difficulty-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+    border-radius: 16px !important;
+}
+
+html[data-theme="light"] .bg-slate-50,
+html.light .bg-slate-50 {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .footer-omni,
+html.light .footer-omni {
+    background: #FFFFFF !important;
+    color: #64748B !important;
+    border-top: 1px solid #E2E8F0 !important;
+}
+
+/* ==========================================================================
+   BUTTONS (Sleek, High Contrast, Modern Interactive States)
+   ========================================================================== */
+.glass-btn-primary {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    transition: var(--transition-smooth) !important;
+}
+
+.glass-btn-primary:hover {
+    background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+.glass-btn-secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #F1F5F9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    transition: var(--transition-smooth) !important;
+}
+
+.glass-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    transform: translateY(-1px);
+}
+
+.glass-nav-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    transition: var(--transition-smooth) !important;
+}
+
+.glass-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   FORMULA & TEXT OVERFLOW CONTAINMENT (Prevents Any Card Overflow)
+   ========================================================================== */
+.katex-display {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0.35rem 0 !important;
+    margin: 0.5rem 0 !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.katex {
+    max-width: 100% !important;
+    white-space: normal !important;
+}
+
+.katex-html {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    vertical-align: middle !important;
+}
+
+#roadmapTimeline {
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+.roadmap-step-card {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+.roadmap-desc {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+.roadmap-desc pre,
+.roadmap-desc code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+}
+
+
+/* ==========================================================================
+   PERFECT LIGHT MODE SPECIFIC OVERRIDES & HIGH CONTRAST BADGES
+   ========================================================================== */
+
+/* Navbar in Light Mode */
+html[data-theme="light"] .navbar-omni,
+html.light .navbar-omni {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="light"] .omni-brand-text,
+html.light .omni-brand-text {
+    color: #0F172A !important;
+    -webkit-text-fill-color: #0F172A !important;
+    font-weight: 800 !important;
+}
+
+html[data-theme="light"] .omni-nav-icon,
+html.light .omni-nav-icon {
+    color: #2563EB !important;
+}
+
+/* Light Mode Nav Buttons (Theme Toggle & Bookmarks) */
+html[data-theme="light"] .glass-nav-btn,
+html.light .glass-nav-btn {
+    background: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="light"] .glass-nav-btn:hover,
+html.light .glass-nav-btn:hover {
+    background: #E2E8F0 !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .glass-nav-btn span,
+html.light .glass-nav-btn span {
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #navSearchInput,
+html.light #navSearchInput {
+    background: #F1F5F9 !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #navSearchInput::placeholder,
+html.light #navSearchInput::placeholder {
+    color: #64748B !important;
+}
+
+html[data-theme="light"] #navSearchContainer span,
+html.light #navSearchContainer span {
+    color: #64748B !important;
+}
+
+/* High-Contrast Light Mode Badges (Fixes washed out pastels) */
+html[data-theme="light"] .glass-badge-indigo,
+html.light .glass-badge-indigo {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+    font-weight: 600 !important;
+}
+
+html[data-theme="light"] .glass-badge-indigo i,
+html.light .glass-badge-indigo i {
+    color: #4F46E5 !important;
+}
+
+html[data-theme="light"] .glass-badge-purple,
+html.light .glass-badge-purple {
+    background: #FAF5FF !important;
+    color: #7E22CE !important;
+    border: 1px solid #E9D5FF !important;
+    font-weight: 600 !important;
+}
+
+html[data-theme="light"] .glass-badge-amber,
+html.light .glass-badge-amber {
+    background: #FFFBEB !important;
+    color: #B45309 !important;
+    border: 1px solid #FDE68A !important;
+    font-weight: 600 !important;
+}
+
+html[data-theme="light"] .glass-badge-emerald,
+html.light .glass-badge-emerald {
+    background: #ECFDF5 !important;
+    color: #047857 !important;
+    border: 1px solid #A7F3D0 !important;
+    font-weight: 600 !important;
+}
+
+/* Topic Bookmark Button */
+html[data-theme="light"] #bookmarkTopicBtn,
+html.light #bookmarkTopicBtn {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #475569 !important;
+}
+
+html[data-theme="light"] #bookmarkTopicBtn:hover,
+html.light #bookmarkTopicBtn:hover {
+    background: #EEF2FF !important;
+    border-color: #C7D2FE !important;
+    color: #4338CA !important;
+}
+
+/* Notes Section in Light Mode */
+html[data-theme="light"] #noteSearchInput,
+html.light #noteSearchInput {
+    background: #F8FAFC !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #noteSearchInput:focus,
+html.light #noteSearchInput:focus {
+    background: #FFFFFF !important;
+    border-color: #2563EB !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+html[data-theme="light"] #notesList > div,
+html.light #notesList > div {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #notesList > div:hover,
+html.light #notesList > div:hover {
+    background: #F1F5F9 !important;
+    border-color: #93C5FD !important;
+}
+
+html[data-theme="light"] .view-file-btn,
+html.light .view-file-btn {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+}
+
+/* Career & Role Relevance */
+html[data-theme="light"] #careersContainer .bg-indigo-50\/70,
+html.light #careersContainer .bg-indigo-50\/70 {
+    background: #EEF2FF !important;
+    border: 1px solid #C7D2FE !important;
+    color: #3730A3 !important;
+}
+
+html[data-theme="light"] #careersContainer .text-indigo-800,
+html.light #careersContainer .text-indigo-800 {
+    color: #312E81 !important;
+}
+
+html[data-theme="light"] #careersContainer > div,
+html.light #careersContainer > div {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #careersContainer > div:hover,
+html.light #careersContainer > div:hover {
+    background: #F1F5F9 !important;
+    border-color: #93C5FD !important;
+}
+
+/* Video Cards & Resources in Light Mode */
+html[data-theme="light"] #videoContainer > div,
+html.light #videoContainer > div,
+html[data-theme="light"] #resourcesContainer > div,
+html.light #resourcesContainer > div {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #videoContainer > div:hover,
+html.light #videoContainer > div:hover,
+html[data-theme="light"] #resourcesContainer > div:hover,
+html.light #resourcesContainer > div:hover {
+    background: #F1F5F9 !important;
+    border-color: #93C5FD !important;
+}
+
+/* Did You Know & Roadmap in Light Mode */
+html[data-theme="light"] .bg-amber-50\/60,
+html.light .bg-amber-50\/60 {
+    background: #FFFBEB !important;
+    border: 1px solid #FDE68A !important;
+    color: #92400E !important;
+}
+
+html[data-theme="light"] .roadmap-step-card,
+html.light .roadmap-step-card {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .roadmap-step-card:hover,
+html.light .roadmap-step-card:hover {
+    background: #F1F5F9 !important;
+    border-color: #93C5FD !important;
+}
+
+html[data-theme="light"] #detailedBreakdownContainer,
+html.light #detailedBreakdownContainer {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #334155 !important;
+}
+
+/* ==========================================================================
+   NAV CONTROL BUTTONS (Theme Toggle & Bookmarks) - Bulletproof Contrast
+   ========================================================================== */
+.nav-control-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-counter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.2rem 0.45rem;
+    border-radius: 9999px;
+    margin-left: 0.15rem;
+}
+
+/* Dark Mode Nav Buttons */
+html[data-theme="dark"] .nav-control-btn,
+html.dark .nav-control-btn {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="dark"] .nav-control-btn:hover,
+html.dark .nav-control-btn:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+}
+
+html[data-theme="dark"] .nav-control-btn span,
+html.dark .nav-control-btn span {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .nav-counter-badge,
+html.dark .nav-counter-badge {
+    background: #6366F1 !important;
+    color: #FFFFFF !important;
+}
+
+/* Light Mode Nav Buttons */
+html[data-theme="light"] .nav-control-btn,
+html.light .nav-control-btn {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .nav-control-btn:hover,
+html.light .nav-control-btn:hover {
+    background: #F8FAFC !important;
+    border-color: #94A3B8 !important;
+    color: #020617 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-1px);
+}
+
+html[data-theme="light"] .nav-control-btn span,
+html.light .nav-control-btn span {
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .nav-counter-badge,
+html.light .nav-counter-badge {
+    background: #4F46E5 !important;
+    color: #FFFFFF !important;
+}
+
+/* ==========================================================================
+   POPULAR TOPICS TRAY (Base, Light Mode, and Dark Mode)
+   ========================================================================== */
+.omni-popular-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.omni-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.05rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Mode Popular Pills */
+html[data-theme="light"] .omni-popular-label,
+html.light .omni-popular-label {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .omni-pill,
+html.light .omni-pill {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #1E293B !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+html[data-theme="light"] .omni-pill:hover,
+html.light .omni-pill:hover {
+    background: #F8FAFC !important;
+    border-color: #2563EB !important;
+    color: #1D4ED8 !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16) !important;
+    transform: translateY(-2px);
+}
+
+html[data-theme="light"] .omni-pill-periwinkle:hover { border-color: #2563EB !important; color: #1D4ED8 !important; }
+html[data-theme="light"] .omni-pill-mauve:hover { border-color: #7C3AED !important; color: #6D28D9 !important; }
+html[data-theme="light"] .omni-pill-blush:hover { border-color: #DB2777 !important; color: #BE185D !important; }
+html[data-theme="light"] .omni-pill-prussian:hover { border-color: #0284C7 !important; color: #0369A1 !important; }
+html[data-theme="light"] .omni-pill-night:hover { border-color: #4F46E5 !important; color: #4338CA !important; }
+
+/* Dark Mode Popular Pills */
+html[data-theme="dark"] .omni-popular-label,
+html.dark .omni-popular-label {
+    color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .omni-pill,
+html.dark .omni-pill {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.13) !important;
+    color: #E2E8F0 !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="dark"] .omni-pill:hover,
+html.dark .omni-pill:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: #60A5FA !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 16px rgba(96, 165, 250, 0.25) !important;
+    transform: translateY(-2px);
+}
+
+html[data-theme="dark"] .omni-pill-periwinkle:hover { border-color: #60A5FA !important; }
+html[data-theme="dark"] .omni-pill-mauve:hover { border-color: #C084FC !important; }
+html[data-theme="dark"] .omni-pill-blush:hover { border-color: #F472B6 !important; }
+html[data-theme="dark"] .omni-pill-prussian:hover { border-color: #38BDF8 !important; }
+html[data-theme="dark"] .omni-pill-night:hover { border-color: #818CF8 !important; }
+
+/* ==========================================================================
+   PRACTICAL REAL-WORLD EXAMPLE & EXPLANATION CARD (NO CODE)
+   ========================================================================== */
+.example-card-omni {
+    border-radius: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+/* Dark Mode Example Card */
+html[data-theme="dark"] .example-card-omni,
+html.dark .example-card-omni {
+    background: rgba(13, 21, 37, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .example-card-header,
+html.dark .example-card-header {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .example-icon-badge,
+html.dark .example-icon-badge {
+    background: rgba(245, 158, 11, 0.18) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-theme="dark"] .example-label,
+html.dark .example-label {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .example-title,
+html.dark .example-title {
+    color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .example-badge,
+html.dark .example-badge {
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: #C7D2FE !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+}
+
+html[data-theme="dark"] .example-copy-btn,
+html.dark .example-copy-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+html[data-theme="dark"] .example-copy-btn:hover,
+html.dark .example-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .example-scenario-box,
+html.dark .example-scenario-box {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .example-section-subhead,
+html.dark .example-section-subhead {
+    color: #A5B4FC !important;
+}
+
+html[data-theme="dark"] .example-body-text,
+html.dark .example-body-text {
+    color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .example-takeaway-box,
+html.dark .example-takeaway-box {
+    background: rgba(99, 102, 241, 0.12) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+html[data-theme="dark"] .example-takeaway-title,
+html.dark .example-takeaway-title {
+    color: #C7D2FE !important;
+}
+
+html[data-theme="dark"] .example-takeaway-text,
+html.dark .example-takeaway-text {
+    color: #F8FAFC !important;
+}
+
+/* Light Mode Example Card */
+html[data-theme="light"] .example-card-omni,
+html.light .example-card-omni {
+    background: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .example-card-header,
+html.light .example-card-header {
+    background: #F8FAFC !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+html[data-theme="light"] .example-icon-badge,
+html.light .example-icon-badge {
+    background: #FEF3C7 !important;
+    border: 1px solid #FDE68A !important;
+}
+
+html[data-theme="light"] .example-label,
+html.light .example-label {
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .example-title,
+html.light .example-title {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .example-badge,
+html.light .example-badge {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+}
+
+html[data-theme="light"] .example-copy-btn,
+html.light .example-copy-btn {
+    background: #FFFFFF !important;
+    color: #334155 !important;
+    border: 1px solid #CBD5E1 !important;
+}
+html[data-theme="light"] .example-copy-btn:hover,
+html.light .example-copy-btn:hover {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .example-scenario-box,
+html.light .example-scenario-box {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+html[data-theme="light"] .example-section-subhead,
+html.light .example-section-subhead {
+    color: #4338CA !important;
+}
+
+html[data-theme="light"] .example-body-text,
+html.light .example-body-text {
+    color: #1E293B !important;
+}
+
+html[data-theme="light"] .example-takeaway-box,
+html.light .example-takeaway-box {
+    background: #EFF6FF !important;
+    border: 1px solid #BFDBFE !important;
+}
+
+html[data-theme="light"] .example-takeaway-title,
+html.light .example-takeaway-title {
+    color: #1E40AF !important;
+}
+
+html[data-theme="light"] .example-takeaway-text,
+html.light .example-takeaway-text {
+    color: #0F172A !important;
+}
+
+/* ==========================================================================
+   MODERN SEARCH BUTTON & INPUT STYLING
+   ========================================================================== */
+.search-form-wrapper {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-btn-modern {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #2563EB 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-btn-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.75s ease;
+}
+
+.search-btn-modern:hover::before {
+    left: 140%;
+}
+
+.search-btn-modern:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.55), 0 0 16px rgba(99, 102, 241, 0.4) !important;
+}
+
+.search-btn-modern:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* ==========================================================================
+   INTERACTIVE EDUCATIONAL STUDY PANEL & BACKGROUND CANVASES
+   ========================================================================== */
+#eduBackgroundLayer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+#eduConstellationCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+}
+
+/* Ensure content layers stay above the background canvas */
+header.navbar-omni,
+main {
+    position: relative;
+    z-index: 10;
+}
+
+/* Educational Panel Styling (Glassmorphism & Theme Support) */
+.edu-panel-omni {
+    position: relative;
+    backdrop-filter: blur(16px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode Edu Panel */
+html[data-theme="dark"] .edu-panel-omni,
+html.dark .edu-panel-omni {
+    background: rgba(15, 23, 42, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .edu-panel-omni:hover,
+html.dark .edu-panel-omni:hover {
+    border-color: rgba(99, 102, 241, 0.35) !important;
+    box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2) !important;
+}
+
+html[data-theme="dark"] .edu-domain-pill,
+html.dark .edu-domain-pill {
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: #C7D2FE !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+}
+
+html[data-theme="dark"] .edu-nav-btn,
+html.dark .edu-nav-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"] .edu-nav-btn:hover,
+html.dark .edu-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html[data-theme="dark"] .edu-explore-btn,
+html.dark .edu-explore-btn {
+    background: rgba(99, 102, 241, 0.2) !important;
+    color: #C7D2FE !important;
+    border: 1px solid rgba(99, 102, 241, 0.4) !important;
+}
+
+html[data-theme="dark"] .edu-explore-btn:hover,
+html.dark .edu-explore-btn:hover {
+    background: #4F46E5 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.45) !important;
+    transform: translateY(-1px);
+}
+
+/* Light Mode Edu Panel */
+html[data-theme="light"] .edu-panel-omni,
+html.light .edu-panel-omni {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1px solid #CBD5E1 !important;
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), inset 0 1px 0 #FFFFFF !important;
+}
+
+html[data-theme="light"] .edu-panel-omni:hover,
+html.light .edu-panel-omni:hover {
+    border-color: #818CF8 !important;
+    box-shadow: 0 12px 28px -4px rgba(79, 70, 229, 0.15) !important;
+}
+
+html[data-theme="light"] #eduConceptTitle {
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] #eduConceptFormula {
+    color: #4F46E5 !important;
+}
+
+html[data-theme="light"] #eduConceptInsight {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .edu-domain-pill,
+html.light .edu-domain-pill {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+}
+
+html[data-theme="light"] .edu-nav-btn,
+html.light .edu-nav-btn {
+    background: #F8FAFC !important;
+    color: #475569 !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+html[data-theme="light"] .edu-nav-btn:hover,
+html.light .edu-nav-btn:hover {
+    background: #EEF2FF !important;
+    color: #1E293B !important;
+    border-color: #94A3B8 !important;
+}
+
+html[data-theme="light"] .edu-explore-btn,
+html.light .edu-explore-btn {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+}
+
+html[data-theme="light"] .edu-explore-btn:hover,
+html.light .edu-explore-btn:hover {
+    background: #4F46E5 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+/* Keyboard Shortcut Badge & Search Input Focus Polish */
+html[data-theme="light"] #mainSearchForm kbd,
+html.light #mainSearchForm kbd {
+    background: #F1F5F9 !important;
+    color: #475569 !important;
+    border-color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] #mainSearchForm kbd,
+html.dark #mainSearchForm kbd {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #94A3B8 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="light"] #mainSearchInput:focus,
+html.light #mainSearchInput:focus {
+    border-color: #4F46E5 !important;
+    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.15), 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}

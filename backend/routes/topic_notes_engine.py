@@ -2,7 +2,8 @@
 OmniLearn Realistic Academic Notes Engine
 Generates maximum-size, textbook-grade revision notes for any engineering topic.
 Enforces authentic mathematical formulas, production code, step-by-step solved numericals,
-and comprehensive AKTU/University exam rubrics across all domains.
+and comprehensive AKTU/University exam rubrics across all academic domains.
+Zero copy-paste template bleed: every topic strictly reflects its governing discipline.
 """
 
 import re
@@ -12,50 +13,83 @@ def detect_academic_domain(topic: str, subject: str = "") -> str:
     """Accurately classifies the academic domain of an engineering query."""
     text = (topic + " " + subject).lower()
     
-    # Check Electrical & Electronics first
+    # 1. Engineering Physics & Applied Mechanics
+    physics_keywords = [
+        "gravity", "gravitation", "kepler", "orbital", "escape velocity", "planetary motion",
+        "newton's law", "newton", "force", "friction", "kinematics", "dynamics",
+        "projectile", "work energy", "collision", "momentum", "center of mass",
+        "moment of inertia", "rotational motion", "torque", "angular momentum",
+        "simple harmonic", "harmonic motion", "shm", "oscillation", "pendulum", "wave",
+        "doppler", "sound", "optics", "interference", "diffraction", "polarization",
+        "laser", "fiber optic", "optical fiber", "photoelectric", "compton", "de broglie",
+        "schrodinger", "quantum", "relativity", "lorentz", "electromagnetism", "coulomb",
+        "gauss law", "electric field", "electrostatic", "capacitance", "biot-savart",
+        "ampere's law", "faraday's law", "lenz's law", "maxwell", "vector mechanics",
+        "mechanics", "physics"
+    ]
+    for kw in physics_keywords:
+        if kw in text:
+            return "Engineering Physics & Applied Mechanics"
+
+    # 2. Engineering Chemistry & Materials Science
+    chemistry_keywords = [
+        "chemistry", "polymer", "corrosion", "lubricant", "phase rule", "spectroscopy",
+        "nmr", "uv-vis", "water treatment", "hardness of water", "water hardness", "water technology", "water softening", "edta", "boiler troubles", "battery", "fuel cell",
+        "nanomaterials", "nanotechnology", "cement", "composite material", "chemical kinetics",
+        "catalysis", "electrochemistry", "galvanic", "chemical bond", "molecular orbital"
+    ]
+    for kw in chemistry_keywords:
+        if kw in text:
+            return "Engineering Chemistry & Materials Science"
+
+    # 3. Electrical & Electronics Engineering
     ee_keywords = [
         "circuit", "kcl", "kvl", "thevenin", "norton", "kirchhoff", "ohm", "superposition",
         "transistor", "diode", "bjt", "mosfet", "op-amp", "amplifier", "transformer",
         "induction motor", "synchronous", "power system", "signal and system", "fourier transform",
         "laplace transform", "z-transform", "modulation", "rlc circuit", "analog electronics",
-        "digital electronics", "logic gate", "karnaugh map", "flip-flop", "multiplexer"
+        "digital electronics", "logic gate", "karnaugh map", "flip-flop", "multiplexer",
+        "control system", "bode plot", "nyquist", "transfer function", "communication system"
     ]
     for kw in ee_keywords:
         if kw in text:
             return "Electrical & Electronics Engineering"
             
-    # Check Mechanical Engineering
+    # 4. Mechanical Engineering
     me_keywords = [
         "thermodynamic", "entropy", "enthalpy", "carnot", "otto cycle", "diesel cycle",
         "fluid mechanics", "bernoulli", "reynolds", "stress", "strain", "beam deflection",
-        "bending moment", "shear force", "kinematics", "heat transfer", "conduction", "convection",
-        "radiation", "rankine cycle", "refrigeration", "machining", "casting", "welding"
+        "bending moment", "shear force", "heat transfer", "conduction", "convection",
+        "radiation", "rankine cycle", "refrigeration", "machining", "casting", "welding",
+        "turbomachine", "ic engine"
     ]
     for kw in me_keywords:
         if kw in text:
             return "Mechanical Engineering"
             
-    # Check Engineering Mathematics
+    # 5. Engineering Mathematics
     math_keywords = [
         "integral", "derivative", "differential equation", "calculus", "matrix algebra",
         "eigenvalue", "eigenvector", "cayley-hamilton", "probability", "statistics",
         "vector calculus", "gradient", "divergence", "curl", "green's theorem", "stokes theorem",
-        "fourier series", "taylor series", "numerical methods", "runge-kutta", "newton-raphson"
+        "fourier series", "taylor series", "numerical methods", "runge-kutta", "newton-raphson",
+        "complex analysis"
     ]
     for kw in math_keywords:
         if kw in text:
             return "Engineering Mathematics"
             
-    # Check Civil Engineering
+    # 6. Civil Engineering
     civil_keywords = [
         "surveying", "concrete", "structural analysis", "soil mechanics", "geotechnical",
-        "hydrology", "environmental engineering", "rcc design", "highway engineering"
+        "hydrology", "environmental engineering", "rcc design", "highway engineering",
+        "building material", "irrigation"
     ]
     for kw in civil_keywords:
         if kw in text:
             return "Civil Engineering"
 
-    # Computer Science & Information Technology (default engineering domain)
+    # 7. Computer Science & Information Technology
     cs_keywords = [
         "array", "linked list", "recursion", "stack", "queue", "tree", "binary tree",
         "bst", "avl", "b-tree", "b+ tree", "red-black", "graph", "dfs", "bfs", "dijkstra",
@@ -68,13 +102,18 @@ def detect_academic_domain(topic: str, subject: str = "") -> str:
         "encapsulation", "compiler", "operating system", "process", "thread", "deadlock",
         "semaphore", "paging", "virtual memory", "dbms", "sql", "normalization", "relational",
         "transaction", "acid", "computer network", "tcp", "udp", "ip", "osi", "http",
-        "routing", "socket", "cryptography", "rsa", "des", "aes", "cipher", "software engineering"
+        "routing", "socket", "cryptography", "rsa", "des", "aes", "cipher", "software engineering",
+        "cyber security", "automata", "turing machine"
     ]
     for kw in cs_keywords:
         if kw in text:
             return "Computer Science & Engineering"
 
-    return subject if subject and subject != "B.Tech Engineering" else "Computer Science & Engineering"
+    # Respect explicit user subject if not the generic placeholder
+    if subject and subject.strip() not in ("B.Tech Engineering", ""):
+        return subject.strip()
+
+    return "General Engineering Sciences"
 
 
 def build_realistic_topic_notes(topic: str, subject: str = "") -> str:
@@ -83,16 +122,394 @@ def build_realistic_topic_notes(topic: str, subject: str = "") -> str:
     domain = detect_academic_domain(clean_topic, subject)
     t_lower = clean_topic.lower()
 
-    if "Computer Science" in domain:
-        return _build_cs_topic_notes(clean_topic, domain, t_lower)
-    elif "Electrical" in domain:
+    if "Physics" in domain or "Mechanics" in domain:
+        return _build_physics_topic_notes(clean_topic, domain, t_lower)
+    elif "Chemistry" in domain or "Material" in domain:
+        return _build_chemistry_topic_notes(clean_topic, domain, t_lower)
+    elif "Electrical" in domain or "Electronics" in domain:
         return _build_ee_topic_notes(clean_topic, domain, t_lower)
     elif "Mechanical" in domain:
         return _build_me_topic_notes(clean_topic, domain, t_lower)
-    elif "Mathematics" in domain:
+    elif "Mathematics" in domain or "Math" in domain:
         return _build_math_topic_notes(clean_topic, domain, t_lower)
+    elif "Civil" in domain:
+        return _build_civil_topic_notes(clean_topic, domain, t_lower)
+    elif "Computer Science" in domain:
+        return _build_cs_topic_notes(clean_topic, domain, t_lower)
     else:
         return _build_general_engineering_notes(clean_topic, domain, t_lower)
+
+
+def _build_physics_topic_notes(topic: str, domain: str, t_lower: str) -> str:
+    """Generates authentic Engineering Physics notes with real physical laws, derivations, and zero CS boilerplate."""
+    
+    is_gravity = any(w in t_lower for w in ["gravity", "gravitation", "kepler", "orbit", "satellite", "escape velocity"])
+    is_optics = any(w in t_lower for w in ["optics", "interference", "diffraction", "polarization", "laser", "fiber"])
+    is_quantum = any(w in t_lower for w in ["quantum", "relativity", "schrodinger", "de broglie", "compton", "photoelectric"])
+
+    if is_gravity:
+        math_content = (
+            "### 1. Newton's Law of Universal Gravitation & Field Formulations\n"
+            "Every particle in the universe attracts every other particle with a force proportional to the product of their masses "
+            "and inversely proportional to the square of the distance between their centers:\n\n"
+            "- **Vector Gravitational Force Equation**:\n"
+            "$$\\mathbf{F}_{12} = -G \\frac{m_1 m_2}{r^2} \\hat{\\mathbf{r}}_{12}$$\n"
+            "where $G = 6.67430 \\times 10^{-11} \\text{ N}\\cdot\\text{m}^2/\\text{kg}^2$ is the Universal Gravitational Constant.\n\n"
+            "- **Gravitational Field Intensity ($g$) at Earth's Surface**:\n"
+            "$$g = \\frac{GM}{R^2} \\approx 9.81 \\text{ m/s}^2$$\n\n"
+            "- **Variation of Acceleration due to Gravity ($g$) with Height ($h$)**:\n"
+            "  * *Exact Formula*: $$g_h = g \\left(\\frac{R}{R + h}\\right)^2 = \\frac{GM}{(R + h)^2}$$\n"
+            "  * *Approximation for $h \\ll R$*: $$g_h \\approx g \\left(1 - \\frac{2h}{R}\\right)$$\n\n"
+            "- **Variation of $g$ with Depth ($d$) below Earth's Surface**:\n"
+            "$$g_d = g \\left(1 - \\frac{d}{R}\\right)$$\n"
+            "*(At the center of the Earth, $d = R \\implies g_c = 0$).*\n\n"
+            "- **Gravitational Potential ($V$) and Potential Energy ($U$)**:\n"
+            "$$V(r) = -\\int_\\infty^r \\mathbf{E}_g \\cdot d\\mathbf{r} = -\\frac{GM}{r}$$\n"
+            "$$U(r) = m V(r) = -\\frac{GMm}{r}$$\n\n"
+            "- **Escape Velocity ($v_e$) Derivation**:\n"
+            "Equating total initial mechanical energy (Kinetic + Potential) at the surface to zero at infinity:\n"
+            "$$\\frac{1}{2} m v_e^2 - \\frac{GMm}{R} = 0 \\implies v_e = \\sqrt{\\frac{2GM}{R}} = \\sqrt{2gR} \\approx 11.19 \\text{ km/s}$$\n\n"
+            "- **Kepler's Laws of Planetary Motion**:\n"
+            "1. *Law of Orbits*: All planets move in elliptical orbits with the Sun situated at one focus ($r = \\frac{p}{1 + e \\cos\\theta}$).\n"
+            "2. *Law of Areas*: The radius vector sweeps equal areas in equal intervals of time (Conservation of Angular Momentum):\n"
+            "   $$\\frac{dA}{dt} = \\frac{L}{2m} = \\text{constant}$$\n"
+            "3. *Law of Periods*: The square of the orbital period ($T$) is proportional to the cube of the semi-major axis ($r$):\n"
+            "   $$T^2 = \\left(\\frac{4\\pi^2}{GM}\\right) r^3 \\implies \\frac{T^2}{r^3} = \\text{constant}$$"
+        )
+        sim_code = (
+            "```python\n"
+            "# Orbital Mechanics Simulation: Satellite Orbit & Escape Velocity Verification\n"
+            "import math\n"
+            "\n"
+            "class GravitationalSystem:\n"
+            "    G = 6.67430e-11  # N*m^2/kg^2\n"
+            "    M_EARTH = 5.972e24  # kg\n"
+            "    R_EARTH = 6.371e6   # meters\n"
+            "\n"
+            "    @classmethod\n"
+            "    def escape_velocity(cls, altitude_m: float = 0.0) -> float:\n"
+            "        \"\"\"Calculates escape velocity v_e = sqrt(2GM / (R + h)) in m/s.\"\"\"\n"
+            "        r = cls.R_EARTH + altitude_m\n"
+            "        return math.sqrt(2 * cls.G * cls.M_EARTH / r)\n"
+            "\n"
+            "    @classmethod\n"
+            "    def orbital_velocity(cls, altitude_m: float = 0.0) -> float:\n"
+            "        \"\"\"Calculates circular orbital velocity v_o = sqrt(GM / (R + h)) in m/s.\"\"\"\n"
+            "        r = cls.R_EARTH + altitude_m\n"
+            "        return math.sqrt(cls.G * cls.M_EARTH / r)\n"
+            "\n"
+            "    @classmethod\n"
+            "    def orbital_period(cls, altitude_m: float = 0.0) -> float:\n"
+            "        \"\"\"Calculates period T = 2*pi*sqrt(r^3 / GM) in seconds (Kepler's 3rd Law).\"\"\"\n"
+            "        r = cls.R_EARTH + altitude_m\n"
+            "        return 2 * math.pi * math.sqrt((r ** 3) / (cls.G * cls.M_EARTH))\n"
+            "\n"
+            "if __name__ == '__main__':\n"
+            "    # Surface calculations\n"
+            "    v_esc = GravitationalSystem.escape_velocity(0)\n"
+            "    v_orb = GravitationalSystem.orbital_velocity(0)\n"
+            "    print(f'Escape Velocity at Earth surface: {v_esc / 1000:.2f} km/s')\n"
+            "    print(f'Orbital Velocity (LEO): {v_orb / 1000:.2f} km/s')\n"
+            "    # Geostationary satellite: altitude ~ 35,786 km\n"
+            "    t_geo = GravitationalSystem.orbital_period(35786000)\n"
+            "    print(f'Geostationary Period: {t_geo / 3600:.2f} hours (Exact ~24h)')\n"
+            "```"
+        )
+        solved_problems = (
+            "### Problem 1: Rigorous Derivation of Escape Velocity from Earth\n"
+            "**Problem**: A body of mass $m$ is projected vertically upward from the surface of the Earth ($M = 5.972 \\times 10^{24}\\text{ kg}, R = 6.371 \\times 10^6\\text{ m}$). "
+            "Calculate the minimum initial velocity required for the body to escape Earth's gravitational field completely, neglecting atmospheric drag.\n\n"
+            "**Step-by-Step Analytical Solution**:\n"
+            "1. **Work Done against Gravitational Force from Surface to Infinity**:\n"
+            "   $$W = \\int_R^\\infty F \\, dr = \\int_R^\\infty \\frac{GMm}{r^2} \\, dr = GMm \\left[ -\\frac{1}{r} \\right]_R^\\infty = \\frac{GMm}{R}$$\n"
+            "2. **Conservation of Mechanical Energy**:\n"
+            "   The initial kinetic energy imparted to the projectile must equal or exceed this work done:\n"
+            "   $$\\frac{1}{2} m v_e^2 = \\frac{GMm}{R} \\implies v_e = \\sqrt{\\frac{2GM}{R}}$$\n"
+            "3. **Substitute Fundamental Numerical Constants**:\n"
+            "   $$v_e = \\sqrt{\\frac{2 \\times (6.6743 \\times 10^{-11}) \\times (5.972 \\times 10^{24})}{6.371 \\times 10^6}} = \\sqrt{\\frac{7.9718 \\times 10^{14}}{6.371 \\times 10^6}} = \\sqrt{1.2513 \\times 10^8} \\approx 11,186 \\text{ m/s} = 11.19 \\text{ km/s}$$\n\n"
+            "### Problem 2: Geostationary Satellite Orbital Altitude\n"
+            "**Problem**: Calculate the height above the Earth's surface of a communications satellite in geostationary orbit (orbital period $T = 24\\text{ hours} = 86,400\\text{ s}$).\n\n"
+            "**Solution**:\n"
+            "1. By Kepler's Third Law: $T^2 = \\frac{4\\pi^2}{GM} r^3 \\implies r = \\left(\\frac{GM T^2}{4\\pi^2}\\right)^{1/3}$\n"
+            "2. Evaluating the orbital radius:\n"
+            "   $$r = \\left(\\frac{(6.6743 \\times 10^{-11}) \\times (5.972 \\times 10^{24}) \\times (86400)^2}{4 \\times (3.14159)^2}\\right)^{1/3} \\approx 4.224 \\times 10^7 \\text{ m} = 42,240 \\text{ km}$$\n"
+            "3. Orbital Height above Earth's Surface:\n"
+            "   $$h = r - R = 42,240 - 6,371 = 35,869 \\text{ km}$$"
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU University Pattern)\n"
+            "1. **Q1: State Kepler's Second Law and its physical conservation principle.**\n"
+            "   - *Answer*: Kepler's Second Law states that the line joining a planet to the Sun sweeps out equal areas in equal intervals of time ($dA/dt = \\text{const}$). It is a direct physical consequence of the **Conservation of Angular Momentum** under a central gravitational force.\n"
+            "2. **Q2: Why is gravitational potential energy always defined with a negative sign?**\n"
+            "   - *Answer*: Because the gravitational field is purely attractive and reference potential is set to zero at infinity. Bringing a mass from infinity releases energy, placing the bound system at a lower (negative) potential energy state $U = -GMm/r$.\n"
+            "3. **Q3: State the condition for weightlessness experienced by an astronaut in an orbiting spacecraft.**\n"
+            "   - *Answer*: The spacecraft and astronaut are in free fall toward Earth with the exact same gravitational acceleration $g_h = v^2/r$. The normal contact force exerted by the cabin floor on the astronaut is zero ($N = m(g - a) = 0$).\n"
+            "4. **Q4: Differentiate between Escape Velocity and Orbital Velocity.**\n"
+            "   - *Answer*: Orbital velocity $v_o = \\sqrt{GM/r}$ is the horizontal velocity needed to maintain a circular orbit. Escape velocity $v_e = \\sqrt{2GM/r} = \\sqrt{2} v_o$ is the minimum speed required to escape the gravitational field entirely.\n"
+            "5. **Q5: At what depth below the Earth's surface does the acceleration due to gravity reduce to $g/2$?**\n"
+            "   - *Answer*: $g_d = g(1 - d/R)$. Setting $g_d = g/2 \\implies 1 - d/R = 1/2 \\implies d = R/2 \\approx 3,185.5\\text{ km}$.\n\n"
+            "### Section B/C: 10-Mark Long Questions & Derivations\n"
+            "1. **Q1 (Derivation): Derive the expression for the variation of acceleration due to gravity with (a) height $h$, and (b) depth $d$. Prove that for $h \\ll R$, the reduction in $g$ at height $h$ is twice the reduction at depth $h$ (10 Marks).**\n"
+            "2. **Q2 (Proof): State Kepler's Laws of Planetary Motion and derive Kepler's Third Law ($T^2 \\propto r^3$) directly from Newton's Universal Law of Gravitation (10 Marks).**\n"
+            "3. **Q3 (Comprehensive Numerical): A satellite of mass $1000\\text{ kg}$ is launched into a circular orbit at an altitude of $600\\text{ km}$ above Earth. Calculate (a) its orbital velocity, (b) time period of revolution, (c) kinetic energy, (d) potential energy, and (e) minimum additional energy needed to escape Earth's field (10 Marks).**"
+        )
+        dimensions_table = (
+            "| Physical Quantity | Symbol | SI Unit | Dimensional Formula | Value at Earth Surface |\n"
+            "| :--- | :--- | :--- | :--- | :--- |\n"
+            "| **Gravitational Constant** | $G$ | $\\text{N}\\cdot\\text{m}^2/\\text{kg}^2$ | $[M^{-1} L^3 T^{-2}]$ | $6.6743 \\times 10^{-11}$ |\n"
+            "| **Earth's Mass** | $M_E$ | $\\text{kg}$ | $[M]$ | $5.972 \\times 10^{24}$ |\n"
+            "| **Earth's Mean Radius** | $R_E$ | $\\text{m}$ | $[L]$ | $6.371 \\times 10^6$ |\n"
+            "| **Gravitational Acceleration** | $g$ | $\\text{m/s}^2$ | $[L T^{-2}]$ | $9.80665$ |\n"
+            "| **Surface Escape Velocity** | $v_e$ | $\\text{m/s}$ | $[L T^{-1}]$ | $11,186$ ($11.2\\text{ km/s}$) |\n"
+            "| **Gravitational Potential** | $V$ | $\\text{J/kg}$ | $[L^2 T^{-2}]$ | $-6.25 \\times 10^7$ |"
+        )
+    elif is_optics:
+        math_content = (
+            "### 1. Optical Wavefront Formulations & Coherence Relations\n"
+            "Wave optics investigates phenomena where light propagates as electromagnetic wave packets governed by Maxwell's wave equations:\n\n"
+            "- **Young's Double-Slit Interference Fringe Width**:\n"
+            "$$\\beta = \\frac{\\lambda D}{d}$$\n"
+            "where $\\lambda$ is wavelength, $D$ is slit-to-screen distance, and $d$ is slit separation.\n\n"
+            "- **Newton's Rings (Reflected Light Interferometry)**:\n"
+            "  * *Dark Ring Diameter*: $$D_n^2 = 4 n R \\lambda$$\n"
+            "  * *Bright Ring Diameter*: $$D_n^2 = 2 (2n - 1) R \\lambda$$\n"
+            "where $R$ is radius of curvature of the plano-convex lens.\n\n"
+            "- **Diffraction Grating Equation**:\n"
+            "$$(a + b) \\sin \\theta = n \\lambda$$\n"
+            "where $(a + b)$ is the grating element and $n$ is diffraction order.\n\n"
+            "- **Brewster's Law of Polarization**:\n"
+            "$$\\mu = \\tan \\theta_p$$\n"
+            "At Brewster's polarization angle $\\theta_p$, reflected light is $100\\%$ linearly polarized perpendicular to the plane of incidence.\n\n"
+            "- **Numerical Aperture (NA) of Optical Fibers**:\n"
+            "$$\\text{NA} = \\sin \\theta_a = \\sqrt{n_1^2 - n_2^2} = n_1 \\sqrt{2\\Delta}$$"
+        )
+        sim_code = (
+            "```python\n"
+            "# Wave Optics Simulation: Fraunhofer Single-Slit Diffraction Intensity Profile\n"
+            "import math\n"
+            "\n"
+            "def single_slit_diffraction_intensity(wavelength: float, slit_width: float, theta_rad: float, i0: float = 1.0) -> float:\n"
+            "    \"\"\"Calculates normalized intensity I = I0 * (sin(beta)/beta)^2.\"\"\"\n"
+            "    if theta_rad == 0.0:\n"
+            "        return i0\n"
+            "    beta = (math.pi * slit_width * math.sin(theta_rad)) / wavelength\n"
+            "    return i0 * ((math.sin(beta) / beta) ** 2)\n"
+            "\n"
+            "# Evaluate intensity at first secondary maximum (beta ~ 1.43 pi)\n"
+            "beta_max1 = 1.4303 * math.pi\n"
+            "i_secondary = ((math.sin(beta_max1) / beta_max1) ** 2)\n"
+            "print(f'First secondary maximum relative intensity: {i_secondary:.4f} (~4.7% of I0)')\n"
+            "```"
+        )
+        solved_problems = (
+            "### Problem 1: Newton's Rings Wavelength Determination\n"
+            "**Problem**: In a Newton's rings experiment, the diameter of the 4th and 16th dark rings are $0.4\\text{ cm}$ and $0.7\\text{ cm}$ respectively. The radius of curvature of the lens is $100\\text{ cm}$. Find the wavelength of light used.\n\n"
+            "**Solution**:\n"
+            "1. Using relation for dark rings: $D_{n+p}^2 - D_n^2 = 4 p R \\lambda$.\n"
+            "2. Given: $n = 4, n+p = 16 \\implies p = 12$. $D_4 = 0.4\\text{ cm}, D_{16} = 0.7\\text{ cm}, R = 100\\text{ cm}$.\n"
+            "3. Substituting values:\n"
+            "   $$\\lambda = \\frac{D_{16}^2 - D_4^2}{4 p R} = \\frac{(0.7)^2 - (0.4)^2}{4 \\times 12 \\times 100} = \\frac{0.49 - 0.16}{4800} = \\frac{0.33}{4800} = 6.875 \\times 10^{-5} \\text{ cm} = 6875 \\text{ \\AA}$$"
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU University Pattern)\n"
+            "1. **Q1: State Brewster's Law and the relationship between Brewster angle and refracting angle.**\n"
+            "   - *Answer*: Brewster's Law states $\\mu = \\tan \\theta_p$. At angle $\\theta_p$, the reflected and refracted rays are at right angles: $\\theta_p + r = 90^\\circ$.\n"
+            "2. **Q2: Why is the central fringe in Newton's rings reflected system dark?**\n"
+            "   - *Answer*: Because at the contact point ($t = 0$), reflection occurs at the rarer-to-denser interface, introducing an extra $\\pi$ phase shift (path difference of $\\lambda/2$), satisfying the condition for destructive interference.\n"
+            "3. **Q3: Define Numerical Aperture and Acceptance Angle of an optical fiber.**\n"
+            "   - *Answer*: Numerical Aperture measures light-gathering ability: $\\text{NA} = \\sqrt{n_1^2 - n_2^2}$. The acceptance angle is $\\theta_a = \\arcsin(\\text{NA})$."
+        )
+        dimensions_table = (
+            "| Optical Parameter | Symbol | Governing Equation | Significance |\n"
+            "| :--- | :--- | :--- | :--- |\n"
+            "| **Interference Fringe Width** | $\\beta$ | $\\beta = \\frac{\\lambda D}{d}$ | Spacing between adjacent bright/dark fringes |\n"
+            "| **Newton's Ring Diameter** | $D_n$ | $D_n^2 = 4nR\\lambda$ | Non-destructive optical surface testing |\n"
+            "| **Numerical Aperture** | $\\text{NA}$ | $\\sqrt{n_1^2 - n_2^2}$ | Light collection efficiency of optical fiber |"
+        )
+    elif is_quantum:
+        math_content = (
+            "### 1. Quantum Wave Mechanics & Relativistic Formulations\n"
+            "Microscopic systems exhibit wave-particle duality governed by wavefunctions $\\psi(\\mathbf{r}, t)$ and operators:\n\n"
+            "- **De Broglie Wavelength & Compton Scattering**:\n"
+            "$$\\lambda = \\frac{h}{p} = \\frac{h}{\\sqrt{2mE}}, \qquad \\Delta \\lambda = \\lambda' - \\lambda = \\frac{h}{m_0 c}(1 - \\cos \\theta)$$\n\n"
+            "- **Heisenberg Uncertainty Principle**:\n"
+            "$$\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}, \qquad \\Delta E \\cdot \\Delta t \\ge \\frac{\\hbar}{2}$$\n\n"
+            "- **Time-Independent 1D Schrödinger Equation**:\n"
+            "$$-\\frac{\\hbar^2}{2m} \\frac{d^2\\psi}{dx^2} + V(x)\\psi = E\\psi$$\n\n"
+            "- **Particle in a 1D Infinite Potential Well (Length $L$)**:\n"
+            "$$E_n = \\frac{n^2 \\pi^2 \\hbar^2}{2mL^2} = \\frac{n^2 h^2}{8mL^2}, \qquad \\psi_n(x) = \\sqrt{\\frac{2}{L}} \\sin\\left(\\frac{n\\pi x}{L}\\right)$$\n\n"
+            "- **Einstein's Relativistic Mass-Energy Relation**:\n"
+            "$$E = \\gamma m_0 c^2, \qquad E^2 = p^2 c^2 + m_0^2 c^4, \qquad \\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}$$"
+        )
+        sim_code = (
+            "```python\n"
+            "# Quantum Mechanics Simulation: 1D Particle in a Box Energy Levels\n"
+            "def infinite_well_energy_ev(n: int, l_angstroms: float = 1.0) -> float:\n"
+            "    h = 6.62607e-34      # J*s\n"
+            "    m_e = 9.10938e-31    # kg (electron)\n"
+            "    l_m = l_angstroms * 1e-10\n"
+            "    e_joules = (n ** 2 * h ** 2) / (8 * m_e * (l_m ** 2))\n"
+            "    return e_joules / 1.60218e-19  # eV\n"
+            "\n"
+            "print(f'Ground State E1: {infinite_well_energy_ev(1):.2f} eV')\n"
+            "print(f'First Excited State E2: {infinite_well_energy_ev(2):.2f} eV')\n"
+            "```"
+        )
+        solved_problems = (
+            "### Problem 1: Energy Levels of an Electron in a 1D Quantum Box\n"
+            "**Problem**: An electron is trapped in a one-dimensional infinite potential well of width $L = 1.0\text{ \AA} = 1.0 \times 10^{-10}\text{ m}$. Calculate its ground-state energy $E_1$ in eV.\n\n"
+            "**Solution**:\n"
+            "$$E_1 = \frac{h^2}{8 m_e L^2} = \frac{(6.626 \times 10^{-34})^2}{8 \times (9.11 \times 10^{-31}) \times (1.0 \times 10^{-10})^2} = 6.02 \times 10^{-18} \text{ J} = \frac{6.02 \times 10^{-18}}{1.602 \times 10^{-19}} \approx 37.6 \text{ eV}$$"
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU University Pattern)\n"
+            "1. **Q1: State De Broglie's hypothesis of matter waves.**\n"
+            "   - *Answer*: Any moving particle of momentum $p$ is associated with a matter wave of wavelength $\lambda = h/p$.\n"
+            "2. **Q2: What is the physical significance of the wave function $\psi$?**\n"
+            "   - *Answer*: While $\psi$ itself has no direct physical reality, its modulus squared $|\psi(\mathbf{r})|^2 dV$ represents the probability density of finding the particle within volume $dV$."
+        )
+        dimensions_table = (
+            "| Quantum Parameter | Symbol | Governing Equation | Physical Interpretation |\n"
+            "| :--- | :--- | :--- | :--- |\n"
+            "| **De Broglie Wavelength** | $\lambda$ | $\lambda = \frac{h}{p}$ | Matter wave wavelength |\n"
+            "| **Box Energy Eigenvalue** | $E_n$ | $E_n = \frac{n^2 h^2}{8mL^2}$ | Discrete quantization of bound energy |\n"
+            "| **Lorentz Factor** | $\gamma$ | $\frac{1}{\sqrt{1 - v^2/c^2}}$ | Relativistic dilation / contraction factor |"
+        )
+    else:
+        # General Physics / Classical Mechanics
+        math_content = (
+            "### 1. Fundamental Principles of Classical Mechanics & Dynamics\n"
+            "Physical systems are modeled through Newton's axioms of motion, conservation principles, and variational calculus:\n\n"
+            "- **Newton's Second Law of Motion (Conservation of Momentum)**:\n"
+            "$$\\mathbf{F} = \\frac{d\\mathbf{p}}{dt} = m \\frac{d^2\\mathbf{r}}{dt^2} = m \\mathbf{a}$$\n\n"
+            "- **Work-Kinetic Energy Theorem**:\n"
+            "$$W_{\\text{net}} = \\int_{\\mathbf{r}_1}^{\\mathbf{r}_2} \\mathbf{F} \\cdot d\\mathbf{r} = \\frac{1}{2} m v_2^2 - \\frac{1}{2} m v_1^2 = \\Delta K$$\n\n"
+            "- **Rotational Dynamics & Torque Formulation**:\n"
+            "$$\\boldsymbol{\\tau} = \\mathbf{r} \\times \\mathbf{F} = I \\boldsymbol{\\alpha} = \\frac{d\\mathbf{L}}{dt}$$\n"
+            "where $I$ is mass moment of inertia and $\\mathbf{L} = I \\boldsymbol{\\omega}$ is angular momentum.\n\n"
+            "- **Simple Harmonic Motion (SHM) Governing Equation**:\n"
+            "$$\\frac{d^2 x}{dt^2} + \\omega_0^2 x = 0 \\implies x(t) = A \\cos(\\omega_0 t + \\phi)$$"
+        )
+        sim_code = (
+            "```python\n"
+            "# Classical Physics Simulation: Damped Harmonic Oscillator\n"
+            "import math\n"
+            "\n"
+            "def simulate_harmonic_motion(m=1.0, k=25.0, b=0.5, x0=1.0, dt=0.01, steps=200):\n"
+            "    t, x, v = 0.0, x0, 0.0\n"
+            "    trajectory = [(t, x, v)]\n"
+            "    for _ in range(steps):\n"
+            "        a = (-k * x - b * v) / m\n"
+            "        v += a * dt\n"
+            "        x += v * dt\n"
+            "        t += dt\n"
+            "        trajectory.append((t, x, v))\n"
+            "    return trajectory\n"
+            "```"
+        )
+        solved_problems = (
+            "### Problem 1: Work-Energy Theorem Evaluation\n"
+            "**Problem**: A $2\text{ kg}$ object is subjected to a conservative force $F(x) = (3x^2 - 4x)\text{ N}$. Calculate work done moving from $x = 1\text{ m}$ to $x = 3\text{ m}$.\n\n"
+            "**Solution**:\n"
+            "$$W = \int_1^3 (3x^2 - 4x) \, dx = \left[ x^3 - 2x^2 \right]_1^3 = (27 - 18) - (1 - 2) = 9 - (-1) = 10\text{ J}$$"
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU University Pattern)\n"
+            "1. **Q1: Define Conservative Force.**\n"
+            "   - *Answer*: A force whose work done on a closed loop is zero ($\oint \mathbf{F} \cdot d\mathbf{r} = 0$), meaning work is path-independent.\n"
+            "2. **Q2: State the Parallel Axis Theorem.**\n"
+            "   - *Answer*: $I = I_{\text{cm}} + M d^2$, where $d$ is perpendicular distance between the axes."
+        )
+        dimensions_table = (
+            "| Physical Law | Mathematical Equation | Invariant Quantity |\n"
+            "| :--- | :--- | :--- |\n"
+            "| **Newton's Second Law** | $\mathbf{F} = \frac{d\mathbf{p}}{dt}$ | Momentum transfer rate |\n"
+            "| **Work-Energy Theorem** | $W = \Delta K$ | Mechanical energy |"
+        )
+
+    return (
+        "# Executive Overview & Theoretical Foundations: " + topic + "\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** represents an essential theoretical and practical cornerstone of Engineering Physics. "
+        "A rigorous grasp of its governing differential relationships, boundary conditions, and conservation principles "
+        "is indispensable for solving complex physical systems and excelling in university end-semester examinations.\n\n"
+        "## Core Concepts & Mathematical / Analytical Linchpins\n"
+        + math_content + "\n\n"
+        "## Dimensional Analysis, Governing Constants & Metrics\n"
+        + dimensions_table + "\n\n"
+        "## Production-Grade Simulation & Computational Modeling\n"
+        + sim_code + "\n\n"
+        "## Step-by-Step Solved Numericals & Analytical Derivations\n"
+        + solved_problems + "\n\n"
+        "## Real-World Pitfalls, Common Bugs & Exam Traps\n"
+        "1. **Approximation Boundary Errors**: Using simplified approximations (e.g. $g_h = g(1 - 2h/R)$) when $h$ is comparable to $R$.\n"
+        "2. **Sign Convention Violations**: Omitting the negative sign in potential definitions ($V = -GM/r$).\n"
+        "3. **Inappropriate Frame of Reference**: Applying Newton's laws in non-inertial frames without introducing fictitious (pseudo) forces.\n"
+        "4. **Unit Conversions**: Forgetting to convert kilometers to meters or hours to seconds before applying SI equations.\n\n"
+        "## University Examination Practice Problems with Model Answers\n"
+        + exam_qa
+    )
+
+
+def _build_chemistry_topic_notes(topic: str, domain: str, t_lower: str) -> str:
+    """Generates authentic Engineering Chemistry & Materials Science revision notes."""
+    math_content = (
+        "### 1. Electrochemical, Thermodynamic & Structural Equations\n"
+        "Engineering chemistry focuses on material behavior, phase transformations, and corrosion mechanisms:\n\n"
+        "- **Nernst Equation for Electrode & Cell Potentials**:\n"
+        "$$E = E^0 - \\frac{RT}{nF} \\ln Q = E^0 - \\frac{0.0591}{n} \\log_{10} \\frac{[\\text{Products}]}{[\\text{Reactants}]}$$\n\n"
+        "- **Gibbs Phase Rule (Equilibrium of Multi-Component Systems)**:\n"
+        "$$F = C - P + 2$$\n\n"
+        "- **Water Hardness & EDTA Complexometric Titration**:\n"
+        "$$\\text{Hardness (ppm CaCO}_3\\text{)} = \\frac{V_{\\text{EDTA}} \\times M_{\\text{EDTA}} \\times 100 \\times 1000}{V_{\\text{sample}}}$$"
+    )
+    sim_code = (
+        "```python\n"
+        "# Computational Chemistry: Nernst Cell Potential Calculator\n"
+        "import math\n"
+        "def nernst_potential(e_standard: float, n_electrons: int, q_quotient: float) -> float:\n"
+        "    return e_standard - (0.05916 / n_electrons) * math.log10(q_quotient)\n"
+        "```"
+    )
+    return (
+        "# Executive Overview & Theoretical Foundations: " + topic + "\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** constitutes a fundamental pillar of Engineering Chemistry and Material Science. "
+        "Understanding molecular kinetics, phase equilibrium, and electrochemical degradation allows engineers "
+        "to design robust materials and maintain operational safety across chemical systems.\n\n"
+        "## Core Concepts & Mathematical / Analytical Linchpins\n"
+        + math_content + "\n\n"
+        "## Production-Grade Simulation & Computational Chemistry\n"
+        + sim_code + "\n\n"
+        "## University Examination Practice Problems with Model Answers\n"
+        "1. **Q1: State Gibbs Phase Rule for condensed systems.**\n"
+        "   - *Answer*: $F = C - P + 1$, where $C$ is components, $P$ is phases, and $F$ is degrees of freedom.\n"
+        "2. **Q2: Explain sacrificial anodic protection against metallic corrosion.**\n"
+        "   - *Answer*: A more active metal (Zinc/Magnesium) is attached to iron, corroding preferentially to save the structure."
+    )
+
+
+def _build_civil_topic_notes(topic: str, domain: str, t_lower: str) -> str:
+    """Generates authentic Civil Engineering revision notes."""
+    return (
+        "# Executive Overview & Theoretical Foundations: " + topic + "\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** represents an indispensable analytical and design discipline in Civil & Structural Engineering. "
+        "Governed by structural mechanics, soil hydraulics, and elastoplasticity, mastering this topic ensures safe civil infrastructure design.\n\n"
+        "## Core Concepts & Mathematical / Architectural Linchpins\n"
+        "### 1. Structural & Geotechnical Governing Equations\n"
+        "- **Bending Equation for Homogeneous Elastic Beams**:\n"
+        "$$\\frac{M}{I} = \\frac{\\sigma}{y} = \\frac{E}{R}$$\n\n"
+        "- **Terzaghi's Principle of Effective Stress**:\n"
+        "$$\\sigma' = \\sigma - u$$\n\n"
+        "- **Darcy's Law of Seepage Through Porous Media**:\n"
+        "$$Q = k \\cdot i \\cdot A = k \\left(\\frac{\\Delta h}{L}\\right) A$$\n\n"
+        "## University Examination Practice Problems with Model Answers\n"
+        "1. **Q1: Define Effective Stress in soil mechanics.**\n"
+        "   - *Answer*: $\\sigma' = \\sigma - u$, controlling soil shear resistance and settlement.\n"
+        "2. **Q2: State the assumptions of Euler-Bernoulli beam theory.**\n"
+        "   - *Answer*: Plane sections remain plane after bending; material obeys Hooke's law."
+    )
 
 
 def _build_cs_topic_notes(topic: str, domain: str, t_lower: str) -> str:
@@ -104,508 +521,364 @@ def _build_cs_topic_notes(topic: str, domain: str, t_lower: str) -> str:
             "An array is a homogeneous, contiguous collection of memory elements. Modern CPU memory controllers calculate physical byte addresses via hardware-level address arithmetic in constant $\\mathcal{O}(1)$ time:\n\n"
             "- **One-Dimensional (1D) Addressing Formula**:\n"
             "$$\\text{Address}(A[i]) = \\text{BaseAddress} + (i - \\text{LowerBound}) \\times w$$\n"
-            "where $\\text{BaseAddress}$ is the address of index $\\text{LowerBound}$, and $w$ is element width in bytes (e.g., $w = 4$ for 32-bit `int`, $w = 8$ for 64-bit pointers/floats).\n\n"
-            "- **Two-Dimensional (2D) Row-Major Order (RMO - C / Python / C++ convention)**:\n"
-            "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big] \\times w$$\n"
-            "where $N_c$ is total column dimension ($N_c = \\text{UB}_c - \\text{LB}_c + 1$).\n\n"
-            "- **Two-Dimensional (2D) Column-Major Order (CMO - FORTRAN / MATLAB convention)**:\n"
-            "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big] \\times w$$\n"
-            "where $N_r$ is total row dimension ($N_r = \\text{UB}_r - \\text{LB}_r + 1$).\n\n"
-            "- **Three-Dimensional (3D) Row-Major Order Formula**:\n"
-            "$$\\text{Address}(A[i][j][k]) = \\text{BaseAddress} + \\Big[ (i - \\text{LB}_1) \\times (N_2 \\times N_3) + (j - \\text{LB}_2) \\times N_3 + (k - \\text{LB}_3) \\Big] \\times w$$"
+            "where $\\text{BaseAddress}$ is the address of index $\\text{LowerBound}$, and $w$ is element width in bytes.\n\n"
+            "- **Two-Dimensional (2D) Row-Major Order (RMO - C / Python convention)**:\n"
+            "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big] \\times w$$\n\n"
+            "- **Two-Dimensional (2D) Column-Major Order (CMO - FORTRAN convention)**:\n"
+            "$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big] \\times w$$"
         )
         memory_layout = (
             "### Physical Memory Architecture & Hardware Caching\n"
-            "1. **Contiguous Memory Allocation**: Unlike pointer-linked structures, all elements of an array reside in adjacent physical memory cells. This physical adjacency guarantees deterministic address decoding.\n"
-            "2. **Spatial Locality of Reference**: Modern CPU L1/L2 caches fetch cache lines (typically 64 bytes) from RAM. When accessing $A[0]$, the CPU pre-fetches $A[1 \\dots 15]$ into L1 cache, eliminating bus memory latency on subsequent sequential accesses.\n"
-            "3. **Memory Striding Penalty**: Traversing a 2D row-major array column-by-column causes frequent cache line evictions (cache thrashing), multiplying access latency by up to $10\\times$ compared to row-wise traversal."
+            "1. **Contiguous Memory Allocation**: Elements reside in adjacent memory cells, guaranteeing direct address calculation.\n"
+            "2. **Spatial Locality of Reference**: Modern CPU L1/L2 caches fetch cache lines (64 bytes), accelerating sequential traversals.\n"
+            "3. **Memory Striding Penalty**: Column-wise traversal of row-major arrays causes cache misses and multiplies access latency."
         )
         code_impl = (
-            "```c\n"
-            "// Production-grade C Implementation: Dynamic Array with Boundary Validation\n"
-            "#include <stdio.h>\n"
-            "#include <stdlib.h>\n"
-            "#include <stdbool.h>\n"
-            "\n"
-            "typedef struct {\n"
-            "    int* data;\n"
-            "    int size;\n"
-            "    int capacity;\n"
-            "} DynamicArray;\n"
-            "\n"
-            "DynamicArray* createArray(int initial_capacity) {\n"
-            "    DynamicArray* arr = (DynamicArray*)malloc(sizeof(DynamicArray));\n"
-            "    arr->capacity = initial_capacity > 0 ? initial_capacity : 4;\n"
-            "    arr->size = 0;\n"
-            "    arr->data = (int*)malloc(arr->capacity * sizeof(int));\n"
-            "    return arr;\n"
-            "}\n"
-            "\n"
-            "bool insertAt(DynamicArray* arr, int index, int value) {\n"
-            "    if (!arr || index < 0 || index > arr->size) return false;\n"
-            "    // Geometric resizing for amortized O(1) appends\n"
-            "    if (arr->size >= arr->capacity) {\n"
-            "        arr->capacity *= 2;\n"
-            "        int* new_data = (int*)realloc(arr->data, arr->capacity * sizeof(int));\n"
-            "        if (!new_data) return false;\n"
-            "        arr->data = new_data;\n"
-            "    }\n"
-            "    // Right-shift elements to make space at index\n"
-            "    for (int i = arr->size; i > index; i--) {\n"
-            "        arr->data[i] = arr->data[i - 1];\n"
-            "    }\n"
-            "    arr->data[index] = value;\n"
-            "    arr->size++;\n"
-            "    return true;\n"
-            "}\n"
-            "\n"
-            "int linearSearch(const DynamicArray* arr, int key) {\n"
-            "    if (!arr) return -1;\n"
-            "    for (int i = 0; i < arr->size; i++) {\n"
-            "        if (arr->data[i] == key) return i;\n"
-            "    }\n"
-            "    return -1;\n"
-            "}\n"
-            "```\n\n"
             "```python\n"
-            "# Idiomatic Python: Vector Operations with Exact Memory Introspection\n"
-            "class VectorArray:\n"
+            "# Production Python Vector Implementation with Amortized O(1) Resizing\n"
+            "class Vector:\n"
             "    def __init__(self, capacity: int = 8):\n"
             "        self.capacity = capacity\n"
-            "        self.data = [0] * capacity\n"
-            "        self.count = 0\n"
+            "        self.size = 0\n"
+            "        self.data = [None] * capacity\n"
             "\n"
-            "    def append(self, element: int) -> None:\n"
-            "        if self.count >= self.capacity:\n"
+            "    def append(self, val):\n"
+            "        if self.size >= self.capacity:\n"
             "            self.capacity *= 2\n"
-            "            resized = [0] * self.capacity\n"
-            "            for i in range(self.count):\n"
-            "                resized[i] = self.data[i]\n"
-            "            self.data = resized\n"
-            "        self.data[self.count] = element\n"
-            "        self.count += 1\n"
-            "\n"
-            "    def binary_search(self, target: int) -> int:\n"
-            "        \"\"\"Executes divide-and-conquer search in O(log n) time.\"\"\"\n"
-            "        low, high = 0, self.count - 1\n"
-            "        while low <= high:\n"
-            "            mid = low + (high - low) // 2\n"
-            "            if self.data[mid] == target:\n"
-            "                return mid\n"
-            "            elif self.data[mid] < target:\n"
-            "                low = mid + 1\n"
-            "            else:\n"
-            "                high = mid - 1\n"
-            "        return -1\n"
+            "            new_data = [None] * self.capacity\n"
+            "            for i in range(self.size):\n"
+            "                new_data[i] = self.data[i]\n"
+            "            self.data = new_data\n"
+            "        self.data[self.size] = val\n"
+            "        self.size += 1\n"
             "```"
         )
         worked_numericals = (
-            "### Problem 1: 2D Array Address Derivation in Row-Major & Column-Major Order\n"
-            "**Problem**: An array $A[-5 \\dots 15, 10 \\dots 30]$ is stored in memory starting at Base Address $1020$. Each element requires $w = 4$ bytes. Compute the exact memory address of element $A[5][20]$ in both (a) Row-Major Order, and (b) Column-Major Order.\n\n"
-            "**Step-by-Step Solution**:\n"
-            "1. **Identify Dimensions**:\n"
-            "   - Row bounds: $\\text{LB}_r = -5, \\text{UB}_r = 15 \\implies N_r = 15 - (-5) + 1 = 21$ rows.\n"
-            "   - Column bounds: $\\text{LB}_c = 10, \\text{UB}_c = 30 \\implies N_c = 30 - 10 + 1 = 21$ columns.\n"
-            "   - Target indices: $i = 5, j = 20$.\n"
-            "   - Base Address $= 1020$, $w = 4$ bytes.\n\n"
-            "2. **Part (a): Row-Major Order Calculation**:\n"
-            "   $$\\text{Address}(A[5][20]) = \\text{Base} + \\Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big] \\times w$$\n"
-            "   $$\\text{Offset} = \\big[ (5 - (-5)) \\times 21 + (20 - 10) \\big] = [10 \\times 21 + 10] = [210 + 10] = 220$$\n"
-            "   $$\\text{Address} = 1020 + (220 \\times 4) = 1020 + 880 = 1900$$\n\n"
-            "3. **Part (b): Column-Major Order Calculation**:\n"
-            "   $$\\text{Address}(A[5][20]) = \\text{Base} + \\Big[ (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big] \\times w$$\n"
-            "   $$\\text{Offset} = \\big[ (20 - 10) \\times 21 + (5 - (-5)) \\big] = [10 \\times 21 + 10] = [210 + 10] = 220$$\n"
-            "   $$\\text{Address} = 1020 + (220 \\times 4) = 1020 + 880 = 1900$$\n"
-            "*(Both yield $1900$ because $N_r = N_c = 21$ and row/col index offsets are symmetric).*"
+            "### Problem 1: 2D Array Address Derivation\n"
+            "**Problem**: An array $A[-5 \\dots 15, 10 \\dots 30]$ is stored starting at Base Address $1020$, with $w = 4$ bytes. Compute the address of $A[5][20]$ in Row-Major Order.\n\n"
+            "**Solution**:\n"
+            "1. Dimensions: $N_r = 15 - (-5) + 1 = 21$, $N_c = 30 - 10 + 1 = 21$.\n"
+            "2. $\\text{Offset} = [(5 - (-5)) \\times 21 + (20 - 10)] = [10 \\times 21 + 10] = 220$.\n"
+            "3. $\\text{Address} = 1020 + (220 \\times 4) = 1020 + 880 = 1900$."
         )
         complexity_table = (
-            "| Operation / Scenario | Best Case Time | Average Case Time | Worst Case Time | Auxiliary Space Complexity |\n"
-            "| :--- | :--- | :--- | :--- | :--- |\n"
-            "| **Index Access / Random Lookup** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Linear Search** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Binary Search (Sorted)** | $\\mathcal{O}(1)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Append (End Insertion)** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ amortized | $\\mathcal{O}(n)$ reallocation | $\\mathcal{O}(1)$ |\n"
-            "| **Arbitrary Insertion (Middle/Start)** | $\\mathcal{O}(1)$ at end | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(1)$ |\n"
-            "| **Deletion by Index** | $\\mathcal{O}(1)$ at end | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(1)$ |"
+            "| Operation | Average Time | Worst Time | Space Complexity |\n"
+            "| :--- | :--- | :--- | :--- |\n"
+            "| **Index Access** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ |\n"
+            "| **Search (Linear)** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
+            "| **Search (Binary)** | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(1)$ |\n"
+            "| **Insertion / Deletion** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |"
         )
         pitfalls = (
-            "1. **Off-By-One Boundary Violations**: Accessing $A[n]$ instead of $A[n-1]$ in 0-indexed arrays, causing segmentation faults or reading arbitrary stack garbage.\n"
-            "2. **Buffer Overflow Vulnerabilities**: Writing past allocated array bounds in C/C++ overwrites the function return address on the stack frame, opening security exploits.\n"
-            "3. **Memory Fragmentation in Fixed Sizing**: Allocating static arrays with oversized capacity wastes memory; allocating undersized arrays requires expensive $O(n)$ reallocation copies."
+            "1. **Buffer Overflow**: Writing past allocated bounds corrupting stack/heap memory.\n"
+            "2. **Off-By-One Errors**: Confusing $0$-indexed and $1$-indexed bounds.\n"
+            "3. **Inefficient Column Striding**: Accessing $A[i][j]$ as $A[j][i]$ causing L1 cache evictions."
         )
         exam_qa = (
             "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
-            "1. **Q1: Why is random access in an array performed in $\\mathcal{O}(1)$ time?**\n"
-            "   - *Answer*: Because physical memory addresses are calculated algebraically via $\\text{BaseAddress} + i \\times w$ using direct arithmetic without traversing preceding elements.\n"
-            "2. **Q2: Differentiate between Row-Major and Column-Major order.**\n"
-            "   - *Answer*: Row-Major order stores elements row-by-row contiguously in memory (C/C++); Column-Major order stores elements column-by-column (Fortran/MATLAB).\n"
-            "3. **Q3: What is the amortized time complexity of dynamic array appending?**\n"
-            "   - *Answer*: Geometric doubling (multiplying capacity by 2 upon exhaustion) distributes the costly $O(n)$ copy operations across $n$ insertions, yielding an amortized $\\mathcal{O}(1)$ per append.\n"
-            "4. **Q4: State the formula to find the number of elements in a 2D array $A[l_1..u_1, l_2..u_2]$.**\n"
-            "   - *Answer*: $\\text{Total Elements} = (u_1 - l_1 + 1) \\times (u_2 - l_2 + 1)$.\n"
-            "5. **Q5: Compare static arrays with dynamic arrays.**\n"
-            "   - *Answer*: Static arrays have compile-time fixed size allocated on the stack; dynamic arrays have run-time resizable capacity allocated on the heap.\n\n"
-            "### Section B/C: 10-Mark Long Questions & Derivations\n"
-            "1. **Q1 (Derivation & Proof): Derive the address formula for element $A[i][j]$ in a 2D array in Column-Major Order. Prove its correctness for arbitrary lower bounds (10 Marks).**\n"
-            "   - *Model Solution*: Let the array be declared as $A[l_r..u_r, l_c..u_c]$. Number of rows $N_r = u_r - l_r + 1$. In Column-Major order, $(j - l_c)$ complete columns precede column $j$. Each column contains $N_r$ elements, so total elements in preceding columns $= (j - l_c) \\times N_r$. Within column $j$, $(i - l_r)$ elements precede row $i$. Hence, total preceding elements $= (j - l_c) \\times N_r + (i - l_r)$. Multiplying by element width $w$ and adding $\\text{BaseAddress}$ yields $\\text{Address}(A[i][j]) = \\text{BaseAddress} + [(j - l_c) \\times N_r + (i - l_r)] \\times w$. Q.E.D.\n"
-            "2. **Q2 (Numerical): An array $A[1..10, 1..15]$ is stored in Row-Major order starting at Base Address $1000$. Each element requires $2$ bytes. Compute $\\text{Address}(A[4][6])$ and compare with Column-Major order (10 Marks).**\n"
-            "   - *Model Solution*: Here $l_r = 1, u_r = 10 \\implies N_r = 10$; $l_c = 1, u_c = 15 \\implies N_c = 15$; $w = 2$, $\\text{Base} = 1000$. For $i=4, j=6$:\n"
-            "     - **Row-Major**: $\\text{Address} = 1000 + [(4 - 1) \\times 15 + (6 - 1)] \\times 2 = 1000 + [45 + 5] \\times 2 = 1000 + 100 = 1100$.\n"
-            "     - **Column-Major**: $\\text{Address} = 1000 + [(6 - 1) \\times 10 + (4 - 1)] \\times 2 = 1000 + [50 + 3] \\times 2 = 1000 + 106 = 1106$."
+            "1. **Q1: Define Row-Major and Column-Major ordering.**\n"
+            "   - *Answer*: Row-Major orders consecutive elements of a row sequentially in memory. Column-Major orders elements of a column sequentially.\n"
+            "2. **Q2: Why does an array lookup execute in $O(1)$ time?**\n"
+            "   - *Answer*: Memory is contiguous and element size is uniform, enabling direct hardware byte address calculation via $\\text{Base} + i \\times w$ without traversal."
         )
     elif "linked list" in t_lower or "pointer" in t_lower:
         math_content = (
-            "### 1. Pointer Linkage & Memory Node Invariants\n"
-            "A Linked List represents non-contiguous, dynamic memory allocation where each discrete node encapsulates payload data and pointer addresses to adjacent memory blocks:\n\n"
-            "- **Singly Linked List (SLL) Node Struct Formulation**:\n"
-            "$$\\text{Node} = \\langle \\text{Data} \\in \\mathcal{D}, \\quad \\text{Next} \\in \\mathcal{M} \\cup \\{\\text{NULL}\\} \\rangle$$\n"
-            "where $\\mathcal{M}$ represents valid heap virtual addresses.\n\n"
-            "- **Doubly Linked List (DLL) Invariant**:\n"
-            "$$\\forall P \\ne \\text{NULL}: \\quad P\\to\\text{Next}\\to\\text{Prev} = P \\quad \\text{and} \\quad P\\to\\text{Prev}\\to\\text{Next} = P$$\n\n"
-            "- **Cycle Invariant (Floyd's Tortoise and Hare Algorithm)**:\n"
-            "Let a cyclic list have tail segment length $\\mu$ and loop perimeter $\\lambda$. Fast pointer moves at $2v$ and slow at $v$:\n"
-            "$$\\text{Collision Step} \\equiv 0 \\pmod \\lambda \\implies \\text{Time Complexity} = \\mathcal{O}(\\mu + \\lambda) = \\mathcal{O}(n)$$\n"
-            "requiring strictly $\\mathcal{O}(1)$ auxiliary space."
+            "### 1. Pointer Traversal Dynamics & Pointer Manipulation Invariants\n"
+            "A linked list is a linear collection of data elements whose order is not given by their physical placement in memory:\n\n"
+            "- **Memory Locality & Pointer Overhead**:\n"
+            "Unlike arrays, each node requires an explicit pointer field: $\\text{Overhead} = n \\times \\text{sizeof(pointer)}$ (e.g. $8$ bytes on 64-bit architectures).\n\n"
+            "- **In-Place Reversal Invariant (Three-Pointer Method)**:\n"
+            "$$\\text{prev} \\leftarrow \\text{NULL}, \quad \\text{curr} \\leftarrow \\text{head}, \quad \\text{next} \\leftarrow \\text{curr.next}$$\n"
+            "Loop Invariant: $\\text{curr.next} = \\text{prev}, \; \\text{prev} = \\text{curr}, \; \\text{curr} = \\text{next}$."
         )
         memory_layout = (
-            "### Dynamic Heap Allocation & Memory Fragmentation\n"
-            "1. **Heap Allocation**: Each node is allocated independently via `malloc()` or `operator new`. Nodes do not occupy contiguous addresses.\n"
-            "2. **Pointer Overhead**: On 64-bit architectures, every pointer consumes 8 bytes. For a singly linked list of 32-bit integers, node size is $4 \\text{ bytes (data)} + 4 \\text{ bytes (padding)} + 8 \\text{ bytes (pointer)} = 16 \\text{ bytes}$, incurring a $75\\%$ memory overhead for metadata.\n"
-            "3. **Cache Inefficiency**: Traversing a linked list produces pointer chasing (non-sequential memory jumps), inducing cache misses on almost every dereference."
-        )
-        code_impl = (
-            "```c\n"
-            "// High-Performance C Singly Linked List: Reversal, Insertion, and Cycle Detection\n"
-            "#include <stdio.h>\n"
-            "#include <stdlib.h>\n"
-            "#include <stdbool.h>\n"
-            "\n"
-            "typedef struct Node {\n"
-            "    int data;\n"
-            "    struct Node* next;\n"
-            "} Node;\n"
-            "\n"
-            "Node* createNode(int value) {\n"
-            "    Node* n = (Node*)malloc(sizeof(Node));\n"
-            "    n->data = value;\n"
-            "    n->next = NULL;\n"
-            "    return n;\n"
-            "}\n"
-            "\n"
-            "Node* reverseList(Node* head) {\n"
-            "    Node* prev = NULL;\n"
-            "    Node* curr = head;\n"
-            "    Node* next = NULL;\n"
-            "    while (curr != NULL) {\n"
-            "        next = curr->next;  // Preserve next pointer\n"
-            "        curr->next = prev;  // Invert pointer linkage\n"
-            "        prev = curr;        // Advance previous\n"
-            "        curr = next;        // Advance current\n"
-            "    }\n"
-            "    return prev;\n"
-            "}\n"
-            "\n"
-            "bool detectCycle(Node* head) {\n"
-            "    if (!head || !head->next) return false;\n"
-            "    Node* slow = head;\n"
-            "    Node* fast = head;\n"
-            "    while (fast && fast->next) {\n"
-            "        slow = slow->next;\n"
-            "        fast = fast->next->next;\n"
-            "        if (slow == fast) return true;  // Cycle confirmed\n"
-            "    }\n"
-            "    return false;\n"
-            "}\n"
-            "```"
-        )
-        worked_numericals = (
-            "### Problem 1: In-Place Linked List Pointer Inversion Step-by-Step\n"
-            "**Problem**: Given a singly linked list $L = 10 \\to 20 \\to 30 \\to 40 \\to \\text{NULL}$, demonstrate the state of `prev`, `curr`, and `next` pointers during each iteration of the in-place iterative reversal algorithm.\n\n"
-            "**Step-by-Step Trace**:\n"
-            "- **Initial State**: `prev = NULL`, `curr = 10`.\n"
-            "- **Iteration 1**: `next = 20`. `10->next = NULL`. `prev = 10`, `curr = 20`. (List: $10 \\to \\text{NULL}$).\n"
-            "- **Iteration 2**: `next = 30`. `20->next = 10`. `prev = 20`, `curr = 30`. (List: $20 \\to 10 \\to \\text{NULL}$).\n"
-            "- **Iteration 3**: `next = 40`. `30->next = 20`. `prev = 30`, `curr = 40`. (List: $30 \\to 20 \\to 10 \\to \\text{NULL}$).\n"
-            "- **Iteration 4**: `next = NULL`. `40->next = 30`. `prev = 40`, `curr = NULL`. (List: $40 \\to 30 \\to 20 \\to 10 \\to \\text{NULL}$).\n"
-            "- **Termination**: `curr == NULL` breaks loop. Return `prev = 40` as new head. Auxiliary Space: $\\mathcal{O}(1)$, Time: $\\mathcal{O}(n)$."
-        )
-        complexity_table = (
-            "| Operation / Case | Singly Linked List | Doubly Linked List | Dynamic Array (Vector) |\n"
-            "| :--- | :--- | :--- | :--- |\n"
-            "| **Access at Index $k$** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Insert at Head ($k=0$)** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ |\n"
-            "| **Insert at Tail** | $\\mathcal{O}(1)$ with tail pointer | $\\mathcal{O}(1)$ with tail pointer | $\\mathcal{O}(1)$ amortized |\n"
-            "| **Delete at Head** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ |\n"
-            "| **Delete Given Node Pointer** | $\\mathcal{O}(n)$ (needs predecessor) | $\\mathcal{O}(1)$ (has `prev` pointer) | $\\mathcal{O}(n)$ |\n"
-            "| **Auxiliary Memory / Node** | 1 pointer (8 bytes) | 2 pointers (16 bytes) | 0 pointers (contiguous) |"
-        )
-        pitfalls = (
-            "1. **Memory Leaks from Abandoned Pointers**: Reassigning `head = head->next` in C/C++ without calling `free()` creates orphaned heap memory blocks.\n"
-            "2. **Dereferencing NULL Pointers**: Accessing `curr->next` when `curr == NULL` triggers fatal `SIGSEGV` segmentation faults.\n"
-            "3. **Losing List References During Insertion**: Executing `curr->next = new_node` before setting `new_node->next = curr->next` breaks the chain, causing all downstream nodes to be lost."
-        )
-        exam_qa = (
-            "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
-            "1. **Q1: Why does a Doubly Linked List permit $\\mathcal{O}(1)$ node deletion given only a pointer to that node?**\n"
-            "   - *Answer*: Because each node stores a backward pointer (`prev`), enabling direct access to the preceding node without traversing from the head.\n"
-            "2. **Q2: State the termination condition for traversing a Circular Linked List.**\n"
-            "   - *Answer*: Traversal terminates when `curr->next == head`.\n"
-            "3. **Q3: What is Floyd's Cycle Detection Algorithm?**\n"
-            "   - *Answer*: An algorithm using two pointers moving at different speeds (slow $1\\times$, fast $2\\times$) that detect cycles in $\\mathcal{O}(n)$ time and $\\mathcal{O}(1)$ space if they meet.\n"
-            "4. **Q4: Compare Singly Linked List vs Doubly Linked List in terms of memory.**\n"
-            "   - *Answer*: Doubly Linked List requires an extra pointer per node (consuming 8 additional bytes on 64-bit systems), doubling pointer overhead.\n"
-            "5. **Q5: When should a Linked List be chosen over an Array?**\n"
-            "   - *Answer*: When frequent $\\mathcal{O}(1)$ insertions and deletions occur at the beginning or unpredictable collection sizing prevents preallocating fixed contiguous memory."
-        )
-    elif "recursion" in t_lower or "dynamic programming" in t_lower:
-        math_content = (
-            "### 1. Recurrence Relations & Master Theorem Formulations\n"
-            "Recursive and dynamic programming algorithms express computational work as recurrence relations:\n\n"
-            "- **Divide-and-Conquer Recurrence (Master Theorem Format)**:\n"
-            "$$T(n) = a \\, T\\left(\\frac{n}{b}\\right) + f(n)$$\n"
-            "where $a \\ge 1$ is the number of recursive subproblems, $b > 1$ is the problem division factor, and $f(n) = \\Theta(n^k \\log^p n)$ is non-recursive partitioning work.\n"
-            "  - **Case 1**: If $k < \\log_b a \\implies T(n) = \\Theta(n^{\\log_b a})$.\n"
-            "  - **Case 2**: If $k = \\log_b a$ and $p = 0 \\implies T(n) = \\Theta(n^{\\log_b a} \\log n)$.\n"
-            "  - **Case 3**: If $k > \\log_b a$ and regularity condition $a f(n/b) \\le c f(n)$ holds for $c < 1 \\implies T(n) = \\Theta(f(n))$.\n\n"
-            "- **Dynamic Programming 0/1 Knapsack Recurrence**:\n"
-            "$$DP[i][w] = \\begin{cases} DP[i-1][w] & \\text{if } wt[i-1] > w \\\\ \\max\\big(DP[i-1][w], \\, DP[i-1][w - wt[i-1]] + val[i-1]\\big) & \\text{otherwise} \\end{cases}$$\n\n"
-            "- **Call Stack Auxiliary Space Bound**:\n"
-            "$$\\text{Auxiliary Space} = \\mathcal{O}(d)$$\n"
-            "where $d$ is the maximum recursive call tree depth (stack frame allocation height)."
-        )
-        memory_layout = (
-            "### Call Stack Frame Allocation & Activation Records\n"
-            "1. **Activation Records**: Each recursive function invocation allocates a stack frame containing:\n"
-            "   - Return address instruction pointer.\n"
-            "   - Function parameters and local variables.\n"
-            "   - CPU saved register contexts.\n"
-            "2. **Stack Overflow**: When recursive depth exceeds available thread stack limits (typically 1MB-8MB), stack pointer memory collision produces `RecursionError` or crash.\n"
-            "3. **Tail Call Optimization (TCO)**: An optimizing compiler can transform a tail-recursive function (where recursive call is the final statement) into an iterative loop, reducing auxiliary stack space from $\\mathcal{O}(n)$ to $\\mathcal{O}(1)$."
+            "### Heap Allocation & Cache Penalty\n"
+            "Nodes are allocated individually on the heap via `malloc()` / `new`. Because heap allocators return non-contiguous addresses, linked lists experience frequent L1/L2 cache misses."
         )
         code_impl = (
             "```python\n"
-            "# Production Python: Memoized vs Tabulated Dynamic Programming (0/1 Knapsack)\n"
-            "def knapsack_tabulated(weights, values, capacity):\n"
-            "    n = len(weights)\n"
-            "    # DP table: (n + 1) rows x (capacity + 1) columns\n"
-            "    dp = [[0] * (capacity + 1) for _ in range(n + 1)]\n"
+            "# Production Singly Linked List with In-Place Reversal\n"
+            "class ListNode:\n"
+            "    def __init__(self, val: int = 0, next=None):\n"
+            "        self.val = val\n"
+            "        self.next = next\n"
             "\n"
-            "    for i in range(1, n + 1):\n"
-            "        for w in range(1, capacity + 1):\n"
-            "            if weights[i - 1] <= w:\n"
-            "                dp[i][w] = max(dp[i - 1][w], values[i - 1] + dp[i - 1][w - weights[i - 1]])\n"
-            "            else:\n"
-            "                dp[i][w] = dp[i - 1][w]\n"
-            "\n"
-            "    return dp[n][capacity]\n"
+            "def reverse_linked_list(head: ListNode) -> ListNode:\n"
+            "    prev, curr = None, head\n"
+            "    while curr:\n"
+            "        nxt = curr.next\n"
+            "        curr.next = prev\n"
+            "        prev = curr\n"
+            "        curr = nxt\n"
+            "    return prev\n"
             "```"
         )
         worked_numericals = (
-            "### Problem 1: Solving Recurrences via Master Theorem\n"
-            "**Problem**: Solve the recurrence relation $T(n) = 2T(n/2) + \\Theta(n)$.\n\n"
-            "**Step-by-Step Solution**:\n"
-            "1. Identify parameters: $a = 2, b = 2, f(n) = \\Theta(n) = \\Theta(n^1)$.\n"
-            "2. Calculate critical exponent: $\\log_b a = \\log_2 2 = 1$.\n"
-            "3. Compare: $n^{\\log_b a} = n^1$ and $f(n) = \\Theta(n^1) \\implies k = \\log_b a = 1$.\n"
-            "4. Case 2 of Master Theorem applies:\n"
-            "   $$T(n) = \\Theta(n^{\\log_b a} \\log n) = \\Theta(n \\log n)$$.\n"
-            "This mathematically establishes the asymptotic time complexity of Merge Sort."
+            "### Problem 1: Linked List In-Place Reversal Trace\n"
+            "**Problem**: Trace in-place reversal on list $10 \\to 20 \\to 30 \\to \\text{NULL}$.\n\n"
+            "**Trace**:\n"
+            "- Step 1: $10 \\to \\text{NULL}$, prev=10, curr=20\n"
+            "- Step 2: $20 \\to 10 \\to \\text{NULL}$, prev=20, curr=30\n"
+            "- Step 3: $30 \\to 20 \\to 10 \\to \\text{NULL}$, prev=30, curr=NULL\n"
+            "Result: Reversed list head is 30 in $\\mathcal{O}(n)$ time and $\\mathcal{O}(1)$ space."
         )
         complexity_table = (
-            "| Paradigm | Time Complexity | Auxiliary Space | Key Invariant |\n"
+            "| Operation | Singly Linked List | Doubly Linked List | Array Comparative |\n"
             "| :--- | :--- | :--- | :--- |\n"
-            "| **Naive Recursion (Fibonacci)** | $\\mathcal{O}(2^n)$ | $\\mathcal{O}(n)$ stack | Exponential redundant recomputations |\n"
-            "| **Memoized DP (Top-Down)** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ hash + stack | Memoizes solved subproblems |\n"
-            "| **Tabulated DP (Bottom-Up)** | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ space-optimized | Iterative topological state transitions |"
+            "| **Prepend (Insert at Head)** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ |\n"
+            "| **Append (with Tail ptr)** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ amortized |\n"
+            "| **Arbitrary Search** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ (linear) / $\\mathcal{O}(\\log n)$ (sorted) |"
         )
         pitfalls = (
-            "1. **Missing Base Condition**: Triggering infinite recursion until thread stack exhaust.\n"
-            "2. **Overlapping Subproblem Neglect**: Solving exponential subproblems without caching.\n"
-            "3. **State Mutation During Recursion**: Mutating shared mutable structures without backtracking."
+            "1. **Memory Leak**: Dropping reference to head before freeing allocated nodes.\n"
+            "2. **Null Pointer Dereference**: Accessing `curr.next` when `curr` is NULL.\n"
+            "3. **Lost Next Pointer**: Overwriting `curr.next` before preserving next node in reversal."
         )
         exam_qa = (
             "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
-            "1. **Q1: Define Optimal Substructure.**\n"
-            "   - *Answer*: A problem exhibits optimal substructure if an optimal solution to the problem contains optimal solutions to its subproblems.\n"
-            "2. **Q2: What is the difference between Memoization and Tabulation?**\n"
-            "   - *Answer*: Memoization is top-down using recursion and caching; Tabulation is bottom-up using iteration and tables.\n"
-            "3. **Q3: State Case 1 of Master Theorem.**\n"
-            "   - *Answer*: If $f(n) = \\mathcal{O}(n^c)$ where $c < \\log_b a$, then $T(n) = \\Theta(n^{\\log_b a})$.\n"
-            "4. **Q4: Why does naive recursive Fibonacci run in exponential time?**\n"
-            "   - *Answer*: Because each subproblem branches into two recursive calls forming a call tree of depth $n$ with $2^n$ nodes.\n"
-            "5. **Q5: What is Tail Recursion?**\n"
-            "   - *Answer*: A recursive function where the recursive call is the final operation performed before return."
+            "1. **Q1: Compare Array and Linked List memory allocation.**\n"
+            "   - *Answer*: Arrays allocate fixed contiguous memory at declaration. Linked lists allocate non-contiguous nodes dynamically on the heap with pointer overhead.\n"
+            "2. **Q2: Why is binary search impossible on a singly linked list in $O(\log n)$?**\n"
+            "   - *Answer*: Because linked lists do not support random access ($O(1)$ indexing); accessing the middle element requires $O(n)$ linear traversal."
+        )
+    elif "tree" in t_lower or "bst" in t_lower or "avl" in t_lower or "heap" in t_lower:
+        math_content = (
+            "### 1. Tree Properties, Height Invariants & Balancing Formulations\n"
+            "A tree is a hierarchical data structure composed of nodes connected by directed edges:\n\n"
+            "- **Binary Tree Structural Invariants**:\n"
+            "  * Max nodes at level $i$: $2^i$ (root at level $0$).\n"
+            "  * Max nodes in binary tree of height $h$: $N_{\\max} = 2^{h+1} - 1$.\n"
+            "  * Minimum height with $n$ nodes: $h_{\\min} = \\lceil \\log_2 (n + 1) \\rceil - 1$.\n\n"
+            "- **AVL Tree Balance Factor Invariant**:\n"
+            "$$\\text{BF}(N) = \\text{Height}(\\text{LeftSubtree}) - \\text{Height}(\\text{RightSubtree}) \\in \\{-1, 0, +1\\}$$"
+        )
+        memory_layout = (
+            "### Node Pointer Layout in Heap Memory\n"
+            "Each tree node resides in dynamically allocated heap memory: `struct TreeNode { int val; TreeNode* left; TreeNode* right; };`."
+        )
+        code_impl = (
+            "```python\n"
+            "# Production Binary Search Tree with Search and Insertion Invariants\n"
+            "class BSTNode:\n"
+            "    def __init__(self, val: int):\n"
+            "        self.val = val\n"
+            "        self.left = None\n"
+            "        self.right = None\n"
+            "\n"
+            "def bst_insert(root, val):\n"
+            "    if not root: return BSTNode(val)\n"
+            "    if val < root.val: root.left = bst_insert(root.left, val)\n"
+            "    elif val > root.val: root.right = bst_insert(root.right, val)\n"
+            "    return root\n"
+            "```"
+        )
+        worked_numericals = (
+            "### Problem 1: AVL Tree Insertion & Rebalancing Trace\n"
+            "**Problem**: Insert keys $[10, 20, 30]$ into an empty AVL tree.\n\n"
+            "**Trace**:\n"
+            "1. Insert 10, 20: Height 1, balanced.\n"
+            "2. Insert 30: Node 10 has $\\text{BF} = -2$ (RR imbalance). Execute **Left Rotation** at 10.\n"
+            "3. Result: 20 becomes root with left child 10 and right child 30. Balanced with $\\text{BF}=0$."
+        )
+        complexity_table = (
+            "| Tree Variant | Search (Avg) | Search (Worst) | Insert (Avg) | Insert (Worst) | Space Complexity |\n"
+            "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
+            "| **Binary Search Tree** | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(h)$ |\n"
+            "| **AVL Tree** | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(\\log n)$ |\n"
+            "| **Binary Heap** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ amortized | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(1)$ |"
+        )
+        pitfalls = (
+            "1. **Degenerate Skewed BST**: Inserting sorted data degrades BST to linked list with $O(n)$ search time.\n"
+            "2. **Recursion Stack Overflow**: Traversing deep unbalanced trees exhausting stack frames."
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
+            "1. **Q1: Define Balance Factor in an AVL Tree.**\n"
+            "   - *Answer*: $\\text{BF} = h_L - h_R$. Must be within $\\{-1, 0, +1\\}$.\n"
+            "2. **Q2: State the relation between leaf nodes and internal nodes with two children.**\n"
+            "   - *Answer*: $n_0 = n_2 + 1$."
+        )
+    elif "graph" in t_lower or "dijkstra" in t_lower or "bfs" in t_lower or "dfs" in t_lower:
+        math_content = (
+            "### 1. Graph Theoretical Invariants & Traversal Formulations\n"
+            "A graph $G = (V, E)$ models network relationships via vertices $V$ and edges $E$:\n\n"
+            "- **Handshaking Lemma**: $\\sum_{v \\in V} \\deg(v) = 2 |E|$.\n"
+            "- **Dijkstra's Greedy Relaxation Invariant**: $\\text{dist}[v] = \\min(\\text{dist}[v], \\text{dist}[u] + w(u, v))$."
+        )
+        memory_layout = (
+            "### Adjacency Matrix vs. Adjacency List Representations\n"
+            "- **Adjacency Matrix**: $|V| \\times |V|$ array, $\\mathcal{O}(V^2)$ space.\n"
+            "- **Adjacency List**: Array of dynamic lists, $\\mathcal{O}(V + E)$ space, optimal for sparse networks."
+        )
+        code_impl = (
+            "```python\n"
+            "# Production Dijkstra's Shortest Path Algorithm using Min-Heap\n"
+            "import heapq\n"
+            "def dijkstra(graph, start):\n"
+            "    dist = {node: float('inf') for node in graph}\n"
+            "    dist[start] = 0\n"
+            "    pq = [(0, start)]\n"
+            "    while pq:\n"
+            "        d, u = heapq.heappop(pq)\n"
+            "        if d > dist[u]: continue\n"
+            "        for v, w in graph[u]:\n"
+            "            if dist[u] + w < dist[v]:\n"
+            "                dist[v] = dist[u] + w\n"
+            "                heapq.heappush(pq, (dist[v], v))\n"
+            "    return dist\n"
+            "```"
+        )
+        worked_numericals = (
+            "### Problem 1: Dijkstra's Algorithm Step-by-Step Trace\n"
+            "Given graph $(A-B: 4, A-C: 2, B-C: 1, B-D: 5, C-D: 8)$, find shortest distances from $A$:\n"
+            "1. Relax from $A$: $B=4, C=2$.\n"
+            "2. Visit $C$ (dist 2): Relax $B \\to 2+1=3 < 4 \\implies B=3$. Relax $D \\to 2+8=10$.\n"
+            "3. Visit $B$ (dist 3): Relax $D \\to 3+5=8 < 10 \\implies D=8$.\n"
+            "Final distances: $A=0, B=3, C=2, D=8$."
+        )
+        complexity_table = (
+            "| Algorithm | Data Structure | Time Complexity | Space Complexity |\n"
+            "| :--- | :--- | :--- | :--- |\n"
+            "| **BFS / DFS** | Queue / Stack | $\\mathcal{O}(V + E)$ | $\\mathcal{O}(V)$ |\n"
+            "| **Dijkstra** | Min-Heap | $\\mathcal{O}((V + E) \\log V)$ | $\\mathcal{O}(V)$ |\n"
+            "| **Bellman-Ford** | Array | $\\mathcal{O}(V \\times E)$ | $\\mathcal{O}(V)$ |"
+        )
+        pitfalls = (
+            "1. **Negative Edge Weights with Dijkstra**: Yields incorrect distances (use Bellman-Ford).\n"
+            "2. **Unmarked Cycles in DFS**: Leads to infinite recursion and stack overflow."
+        )
+        exam_qa = (
+            "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
+            "1. **Q1: Why does Dijkstra's algorithm fail for negative edge weights?**\n"
+            "   - *Answer*: It greedily assumes finalized distances are optimal; negative edges can decrease costs later.\n"
+            "2. **Q2: State the space complexity of Adjacency Matrix vs Adjacency List.**\n"
+            "   - *Answer*: Matrix requires $O(V^2)$; List requires $O(V + E)$."
         )
     elif "hash" in t_lower:
         math_content = (
-            "### 1. Hash Functions & Collision Resolution Formulations\n"
-            "A Hash Table maps arbitrary keys $k \\in \\mathcal{K}$ to discrete bucket addresses in an array of size $m$ via a hash function $h(k)$:\n\n"
-            "- **Division Method Hash Function**:\n"
-            "$$h(k) = k \\pmod m$$\n"
-            "where $m$ is ideally a prime number not close to a power of 2 to minimize clustering.\n\n"
-            "- **Load Factor ($\\alpha$) Definition**:\n"
-            "$$\\alpha = \\frac{n}{m}$$\n"
-            "where $n$ is total inserted keys and $m$ is bucket capacity. For separate chaining, $\\alpha$ can exceed $1$; for open addressing, $\\alpha < 1$ is mandatory.\n\n"
-            "- **Open Addressing Collision Resolution Probing Sequences**:\n"
-            "  1. **Linear Probing**: $h(k, i) = \\big(h'(k) + i\\big) \\pmod m$, where $i \\in \\{0, 1, \\dots, m-1\\}$. Causes primary clustering.\n"
-            "  2. **Quadratic Probing**: $h(k, i) = \\big(h'(k) + c_1 i + c_2 i^2\\big) \\pmod m$. Eliminates primary clustering.\n"
-            "  3. **Double Hashing**: $h(k, i) = \\big(h_1(k) + i \\cdot h_2(k)\\big) \\pmod m$, where $h_2(k)$ must be relatively prime to $m$."
+            "### 1. Hash Functions, Load Factor & Collision Resolution Formulations\n"
+            "Hashing achieves constant average time key-value retrieval via deterministic mapping:\n\n"
+            "- **Load Factor Definition**: $$\alpha = \\frac{n}{m}$$\n"
+            "where $n$ is keys stored and $m$ is bucket capacity.\n\n"
+            "- **Division Hash Function**: $$h(k) = k \\pmod m$$\n"
+            "- **Open Addressing Linear Probing Invariant**: $$h(k, i) = (h'(k) + i) \\pmod m$$\n"
+            "- **Double Hashing Invariant**: $$h(k, i) = (h_1(k) + i \\cdot h_2(k)) \\pmod m$$"
         )
         memory_layout = (
-            "### Hash Table Storage Architecture\n"
-            "1. **Separate Chaining**: Array of head pointers to singly linked lists. Buckets handle collisions dynamically without table exhaustion.\n"
-            "2. **Open Addressing**: Contiguous flat array where colliding entries probe adjacent slots directly, maximizing cache locality.\n"
-            "3. **Dynamic Re-Hashing**: When load factor $\\alpha > 0.75$, the table capacity doubles to a new prime $m' > 2m$, and all existing keys are re-inserted."
+            "### Bucket Table Architecture in RAM\n"
+            "1. **Separate Chaining**: Array of pointers to heap linked lists. Resilient to high load factor.\n"
+            "2. **Open Addressing**: Contiguous table storing elements directly. Suffers from primary/secondary clustering."
         )
         code_impl = (
             "```python\n"
-            "# Production Python: Hash Table with Linear Probing & Collision Resolution\n"
+            "# Production Hash Table with Separate Chaining\n"
             "class HashTable:\n"
-            "    def __init__(self, capacity: int = 11):\n"
+            "    def __init__(self, capacity: int = 17):\n"
             "        self.capacity = capacity\n"
-            "        self.keys = [None] * capacity\n"
-            "        self.values = [None] * capacity\n"
-            "        self.size = 0\n"
+            "        self.buckets = [[] for _ in range(capacity)]\n"
             "\n"
-            "    def _hash(self, key: int) -> int:\n"
-            "        return key % self.capacity\n"
+            "    def put(self, key, value):\n"
+            "        idx = hash(key) % self.capacity\n"
+            "        for i, (k, v) in enumerate(self.buckets[idx]):\n"
+            "            if k == key:\n"
+            "                self.buckets[idx][i] = (key, value)\n"
+            "                return\n"
+            "        self.buckets[idx].append((key, value))\n"
             "\n"
-            "    def put(self, key: int, value: any) -> bool:\n"
-            "        if self.size >= self.capacity:\n"
-            "            return False  # Table full\n"
-            "        idx = self._hash(key)\n"
-            "        for i in range(self.capacity):\n"
-            "            probe = (idx + i) % self.capacity\n"
-            "            if self.keys[probe] is None or self.keys[probe] == key:\n"
-            "                self.keys[probe] = key\n"
-            "                self.values[probe] = value\n"
-            "                self.size += 1\n"
-            "                return True\n"
-            "        return False\n"
-            "\n"
-            "    def get(self, key: int) -> any:\n"
-            "        idx = self._hash(key)\n"
-            "        for i in range(self.capacity):\n"
-            "            probe = (idx + i) % self.capacity\n"
-            "            if self.keys[probe] is None:\n"
-            "                return None  # Key does not exist\n"
-            "            if self.keys[probe] == key:\n"
-            "                return self.values[probe]\n"
+            "    def get(self, key):\n"
+            "        idx = hash(key) % self.capacity\n"
+            "        for k, v in enumerate(self.buckets[idx]):\n"
+            "            if k == key: return v\n"
             "        return None\n"
             "```"
         )
         worked_numericals = (
-            "### Problem 1: Step-by-Step Linear Probing Key Insertion Trace\n"
-            "**Problem**: Insert keys $\\{79, 69, 98, 72, 14, 50\\}$ into a hash table of size $m = 10$ using the division hash function $h(k) = k \\pmod{10}$ with Linear Probing.\n\n"
-            "**Step-by-Step Insertion**:\n"
-            "1. Key $79$: $h(79) = 79 \\bmod 10 = 9$. Slot 9 is empty $\\to$ Store at slot 9.\n"
-            "2. Key $69$: $h(69) = 69 \\bmod 10 = 9$. Collision at slot 9! Probe $(9+1) \\bmod 10 = 0$. Slot 0 is empty $\\to$ Store at slot 0.\n"
-            "3. Key $98$: $h(98) = 98 \\bmod 10 = 8$. Slot 8 is empty $\\to$ Store at slot 8.\n"
-            "4. Key $72$: $h(72) = 72 \\bmod 10 = 2$. Slot 2 is empty $\\to$ Store at slot 2.\n"
-            "5. Key $14$: $h(14) = 14 \\bmod 10 = 4$. Slot 4 is empty $\\to$ Store at slot 4.\n"
-            "6. Key $50$: $h(50) = 50 \\bmod 10 = 0$. Collision at slot 0! Probe $(0+1)=1$. Slot 1 is empty $\\to$ Store at slot 1.\n\n"
-            "**Final Table Layout**: `[69, 50, 72, _, 14, _, _, _, 98, 79]`."
+            "### Problem 1: Open Addressing Collision Trace via Linear Probing\n"
+            "Given table size $m = 10$, hash function $h(k) = k \\pmod{10}$, insert keys $[43, 23, 13, 33]$:\n"
+            "1. $43 \\to 43 \\pmod{10} = 3$. Slot 3 empty $\\implies$ store at 3.\n"
+            "2. $23 \\to 23 \\pmod{10} = 3$. Collision! Linear probe: slot 4 empty $\\implies$ store at 4.\n"
+            "3. $13 \\to 13 \\pmod{10} = 3$. Collision! Slots 3, 4 full. Probe 5 empty $\\implies$ store at 5.\n"
+            "4. $33 \\to 33 \\pmod{10} = 3$. Collision! Probe 6 empty $\\implies$ store at 6."
         )
         complexity_table = (
-            "| Operation | Average Case | Worst Case (Degenerate) | Space Complexity |\n"
-            "| :--- | :--- | :--- | :--- |\n"
-            "| **Search** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Insertion** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Deletion** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |"
+            "| Scheme | Search (Avg) | Search (Worst) | Insert (Avg) | Insert (Worst) |\n"
+            "| :--- | :--- | :--- | :--- | :--- |\n"
+            "| **Chaining** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ |\n"
+            "| **Linear Probing** | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ |"
         )
         pitfalls = (
-            "1. **Primary Clustering in Linear Probing**: Long continuous blocks of occupied slots build up, drastically increasing average probe count.\n"
-            "2. **Improper Deletion in Open Addressing**: Physically clearing a slot creates holes that break search chains for subsequent colliding keys; slots must be marked with a tombstone (DELETED).\n"
-            "3. **Poor Hash Function Distribution**: Hash functions that map multiple keys to the same bucket degrade hash table lookup from $\\mathcal{O}(1)$ to $\\mathcal{O}(n)$."
+            "1. **Primary Clustering**: Long clusters formed in linear probing slowing down search.\n"
+            "2. **Poor Hash Modulo**: Using non-prime table sizes creating common factor collisions."
         )
         exam_qa = (
             "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
             "1. **Q1: Define Load Factor in Hashing.**\n"
-            "   - *Answer*: The ratio $\\alpha = n/m$ of the number of stored keys $n$ to the total bucket capacity $m$.\n"
-            "2. **Q2: What is primary clustering in Linear Probing?**\n"
-            "   - *Answer*: The tendency of occupied slots to form long continuous clusters, causing subsequent probes to take increasingly more steps.\n"
-            "3. **Q3: How does Double Hashing eliminate clustering?**\n"
-            "   - *Answer*: It uses a second hash function $h_2(k)$ as the probe increment step, ensuring different keys starting at the same slot follow different probing sequences.\n"
-            "4. **Q4: Why should hash table size $m$ be a prime number?**\n"
-            "   - *Answer*: Prime numbers distribute key residues evenly and minimize common factors with key patterns.\n"
-            "5. **Q5: What is a Tombstone in open addressing deletion?**\n"
-            "   - *Answer*: A special marker indicating a slot previously held data, allowing searches to continue past it while permitting new insertions."
+            "   - *Answer*: $\\alpha = n/m$, the ratio of stored keys to bucket capacity.\n"
+            "2. **Q2: Why should hash table size $m$ be a prime number?**\n"
+            "   - *Answer*: Prime numbers distribute key residues evenly and avoid common factors with key patterns."
         )
     else:
-        # Default comprehensive CS template
+        # General CS / Algorithm / Software Engine
         math_content = (
-            "### 1. Theoretical Formulations & Algorithmic State Invariants\n"
-            "The computational mechanics of **" + topic + "** are governed by deterministic state transitions and complexity bounds:\n\n"
-            "- **Asymptotic State Transition Recurrence**:\n"
-            "$$T(n) = T(n - 1) + \\mathcal{O}(1) \\implies T(n) = \\mathcal{O}(n)$$\n\n"
-            "- **Information-Theoretic Comparison Bound**:\n"
-            "$$\\Omega(n \\log n) \\le C_{\\mathrm{cmp}}(n)$$\n\n"
-            "- **Physical Memory Addressing Invariant**:\n"
-            "$$\\text{Address}(\\text{Node}_i) = \\text{BaseAddress} + (i - \\text{LB}) \\times w$$"
+            "### 1. Algorithmic Invariants, State Bounds & Recurrences\n"
+            "The computational mechanics of **" + topic + "** are governed by state-space invariants and asymptotic bounds:\n\n"
+            "- **Algorithmic Recurrence Formulation**:\n"
+            "$$T(n) = a \\, T\\left(\\frac{n}{b}\\right) + f(n)$$\n"
+            "Under the Master Theorem, time growth is strictly bounded by the comparison of $f(n)$ against $n^{\\log_b a}$.\n\n"
+            "- **State Correctness Invariant**:\n"
+            "For every valid operational step $k$, state $\\sigma_k$ satisfies all safety and termination invariants."
         )
         memory_layout = (
-            "### Memory Representation & Architectural Integration\n"
-            "1. **Memory Allocation**: Structured in contiguous blocks or heap-allocated pointer chains to preserve execution invariants.\n"
-            "2. **Cache Locality**: Access patterns balance L1/L2 cache utilization against dynamic resizing requirements.\n"
-            "3. **Pointer Synchronization**: Maintains state consistency across concurrent or sequential thread invocations."
+            "### Architectural Memory Layout & Execution Environment\n"
+            "1. **Execution Stack Frame**: Manages activation records, local variables, and return instruction pointers.\n"
+            "2. **Heap Allocation**: Manages dynamic object graphs with deterministic boundary validation.\n"
+            "3. **Data Cache Alignment**: Exploits sequential memory layouts to maximize CPU instruction throughput."
         )
         class_name = re.sub(r'[^a-zA-Z0-9]+', '', topic) or "Engine"
         code_impl = (
             "```python\n"
             "# Production-Grade Implementation: " + topic + "\n"
-            "class " + class_name + "Model:\n"
+            "class " + class_name + "System:\n"
             "    \"\"\"Authoritative implementation with boundary validation and invariant assertions.\"\"\"\n"
             "    def __init__(self, capacity: int = 100):\n"
             "        self.capacity = capacity\n"
-            "        self.elements = []\n"
-            "        self._is_ready = True\n"
+            "        self.records = {}\n"
             "\n"
-            "    def process(self, item) -> bool:\n"
-            "        if item is None or len(self.elements) >= self.capacity:\n"
+            "    def execute(self, key: str, value) -> bool:\n"
+            "        if key is None or len(self.records) >= self.capacity:\n"
             "            return False\n"
-            "        self.elements.append(item)\n"
+            "        self.records[key] = value\n"
             "        return True\n"
             "\n"
-            "    def lookup(self, key) -> int:\n"
-            "        for idx, val in enumerate(self.elements):\n"
-            "            if val == key:\n"
-            "                return idx\n"
-            "        return -1\n"
+            "    def query(self, key: str):\n"
+            "        return self.records.get(key, None)\n"
             "```"
         )
         worked_numericals = (
-            "### Problem 1: Algorithmic Verification & State Transition Trace\n"
-            "**Problem**: Trace the state transitions on input sequence $S = [12, 24, 36, 48]$.\n\n"
-            "**Trace Solution**:\n"
-            "1. Initialization: State is initialized with $\\text{count} = 0$, base memory bound asserted.\n"
-            "2. Processing element 12: Transition $\\sigma_0 \\to \\sigma_1$, invariant verified.\n"
-            "3. Processing element 24: Transition $\\sigma_1 \\to \\sigma_2$, memory state consistent.\n"
-            "4. Processing elements 36, 48: Final state $\\sigma_4$ reached in $\\mathcal{O}(n)$ total operations."
+            "### Problem 1: Complexity Recurrence Solution\n"
+            "**Problem**: Solve the asymptotic recurrence: $T(n) = 2T(n/2) + \\mathcal{O}(n)$.\n\n"
+            "**Solution**:\n"
+            "1. Identify parameters: $a = 2, b = 2, f(n) = \\mathcal{O}(n^1)$.\n"
+            "2. Calculate critical exponent: $n^{\\log_b a} = n^{\\log_2 2} = n^1$.\n"
+            "3. Since $f(n) = \\Theta(n^1)$, Case 2 of Master Theorem applies $\\implies T(n) = \\Theta(n \\log n)$."
         )
         complexity_table = (
-            "| Operation / Stage | Best Case Time | Average Case Time | Worst Case Time | Space Complexity |\n"
+            "| Stage / Procedure | Best Case | Average Case | Worst Case | Space Complexity |\n"
             "| :--- | :--- | :--- | :--- | :--- |\n"
-            "| **Lookup / Access** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ to $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Insertion / State Mutation** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
-            "| **Full Traversal** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |"
+            "| **Core Operation** | $\\mathcal{O}(1)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |\n"
+            "| **Total Procedure** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n \\log n)$ | $\\mathcal{O}(n^2)$ | $\\mathcal{O}(n)$ |"
         )
         pitfalls = (
-            "1. **Unchecked Null/Boundary Conditions**: Accessing uninitialized references producing runtime exceptions.\n"
-            "2. **Off-By-One Indexing**: Erroneous loop condition boundaries.\n"
-            "3. **Memory Leaks**: Abandoning heap objects without garbage collection or explicit deallocation."
+            "1. **Unchecked Edge Conditions**: Failing to validate empty or null inputs leading to runtime failures.\n"
+            "2. **Boundary Truncation**: Integer overflow or index out of range exceptions.\n"
+            "3. **Memory Leaks**: Retaining unused references preventing garbage collection."
         )
         exam_qa = (
             "### Section A: 2-Mark Short Questions & Answers (AKTU Pattern)\n"
-            "1. **Q1: Define " + topic + " in modern computer architecture.**\n"
-            "   - *Answer*: A structured computational model providing deterministic operations under explicit space and time invariants.\n"
-            "2. **Q2: State the primary worst-case time complexity bound for " + topic + ".**\n"
-            "   - *Answer*: Bounded by $\\mathcal{O}(n)$ under degenerate operational distributions.\n"
-            "3. **Q3: What is the auxiliary space complexity of " + topic + "?**\n"
-            "   - *Answer*: Strict $\\mathcal{O}(1)$ auxiliary space during iterative execution.\n"
-            "4. **Q4: State one critical edge case to validate when implementing " + topic + ".**\n"
-            "   - *Answer*: Verifying empty or single-element inputs prior to executing state transitions.\n"
-            "5. **Q5: Compare " + topic + " with naive linear storage.**\n"
-            "   - *Answer*: Provides structured indexing guarantees, reducing average computational cycles."
+            "1. **Q1: Define " + topic + " in computer science curriculum.**\n"
+            "   - *Answer*: A deterministic computational architecture providing bounded space and time execution guarantees.\n"
+            "2. **Q2: State the primary asymptotic bound for " + topic + ".**\n"
+            "   - *Answer*: Bounded by $\\mathcal{O}(n \\log n)$ or $\\mathcal{O}(n)$ under standard operating invariants."
         )
 
     return (
@@ -638,159 +911,81 @@ def _build_ee_topic_notes(topic: str, domain: str, t_lower: str) -> str:
         "Electrical network analysis is governed by Kirchhoff's fundamental laws derived from Maxwell's equations:\n\n"
         "- **Kirchhoff's Current Law (KCL - Conservation of Charge)**:\n"
         "$$\\sum_{k=1}^{N} I_k = 0$$\n"
-        "At any junction node, the algebraic sum of currents entering equals the sum of currents leaving.\n\n"
         "- **Kirchhoff's Voltage Law (KVL - Conservation of Energy)**:\n"
         "$$\\sum_{k=1}^{M} V_k = 0$$\n"
-        "The algebraic sum of all branch voltages around any closed loop in a planar circuit equals zero.\n\n"
-        "- **Thevenin's Equivalent Theorem**:\n"
-        "Any linear, bilateral two-terminal resistive network can be replaced with an equivalent voltage source $V_{\\text{th}}$ in series with an equivalent resistance $R_{\\text{th}}$:\n"
-        "$$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L}$$\n\n"
-        "- **Maximum Power Transfer Theorem**:\n"
-        "Maximum power is transferred to load $R_L$ when $R_L = R_{\\text{th}}$:\n"
-        "$$P_{\\max} = \\frac{V_{\\text{th}}^2}{4 R_{\\text{th}}}$$"
+        "- **Thevenin's Equivalent & Maximum Power Transfer**:\n"
+        "$$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L}, \\qquad P_{\\max} = \\frac{V_{\\text{th}}^2}{4 R_{\\text{th}}}$$"
     )
-    circuit_impl = (
+    code_impl = (
         "```python\n"
-        "# Python Simulation: Thevenin Equivalent Circuit Calculator\n"
-        "def thevenin_analysis(v_open_circuit: float, r_internal: float, r_load: float):\n"
-        "    \"\"\"Calculates load voltage, load current, and delivered power.\"\"\"\n"
-        "    if (r_internal + r_load) == 0:\n"
-        "        raise ValueError(\"Total resistance cannot be zero.\")\n"
-        "    i_load = v_open_circuit / (r_internal + r_load)\n"
-        "    v_load = i_load * r_load\n"
-        "    p_load = (i_load ** 2) * r_load\n"
-        "    p_max = (v_open_circuit ** 2) / (4 * r_internal) if r_internal > 0 else 0\n"
-        "    return {\"I_load\": i_load, \"V_load\": v_load, \"P_load\": p_load, \"P_max\": p_max}\n"
+        "# Electrical Engineering Simulation: Thevenin Equivalent & Power Transfer\n"
+        "def thevenin_analysis(v_th: float, r_th: float, r_load: float) -> dict:\n"
+        "    current = v_th / (r_th + r_load)\n"
+        "    v_load = current * r_load\n"
+        "    power = (current ** 2) * r_load\n"
+        "    p_max = (v_th ** 2) / (4 * r_th)\n"
+        "    return {'current': current, 'power': power, 'max_power': p_max}\n"
         "```"
-    )
-    numerical = (
-        "### Problem 1: Step-by-Step Thevenin Equivalent Calculation\n"
-        "**Problem**: A DC circuit consists of a $24\\text{ V}$ independent voltage source connected to a resistor $R_1 = 6\\,\\Omega$ in series, followed by a parallel branch with $R_2 = 12\\,\\Omega$, connected to load terminals $A-B$ with load $R_L = 4\\,\\Omega$. Find the Thevenin equivalent circuit and compute load current $I_L$.\n\n"
-        "**Step-by-Step Solution**:\n"
-        "1. **Calculate Open-Circuit Voltage ($V_{\\text{th}}$)** across terminals $A-B$ with $R_L$ removed:\n"
-        "   $$V_{\\text{th}} = V_{R_2} = 24 \\times \\left( \\frac{12}{6 + 12} \\right) = 24 \\times \\frac{12}{18} = 16\\text{ V}$$\n"
-        "2. **Calculate Thevenin Resistance ($R_{\\text{th}}$)** with independent voltage source deactivated (short-circuited):\n"
-        "   $$R_{\\text{th}} = R_1 \\parallel R_2 = \\frac{6 \\times 12}{6 + 12} = \\frac{72}{18} = 4\\,\\Omega$$\n"
-        "3. **Compute Load Current ($I_L$)** across $R_L = 4\\,\\Omega$:\n"
-        "   $$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L} = \\frac{16\\text{ V}}{4\\,\\Omega + 4\\,\\Omega} = \\frac{16}{8} = 2\\text{ A}$$\n"
-        "4. **Delivered Power ($P_L$)**:\n"
-        "   $$P_L = I_L^2 \\times R_L = (2)^2 \\times 4 = 16\\text{ W}$$\n"
-        "Since $R_L = R_{\\text{th}} = 4\\,\\Omega$, the system is operating at the maximum power transfer condition."
     )
     return (
         "# Executive Overview & Theoretical Foundations: " + topic + "\n"
-        "**Academic Domain:** " + domain + " | **Level:** Undergraduate Engineering (B.Tech EE/ECE)\n\n"
-        "**" + topic + "** is a core operational subject in electrical network theory and electronic system engineering. "
-        "It establishes the mathematical relationships governing electromagnetic energy flow, circuit loop stability, and signal integrity.\n\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** constitutes a core foundational discipline within Electrical & Electronics Engineering. "
+        "Mastering electrical circuit analysis, transient behavior, and electromagnetic field equations guarantees "
+        "reliable power, analog, and digital system design.\n\n"
         "## Core Concepts & Mathematical / Architectural Linchpins\n"
         + math_content + "\n\n"
-        "## Physical Architecture & Component Models\n"
-        "- **Linear Bilateral Elements**: Resistors, inductors, and capacitors obey superposition and reciprocity.\n"
-        "- **Impedance Matching**: Minimizes signal reflections in high-frequency transmission lines.\n\n"
-        "## Production-Grade Implementation & Boundary Validation\n"
-        + circuit_impl + "\n\n"
-        "## Step-by-Step Solved Numericals & Circuit Traces\n"
-        + numerical + "\n\n"
-        "## Real-World Pitfalls, Common Bugs & Exam Traps\n"
-        "1. Deactivating independent current sources as short circuits instead of open circuits.\n"
-        "2. Incorrect reference polarity assignment when applying KVL mesh equations.\n"
-        "3. Forgetting source internal impedance during power transfer calculations.\n\n"
+        "## Production-Grade Simulation & Computational Circuit Modeling\n"
+        + code_impl + "\n\n"
         "## University Examination Practice Problems with Model Answers\n"
         "1. **Q1: State Thevenin's Theorem.**\n"
-        "   - *Answer*: Any linear two-terminal DC network can be replaced by an equivalent voltage source $V_{\\text{th}}$ in series with resistance $R_{\\text{th}}$.\n"
-        "2. **Q2: What is the condition for maximum power transfer in a DC circuit?**\n"
-        "   - *Answer*: The load resistance must equal the Thevenin internal resistance of the network ($R_L = R_{\\text{th}}$).\n"
-        "3. **Q3: State Kirchhoff's Current Law and its underlying conservation principle.**\n"
-        "   - *Answer*: $\\sum I = 0$ at any node; it is based on the law of conservation of electric charge."
+        "   - *Answer*: Any linear, bilateral, active two-terminal DC network can be replaced by an equivalent voltage source $V_{\\text{th}}$ in series with an equivalent resistance $R_{\\text{th}}$.\n"
+        "2. **Q2: State the condition for maximum power transfer to a load.**\n"
+        "   - *Answer*: Load resistance must equal Thevenin resistance ($R_L = R_{\\text{th}}$), yielding $P_{\\max} = V_{\\text{th}}^2 / (4 R_{\\text{th}})$."
     )
 
 
 def _build_me_topic_notes(topic: str, domain: str, t_lower: str) -> str:
-    """Generates realistic Mechanical Engineering notes with real thermodynamic and fluid mechanics equations."""
+    """Generates realistic Mechanical Engineering revision notes."""
     math_content = (
-        "### 1. Governing Laws of Thermodynamics & Fluid Dynamics\n"
-        "Mechanical and thermal energy systems are governed by macroscopic conservation laws:\n\n"
-        "- **First Law of Thermodynamics (Energy Conservation)**:\n"
-        "$$dQ = dU + dW \\implies \\Delta U = Q - W$$\n"
-        "For an ideal gas undergoing a quasi-static process, work done is $W = \\int P \\, dV$.\n\n"
-        "- **Second Law of Thermodynamics (Entropy Invariant)**:\n"
-        "$$dS \\ge \\frac{\\delta Q}{T}$$\n\n"
-        "- **Carnot Heat Engine Efficiency Bound**:\n"
-        "$$\\eta_{\\text{Carnot}} = 1 - \\frac{T_L}{T_H} = \\frac{T_H - T_L}{T_H}$$\n"
-        "where $T_H$ and $T_L$ are absolute temperatures of heat source and heat sink in Kelvin ($\\text{K}$).\n\n"
-        "- **Bernoulli's Equation (Incompressible, Inviscid Fluid Flow)**:\n"
-        "$$P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{Constant}$$"
-    )
-    numerical = (
-        "### Problem 1: Step-by-Step Carnot Engine Thermal Efficiency & Power Output\n"
-        "**Problem**: A Carnot heat engine operates between a heat source at $T_H = 600^\\circ\\text{C}$ and a heat sink at $T_L = 30^\\circ\\text{C}$. It absorbs $1200\\text{ kJ}$ of heat per cycle. Compute (a) Thermal efficiency $\\eta$, (b) Net work output $W_{\\text{net}}$, and (c) Heat rejected to the sink $Q_L$.\n\n"
-        "**Step-by-Step Solution**:\n"
-        "1. **Convert temperatures to absolute Kelvin scale**:\n"
-        "   $$T_H = 600 + 273.15 = 873.15\\text{ K}$$\n"
-        "   $$T_L = 30 + 273.15 = 303.15\\text{ K}$$\n"
-        "2. **Calculate Carnot Thermal Efficiency**:\n"
-        "   $$\\eta = 1 - \\frac{T_L}{T_H} = 1 - \\frac{303.15}{873.15} = 1 - 0.3472 = 0.6528 \\implies 65.28\\%$$\n"
-        "3. **Compute Net Work Output ($W_{\\text{net}}$)**:\n"
-        "   $$W_{\\text{net}} = \\eta \\times Q_H = 0.6528 \\times 1200\\text{ kJ} = 783.36\\text{ kJ}$$\n"
-        "4. **Compute Heat Rejected ($Q_L$)**:\n"
-        "   $$Q_L = Q_H - W_{\\text{net}} = 1200 - 783.36 = 416.64\\text{ kJ}$$"
+        "### 1. Thermodynamic Laws & Fluid Mechanics Governing Formulations\n"
+        "Mechanical systems are governed by the conservation of mass, momentum, and energy across control volumes:\n\n"
+        "- **First Law of Thermodynamics (Conservation of Energy)**:\n"
+        "$$\\delta Q = dU + \\delta W \\implies Q - W = \\Delta U$$\n"
+        "- **Carnot Engine Thermal Efficiency Bound**:\n"
+        "$$\\eta_{\\text{Carnot}} = 1 - \\frac{T_L}{T_H} = \\frac{W_{\\text{net}}}{Q_H}$$\n"
+        "- **Bernoulli's Equation for Incompressible, Frictionless Fluid Flow**:\n"
+        "$$P + \\frac{1}{2} \\rho v^2 + \\rho g z = \\text{constant}$$\n"
+        "- **Reynolds Number (Laminar vs. Turbulent Flow Transition)**:\n"
+        "$$\\text{Re} = \\frac{\\rho v D}{\\mu} = \\frac{v D}{\\nu}$$\n"
+        "Flow through circular pipes is laminar for $\\text{Re} < 2000$ and turbulent for $\\text{Re} > 4000$."
     )
     return (
         "# Executive Overview & Theoretical Foundations: " + topic + "\n"
-        "**Academic Domain:** " + domain + " | **Level:** Undergraduate Engineering (B.Tech ME)\n\n"
-        "**" + topic + "** constitutes a primary analytical discipline within mechanical systems engineering. "
-        "Understanding its governing equations provides the foundation for designing power cycles, fluid transport networks, and stress-optimized structures.\n\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** represents an essential discipline within Mechanical Engineering. "
+        "A rigorous comprehension of continuum mechanics, heat transfer modes, and fluid dynamics "
+        "provides the analytical machinery necessary for designing thermal and mechanical machinery.\n\n"
         "## Core Concepts & Mathematical / Architectural Linchpins\n"
         + math_content + "\n\n"
-        "## Step-by-Step Solved Numericals & Thermodynamic Traces\n"
-        + numerical + "\n\n"
-        "## Real-World Pitfalls, Common Bugs & Exam Traps\n"
-        "1. Forgetting to convert temperatures to Kelvin ($\\text{K} = ^\\circ\\text{C} + 273.15$).\n"
-        "2. Confusing gauge pressure with absolute pressure ($P_{\\text{abs}} = P_{\\text{gauge}} + P_{\\text{atm}}$).\n"
-        "3. Violating the sign convention for work done on vs. work done by the system.\n\n"
         "## University Examination Practice Problems with Model Answers\n"
-        "1. **Q1: State the Kelvin-Planck statement of the Second Law of Thermodynamics.**\n"
-        "   - *Answer*: It is impossible for any device that operates on a cycle to receive heat from a single reservoir and produce an equivalent amount of work.\n"
-        "2. **Q2: State Bernoulli's equation and its key assumptions.**\n"
-        "   - *Answer*: $P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{constant}$, assuming inviscid, incompressible, laminar, steady flow along a streamline.\n"
-        "3. **Q3: What is the efficiency of a reversible heat engine operating between identical source and sink temperatures?**\n"
-        "   - *Answer*: Zero, since $\\eta = 1 - T_L/T_H = 1 - 1 = 0$."
+        "1. **Q1: State the Second Law of Thermodynamics (Kelvin-Planck statement).**\n"
+        "   - *Answer*: It is impossible for any system to operate in a thermodynamic cycle and deliver a net amount of work to its surroundings while receiving energy by heat transfer from a single thermal reservoir.\n"
+        "2. **Q2: State Bernoulli's equation assumptions.**\n"
+        "   - *Answer*: Steady, incompressible, inviscid (non-viscous), and irrotational flow along a streamline."
     )
 
 
 def _build_math_topic_notes(topic: str, domain: str, t_lower: str) -> str:
-    """Generates realistic Engineering Mathematics notes with real calculus and linear algebra."""
+    """Generates realistic Engineering Mathematics revision notes."""
     math_content = (
-        "### 1. Analytical Formulations & Mathematical Invariants\n"
-        "Engineering Mathematics provides analytical tools for modeling multi-dimensional continuous and discrete systems:\n\n"
-        "- **Characteristic Equation & Eigenvalues**:\n"
+        "### 1. Linear Algebra, Vector Calculus & Differential Equations\n"
+        "- **Matrix Eigenvalue & Characteristic Equation**:\n"
         "$$\\det(A - \\lambda I) = 0$$\n"
-        "For an $n \\times n$ matrix $A$, solving the characteristic polynomial yields eigenvalues $\\lambda_1, \\dots, \\lambda_n$.\n\n"
         "- **Cayley-Hamilton Theorem**:\n"
-        "Every square matrix satisfies its own characteristic equation:\n"
-        "$$p(A) = A^n + c_{n-1}A^{n-1} + \\dots + c_0 I = 0$$\n\n"
-        "- **Exact First-Order Differential Equation Condition**:\n"
-        "$$M(x, y) \\, dx + N(x, y) \\, dy = 0$$\n"
-        "is exact if and only if:\n"
-        "$$\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$$\n\n"
-        "- **Taylor Series Expansion around $x = a$**:\n"
-        "$$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!} (x - a)^n$$"
-    )
-    numerical = (
-        "### Problem 1: Step-by-Step Eigenvalue & Eigenvector Computation\n"
-        "**Problem**: Find the eigenvalues and corresponding eigenvectors for the matrix:\n"
-        "$$A = \\begin{bmatrix} 4 & 1 \\\\ 2 & 3 \\end{bmatrix}$$\n\n"
-        "**Step-by-Step Solution**:\n"
-        "1. **Formulate Characteristic Equation**:\n"
-        "   $$\\det(A - \\lambda I) = \\det\\begin{bmatrix} 4 - \\lambda & 1 \\\\ 2 & 3 - \\lambda \\end{bmatrix} = (4 - \\lambda)(3 - \\lambda) - (1)(2) = 0$$\n"
-        "   $$\\lambda^2 - 7\\lambda + 12 - 2 = \\lambda^2 - 7\\lambda + 10 = 0$$\n"
-        "   $$(\\lambda - 5)(\\lambda - 2) = 0 \\implies \\lambda_1 = 5, \\quad \\lambda_2 = 2$$\n\n"
-        "2. **Find Eigenvector for $\\lambda_1 = 5$**:\n"
-        "   $$(A - 5I) \\mathbf{v} = \\begin{bmatrix} -1 & 1 \\\\ 2 & -2 \\end{bmatrix} \\begin{bmatrix} x_1 \\\\ x_2 \\end{bmatrix} = \\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix}$$\n"
-        "   $$-x_1 + x_2 = 0 \\implies x_1 = x_2 \\implies \\mathbf{v}_1 = \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$$\n\n"
-        "3. **Find Eigenvector for $\\lambda_2 = 2$**:\n"
-        "   $$(A - 2I) \\mathbf{v} = \\begin{bmatrix} 2 & 1 \\\\ 2 & 1 \\end{bmatrix} \\begin{bmatrix} x_1 \\\\ x_2 \\end{bmatrix} = \\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix}$$\n"
-        "   $$2x_1 + x_2 = 0 \\implies x_2 = -2x_1 \\implies \\mathbf{v}_2 = \\begin{bmatrix} 1 \\\\ -2 \\end{bmatrix}$$"
+        "Every square matrix $A$ satisfies its own characteristic polynomial: $$p(A) = 0$$\n"
+        "- **Exact First-Order Differential Equation Criterion**:\n"
+        "$$M(x, y) \\, dx + N(x, y) \\, dy = 0 \\iff \\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$$"
     )
     return (
         "# Executive Overview & Theoretical Foundations: " + topic + "\n"
@@ -799,22 +994,64 @@ def _build_math_topic_notes(topic: str, domain: str, t_lower: str) -> str:
         "Understanding its analytical structures guarantees exact formulation and numerical stability in real-world systems.\n\n"
         "## Core Concepts & Mathematical / Architectural Linchpins\n"
         + math_content + "\n\n"
-        "## Step-by-Step Solved Numericals & Analytical Derivations\n"
-        + numerical + "\n\n"
-        "## Real-World Pitfalls, Common Bugs & Exam Traps\n"
-        "1. Forgetting to test for exactness before integrating differential forms.\n"
-        "2. Sign errors when expanding $2 \\times 2$ or $3 \\times 3$ matrix determinants.\n"
-        "3. Violating radius of convergence bounds when approximating functions with Taylor series.\n\n"
         "## University Examination Practice Problems with Model Answers\n"
         "1. **Q1: State the Cayley-Hamilton Theorem.**\n"
         "   - *Answer*: Every square matrix satisfies its own characteristic polynomial equation $\\det(A - \\lambda I) = 0$.\n"
         "2. **Q2: What is the condition for $M dx + N dy = 0$ to be an exact differential equation?**\n"
-        "   - *Answer*: $\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$.\n"
-        "3. **Q3: State the relationship between the trace of a matrix and its eigenvalues.**\n"
-        "   - *Answer*: The sum of the eigenvalues equals the trace of the matrix: $\\sum_{i=1}^n \\lambda_i = \\text{Trace}(A)$."
+        "   - *Answer*: $\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$."
     )
 
 
 def _build_general_engineering_notes(topic: str, domain: str, t_lower: str) -> str:
-    """Fallback generator for any general engineering topic."""
-    return _build_cs_topic_notes(topic, domain, t_lower)
+    """Universal engineering note generator for any general engineering science topic."""
+    math_content = (
+        "### 1. Governing System Dynamics, Conservation Principles & Transfer Characteristics\n"
+        "The engineering behavior of **" + topic + "** is modeled through system state variables and conservation formulations:\n\n"
+        "- **Linear System Transfer Formulation**:\n"
+        "$$\\mathcal{Y}(s) = \\mathcal{H}(s) \\cdot \\mathcal{U}(s) + \\mathcal{E}(s)$$\n"
+        "where $\\mathcal{H}(s)$ denotes the system transfer function characterizing dynamic responsiveness.\n\n"
+        "- **Conservation of State Invariants**:\n"
+        "$$\\frac{d}{dt} \\int_{\\Omega} \\rho \\, \\phi \\, d\\Omega + \\oint_{\\partial \\Omega} \\rho \\, \\phi \\, (\\mathbf{v} \\cdot \\mathbf{n}) \\, dA = \\int_{\\Omega} S_\\phi \\, d\\Omega$$\n"
+        "enforcing equilibrium between accumulation, net convective flux, and internal sources.\n\n"
+        "- **Dimensional Homogeneity (Buckingham $\\Pi$ Theorem)**:\n"
+        "$$\\Pi_1 = \\Phi(\\Pi_2, \\Pi_3, \\dots, \\Pi_{n-k})$$"
+    )
+    code_impl = (
+        "```python\n"
+        "# Computational Engineering Model: " + topic + "\n"
+        "class SystemSimulation:\n"
+        "    \"\"\"Numerical evaluation of governing transfer parameters.\"\"\"\n"
+        "    def __init__(self, damping: float = 0.2, natural_freq: float = 5.0):\n"
+        "        self.zeta = damping\n"
+        "        self.wn = natural_freq\n"
+        "\n"
+        "    def step_response(self, time_s: float) -> float:\n"
+        "        import math\n"
+        "        if self.zeta >= 1.0:\n"
+        "            return 1.0 - math.exp(-self.wn * time_s)\n"
+        "        wd = self.wn * math.sqrt(1 - self.zeta ** 2)\n"
+        "        decay = math.exp(-self.zeta * self.wn * time_s)\n"
+        "        osc = math.cos(wd * time_s) + (self.zeta / math.sqrt(1 - self.zeta ** 2)) * math.sin(wd * time_s)\n"
+        "        return 1.0 - decay * osc\n"
+        "```"
+    )
+    return (
+        "# Executive Overview & Theoretical Foundations: " + topic + "\n"
+        "**Academic Domain:** " + domain + " | **Level:** B.Tech Undergraduate Engineering\n\n"
+        "**" + topic + "** represents an important conceptual foundation in " + domain + ". "
+        "A rigorous comprehension of its governing principles, equilibrium states, and operational parameters "
+        "is critical for analyzing complex engineering problems and scoring top marks in university exams.\n\n"
+        "## Core Concepts & Mathematical / Architectural Linchpins\n"
+        + math_content + "\n\n"
+        "## Production-Grade Implementation & Computational Modeling\n"
+        + code_impl + "\n\n"
+        "## Real-World Pitfalls, Common Bugs & Exam Traps\n"
+        "1. Neglecting non-linearities and boundary constraints in real physical systems.\n"
+        "2. Violating dimensional consistency across conversion factors.\n"
+        "3. Assuming steady-state behavior during initial startup transients.\n\n"
+        "## University Examination Practice Problems with Model Answers\n"
+        "1. **Q1: Define the primary governing parameter of " + topic + ".**\n"
+        "   - *Answer*: It specifies the transfer equilibrium and operational response under defined system inputs.\n"
+        "2. **Q2: State the dimensional homogeneity principle.**\n"
+        "   - *Answer*: Every additive term in a physically meaningful equation must possess identical fundamental dimensions ($M, L, T, \\theta$)."
+    )

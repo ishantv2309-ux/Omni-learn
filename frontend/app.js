@@ -9,8 +9,75 @@ let completedRoadmapSteps = {}; // Map of query -> Set of step indices
 let isSearching = false;
 const searchResultCache = new Map(); // Client-side instant query cache
 
+// --- Dark / Light Mode Theme System ---
+function initTheme() {
+    const savedTheme = localStorage.getItem("omni_theme") || "dark";
+    applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+        root.classList.add("dark");
+        root.classList.remove("light");
+    } else {
+        root.classList.add("light");
+        root.classList.remove("dark");
+    }
+    localStorage.setItem("omni_theme", theme);
+    updateThemeToggleUI(theme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+}
+
+function updateThemeToggleUI(theme) {
+    const icon = document.getElementById("themeToggleIcon");
+    const text = document.getElementById("themeToggleText");
+    const header = document.querySelector("header.navbar-omni");
+    const bookmarksBtn = document.getElementById("bookmarksNavBtn") || document.querySelector("button[onclick='toggleBookmarksSidebar()']");
+
+    if (icon) {
+        if (theme === "dark") {
+            icon.className = "fa-solid fa-moon text-amber-300";
+        } else {
+            icon.className = "fa-solid fa-sun text-amber-500";
+        }
+    }
+    if (text) {
+        text.textContent = theme === "dark" ? "Dark" : "Light";
+        text.style.color = "";
+    }
+    if (bookmarksBtn) {
+        bookmarksBtn.style.color = "";
+        bookmarksBtn.style.backgroundColor = "";
+        bookmarksBtn.style.borderColor = "";
+    }
+    if (header) {
+        if (theme === "dark") {
+            header.style.backgroundColor = "rgba(10, 14, 23, 0.9)";
+            header.style.color = "#ffffff";
+            header.style.borderBottom = "1px solid rgba(255, 255, 255, 0.08)";
+        } else {
+            header.style.backgroundColor = "rgba(255, 255, 255, 0.96)";
+            header.style.color = "#0F172A";
+            header.style.borderBottom = "1px solid #E2E8F0";
+        }
+    }
+}
+
+// Expose toggleTheme to window for inline onclick handlers
+window.toggleTheme = toggleTheme;
+window.applyTheme = applyTheme;
+window.initTheme = initTheme;
+
 // --- Init on Page Load & URL Routing ("useEffect" Hook equivalent) ---
 document.addEventListener("DOMContentLoaded", () => {
+    initTheme();
     fetchBookmarks();
     initUrlRouting();
     initSearchInputListeners();
@@ -103,6 +170,20 @@ function setCardsLoadingState(query) {
                 <div class="h-4 bg-slate-200 rounded w-4/5"></div>
                 <div class="h-4 bg-slate-200 rounded w-2/3"></div>
             </div>`;
+    }
+
+    // Quick Example Skeleton
+    const qeSection = document.getElementById("quickExampleSection");
+    if (qeSection) {
+        qeSection.classList.remove("hidden");
+        const qeTitle = document.getElementById("quickExampleTitle");
+        if (qeTitle) qeTitle.textContent = `— ${query}`;
+        const qeLang = document.getElementById("quickExampleLangBadge");
+        if (qeLang) qeLang.textContent = "Loading...";
+        const qeCode = document.getElementById("quickExampleCode");
+        if (qeCode) qeCode.textContent = `// Analyzing topic and generating authentic code/calculation example for ${query}...`;
+        const qeExp = document.getElementById("quickExampleExplanationText");
+        if (qeExp) qeExp.textContent = `Synthesizing algorithmic and computational implementation patterns...`;
     }
 
     // Reset expandable breakdown
@@ -441,7 +522,22 @@ function renderDashboard(data) {
     
     // Format and render concise summary/overview text
     const summaryContainer = document.getElementById("overview-text") || document.getElementById("summaryText");
-    const overviewContent = (data.overview || data.summary || "").trim();
+    // Clean any unwanted boilerplate openers like "In the context of..."
+    function stripContextBoilerplate(text) {
+        if (!text) return "";
+        const pattern = /^(?:In the (?:context|domain|realm|framework) of|From the (?:perspective|standpoint) of|Within the (?:context|framework|realm) of)\s+(?:(?:B\.Tech|Ph\.D|M\.Tech|[^\n,:;])+)(?:,\s*|:\s*|\s*-\s*)/i;
+        let cleaned = text.replace(pattern, '').trim();
+        if (cleaned && cleaned.length > 1 && (cleaned[0] === '"' || cleaned[0] === "'" || cleaned[0] === '“' || cleaned[0] === '‘')) {
+            cleaned = cleaned[0] + cleaned[1].toUpperCase() + cleaned.slice(2);
+        } else if (cleaned && cleaned.length > 0) {
+            cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+        }
+        return cleaned;
+    }
+
+    const rawOverview = (data.overview || data.summary || "").trim();
+    const overviewContent = stripContextBoilerplate(rawOverview);
+
     if (!overviewContent) {
         summaryContainer.innerHTML = `
             <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm font-medium flex items-center">
@@ -452,6 +548,46 @@ function renderDashboard(data) {
         summaryContainer.innerHTML = formatSummaryMarkdown(overviewContent);
     }
     renderMathFormulas(summaryContainer);
+
+    // Render Explainable Practical Example & Real-World Walkthrough (No Code)
+    const qeSection = document.getElementById("quickExampleSection");
+    const qe = data.quick_example || data.quickExample;
+    window.currentQuickExample = qe;
+
+    if (qeSection) {
+        if (qe && (qe.scenario || qe.breakdown || qe.takeaway || qe.example || qe.explanation || qe.code)) {
+            qeSection.classList.remove("hidden");
+            
+            const qeTitle = document.getElementById("quickExampleTitle");
+            if (qeTitle) qeTitle.textContent = qe.title ? `— ${qe.title}` : `— ${topicTitle}`;
+            
+            const qeBadge = document.getElementById("quickExampleBadge");
+            if (qeBadge) qeBadge.textContent = qe.badge || "Practical Example";
+            
+            const qeScenario = document.getElementById("quickExampleScenario");
+            if (qeScenario) {
+                const scenarioText = qe.scenario || qe.example || `Real-world operational setup and conditions under which ${topicTitle} is observed or applied.`;
+                qeScenario.innerHTML = formatSummaryMarkdown(scenarioText);
+                renderMathFormulas(qeScenario);
+            }
+            
+            const qeBreakdown = document.getElementById("quickExampleBreakdown");
+            if (qeBreakdown) {
+                const breakdownText = qe.breakdown || qe.explanation || (qe.code ? `Step-by-step logic:\n${qe.code}` : "");
+                qeBreakdown.innerHTML = formatSummaryMarkdown(breakdownText);
+                renderMathFormulas(qeBreakdown);
+            }
+            
+            const qeTakeaway = document.getElementById("quickExampleTakeaway");
+            if (qeTakeaway) {
+                const takeawayText = qe.takeaway || qe.key_takeaway || `Fundamental principle and practical takeaway of ${topicTitle}.`;
+                qeTakeaway.innerHTML = formatSummaryMarkdown(takeawayText);
+                renderMathFormulas(qeTakeaway);
+            }
+        } else {
+            qeSection.classList.add("hidden");
+        }
+    }
     
     // Populate expandable in-depth detailed breakdown directly with theoretical_foundations and core_formulations
     const detailedContainer = document.getElementById("detailedBreakdownContainer");
@@ -585,6 +721,39 @@ function toggleDetailedBreakdown() {
         if (btnIcon) btnIcon.className = "fa-solid fa-chevron-down text-[10px] text-indigo-500 transition-transform duration-300 ml-1";
     }
 }
+
+function copyQuickExampleContent() {
+    const qe = window.currentQuickExample;
+    let textToCopy = "";
+    if (qe) {
+        if (qe.title) textToCopy += `${qe.title}\n\n`;
+        if (qe.scenario) textToCopy += `Scenario / Setup:\n${qe.scenario}\n\n`;
+        if (qe.breakdown) textToCopy += `Step-by-Step Breakdown:\n${qe.breakdown}\n\n`;
+        if (qe.takeaway) textToCopy += `Key Takeaway:\n${qe.takeaway}\n`;
+    }
+    if (!textToCopy) {
+        const sec = document.getElementById("quickExampleSection");
+        if (sec) textToCopy = sec.innerText;
+    }
+    if (!textToCopy) return;
+
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+            const btnText = document.getElementById("copyExampleText");
+            const btnIcon = document.getElementById("copyExampleIcon");
+            if (btnText) btnText.textContent = "Copied!";
+            if (btnIcon) btnIcon.className = "fa-solid fa-check text-emerald-400 text-[11px]";
+            setTimeout(() => {
+                if (btnText) btnText.textContent = "Copy";
+                if (btnIcon) btnIcon.className = "fa-regular fa-clone text-[11px]";
+            }, 2000);
+        }).catch(err => {
+            console.error("Failed to copy example content: ", err);
+        });
+    }
+}
+window.copyQuickExampleContent = copyQuickExampleContent;
+window.copyQuickExampleCode = copyQuickExampleContent;
 
 function prepareMathMarkdown(rawText) {
     if (!rawText || typeof rawText !== 'string') return "";
@@ -737,6 +906,31 @@ function formatDetailedMarkdown(rawText) {
 }
 
 // --- Render Helper Blocks ---
+function formatRoadmapDescription(text) {
+    if (!text) return "";
+    
+    // Fix corrupted LaTeX where \t was absorbed as tab: "ext{" -> "\text{"
+    let formatted = text.replace(/(^|[^\\])ext\{/g, '$1\\text{');
+    
+    // Check if there are code blocks ```lang ... ```
+    formatted = formatted.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+        const cleanCode = code.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<div class="my-2 rounded-lg bg-slate-900/90 border border-slate-700/60 overflow-hidden font-mono text-[11px] leading-relaxed max-w-full min-w-0">
+            ${lang ? `<div class="px-2.5 py-0.5 bg-slate-800/80 text-[10px] text-slate-400 border-b border-slate-700/60 uppercase font-semibold">${lang}</div>` : ''}
+            <div class="p-2.5 overflow-x-auto custom-scrollbar text-emerald-300">
+                <pre class="m-0 p-0 font-mono"><code class="break-normal">${cleanCode}</code></pre>
+            </div>
+        </div>`;
+    });
+
+    // Formatting bold and inline code
+    formatted = formatted
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-800">$1</strong>')
+        .replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-indigo-700 px-1 py-0.5 rounded text-[11px] font-mono break-all">$1</code>');
+
+    return formatted;
+}
+
 function renderRoadmap(steps) {
     const container = document.getElementById("roadmapTimeline");
     const progressBadge = document.getElementById("roadmapProgressBadge");
@@ -759,7 +953,7 @@ function renderRoadmap(steps) {
     steps.forEach((step, idx) => {
         const isDone = completedSet.has(idx);
         const stepEl = document.createElement("div");
-        stepEl.className = `relative mb-4 last:mb-0 transition-all duration-200 ${isDone ? 'opacity-65' : ''}`;
+        stepEl.className = `relative mb-4 last:mb-0 transition-all duration-200 min-w-0 max-w-full ${isDone ? 'opacity-65' : ''}`;
         
         let typeBadgeColor = "glass-badge glass-badge-indigo";
         let dotColor = "border-slate-300 bg-white text-slate-400";
@@ -791,21 +985,23 @@ function renderRoadmap(steps) {
             <span class="absolute -left-[23px] top-1 rounded-full border-2 ${dotColor} w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-sm cursor-pointer" onclick="toggleRoadmapStep(${idx})">
                 ${isDone ? '<i class="fa-solid fa-check text-[9px]"></i>' : (idx + 1)}
             </span>
-            <div class="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-lg p-3 transition shadow-xs">
+            <div class="roadmap-step-card bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 transition shadow-xs min-w-0 max-w-full overflow-hidden">
                 <div class="flex items-center justify-between gap-2">
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 min-w-0">
                         <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleRoadmapStep(${idx})" 
-                               class="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer h-3.5 w-3.5 border-slate-300">
-                        <span class="text-[10px] font-bold uppercase tracking-wider ${typeBadgeColor} px-1.5 py-0.5 rounded">
+                               class="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer h-3.5 w-3.5 border-slate-300 shrink-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider ${typeBadgeColor} px-1.5 py-0.5 rounded truncate">
                             ${typeLabel}
                         </span>
                     </div>
-                    <span class="text-[10px] text-slate-500 font-medium flex items-center">
+                    <span class="text-[10px] text-slate-500 font-medium flex items-center shrink-0">
                         <i class="fa-regular fa-clock mr-1 text-slate-400"></i>${step.estimated_time || "2-3 hrs"}
                     </span>
                 </div>
-                <h4 class="font-bold text-xs text-slate-800 mt-1.5 ${isDone ? 'line-through text-slate-500' : ''}">${step.concept}</h4>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">${step.description}</p>
+                <h4 class="font-bold text-xs text-slate-800 mt-2 break-words ${isDone ? 'line-through text-slate-500' : ''}">${step.concept}</h4>
+                <div class="roadmap-desc text-xs text-slate-600 mt-1.5 leading-relaxed break-words overflow-x-auto custom-scrollbar max-w-full min-w-0">
+                    ${formatRoadmapDescription(step.description)}
+                </div>
             </div>
         `;
         container.appendChild(stepEl);
@@ -1293,30 +1489,27 @@ function formatInlineMarkdown(text) {
 function renderMarkdownToHtml(rawText) {
     if (!rawText) return "<p class='text-slate-400 italic p-4'>No study notes content available.</p>";
     
-    // Pre-process text to remove ASCII divider noise and convert LaTeX notation into readable math
+    // 1. Sanitize decorative ASCII boundaries, but preserve math syntax intact
     let cleanText = rawText
-        .replace(/^[=\-]{4,}.*$/gm, '') // Remove ASCII banners
-        .replace(/\n{3,}/g, '\n\n')
-        .replace(/\\mathcal\{([A-Za-z]+)\}/g, '$1')
-        .replace(/\\mathbf\{([A-Za-z0-9]+)\}/g, '$1')
-        .replace(/\\sum_\{([^\}]+)\}\^\{([^\}]+)\}/g, '∑($1 to $2)')
-        .replace(/\\int_\{([^\}]+)\}\^\{([^\}]+)\}/g, '∫($1 to $2)')
-        .replace(/\\cdot/g, '·')
-        .replace(/\\omega/g, 'ω')
-        .replace(/\\psi/g, 'ψ')
-        .replace(/\\epsilon/g, 'ε')
-        .replace(/\\alpha/g, 'α')
-        .replace(/\\beta/g, 'β')
-        .replace(/\\theta/g, 'θ')
-        .replace(/\\mu/g, 'μ')
-        .replace(/\\le/g, '≤')
-        .replace(/\\ge/g, '≥')
-        .replace(/\\ne/g, '≠')
-        .replace(/\\in/g, '∈')
-        .replace(/\\subset/g, '⊂')
-        .replace(/\\left\(/g, '(')
-        .replace(/\\right\)/g, ')')
-        .replace(/\\([,;!])/g, '$1');
+        .replace(/^[=\-~_#*]{4,}\s*$/gm, '')
+        .replace(/\n{3,}/g, '\n\n');
+
+    // 2. Extract math blocks to protect them from Markdown parsing (underscores, asterisks, backslashes)
+    const mathTokens = [];
+    
+    // Display math: $$...$$ or \[...\]
+    cleanText = cleanText.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\])/g, (match) => {
+        const placeholder = `@@MATH_BLOCK_${mathTokens.length}@@`;
+        mathTokens.push(match);
+        return placeholder;
+    });
+
+    // Inline math: $...$ or \(...\)
+    cleanText = cleanText.replace(/(\$[^$\n\r]+?\$|\\\([^)\n\r]+?\\\))/g, (match) => {
+        const placeholder = `@@MATH_BLOCK_${mathTokens.length}@@`;
+        mathTokens.push(match);
+        return placeholder;
+    });
 
     // Use marked.js if available
     if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
@@ -1343,6 +1536,11 @@ function renderMarkdownToHtml(rawText) {
                 .replace(/<code>([^<]+)<\/code>/g, '<code class="bg-slate-100 text-indigo-700 px-1.5 py-0.5 rounded text-[11px] font-mono border border-slate-200">$1</code>')
                 .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-indigo-500 bg-indigo-50/50 p-3.5 rounded-r-xl my-3 text-slate-700 text-xs sm:text-sm">');
                 
+            // Restore protected math expressions
+            parsed = parsed.replace(/@@MATH_BLOCK_(\d+)@@/g, (match, idx) => {
+                return mathTokens[parseInt(idx, 10)] || match;
+            });
+
             return parsed;
         } catch (e) {
             console.warn("marked.parse encountered error, using internal parser:", e);
@@ -1453,7 +1651,11 @@ function renderMarkdownToHtml(rawText) {
     if (inList) htmlLines.push(`</${listType}>`);
     if (inTable) htmlLines.push("</tbody></table></div>");
     
-    return htmlLines.join("\n");
+    let finalHtml = htmlLines.join("\n");
+    finalHtml = finalHtml.replace(/@@MATH_BLOCK_(\d+)@@/g, (match, idx) => {
+        return mathTokens[parseInt(idx, 10)] || match;
+    });
+    return finalHtml;
 }
 
 // --- Modern Technical Document Reader & TOC Controller ---
@@ -1498,14 +1700,192 @@ function showNoteModalLoadingSkeleton(topic) {
 
 function generateAcademicFallbackNotes(topic, subject) {
     const cleanTopic = (topic || "Academic Topic").trim();
-    const cleanSubject = (subject || "Engineering & Computer Science").trim();
+    const cleanSubject = (subject || "Engineering Sciences").trim();
     const tLower = cleanTopic.toLowerCase();
     const sLower = cleanSubject.toLowerCase();
     const combined = `${tLower} ${sLower}`;
 
+    const isPhysics = /physic|gravity|gravitation|kepler|mechanic|kinematic|newton|projectile|friction|collision|momentum|optics|laser|interference|diffraction|polarization|quantum|schrodinger|wavefunction|relativity|lorentz|hall effect|maxwell|coulomb|electromagnet/.test(combined);
+    const isChemistry = /chemist|polymer|corrosion|nernst|electrode|galvanic|phase rule|water hardness|hardness|edta|spectroscopy|lubricant|fuel|calorific|cement|battery|titration|molecular orbital|mot/.test(combined);
     const isEE = /circuit|kcl|kvl|thevenin|norton|kirchhoff|transistor|diode|bjt|mosfet|op-amp|rlc|transformer|induction motor/.test(combined);
     const isME = /thermodynamic|carnot|entropy|enthalpy|fluid|bernoulli|reynolds|stress|strain|otto|diesel/.test(combined);
     const isMath = /calculus|integral|derivative|differential equation|eigenvalue|eigenvector|matrix algebra|taylor series|fourier/.test(combined);
+
+    if (isPhysics) {
+        const isGravity = /gravity|gravitation|kepler|orbital/.test(combined);
+        const isOptics = /optics|laser|interference|diffraction|fiber/.test(combined);
+        const isQuantum = /quantum|schrodinger|wavefunction|uncertainty|de broglie/.test(combined);
+
+        if (isGravity) {
+            return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Engineering Physics & Applied Mechanics | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** is a cornerstone of classical mechanics and astrophysical engineering. It describes the fundamental attractive interaction between massive bodies, governing celestial orbits, artificial satellite trajectories, and terrestrial gravitational fields.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **Newton's Law of Universal Gravitation**:
+$$\\mathbf{F} = -G \\frac{m_1 m_2}{r^2} \\hat{\\mathbf{r}}$$
+where $G = 6.67430 \\times 10^{-11} \\text{ N}\\cdot\\text{m}^2/\\text{kg}^2$.
+
+2. **Gravitational Field Intensity & Acceleration**:
+$$g = \\frac{GM}{R^2}, \\qquad g_h = g \\left(1 - \\frac{2h}{R}\\right) \\; (h \\ll R), \\qquad g_d = g \\left(1 - \\frac{d}{R}\\right)$$
+
+3. **Gravitational Potential Energy & Escape Velocity**:
+$$U(r) = -\\frac{GMm}{r}, \\qquad v_e = \\sqrt{\\frac{2GM}{R}} \\approx 11.19 \\text{ km/s for Earth}$$
+
+4. **Kepler's Third Law (Harmonic Law)**:
+$$T^2 = \\left( \\frac{4\\pi^2}{GM} \\right) r^3$$
+
+## Production-Grade Implementation & Boundary Validation
+\`\`\`python
+# Scientific Python: Two-Body Gravitational Orbital Velocity & Escape Velocity
+import math
+
+def compute_orbital_mechanics(mass_central_kg: float, radius_m: float) -> dict:
+    """Calculates circular orbital speed, period, and escape velocity."""
+    G = 6.67430e-11
+    if radius_m <= 0 or mass_central_kg <= 0:
+        raise ValueError("Mass and orbital radius must be strictly positive.")
+    
+    v_orbital = math.sqrt(G * mass_central_kg / radius_m)
+    v_escape = math.sqrt(2 * G * mass_central_kg / radius_m)
+    period_sec = 2 * math.pi * math.sqrt((radius_m ** 3) / (G * mass_central_kg))
+    
+    return {
+        "v_orbital_m_s": v_orbital,
+        "v_escape_km_s": v_escape / 1000.0,
+        "orbital_period_hrs": period_sec / 3600.0
+    }
+\`\`\`
+
+## Step-by-Step Solved Numericals & Analytical Traces
+### Problem 1: Earth Escape Velocity Calculation
+**Problem**: Calculate the escape velocity from Earth's surface given $M = 5.972 \\times 10^{24}\\text{ kg}$ and mean radius $R = 6.371 \\times 10^6\\text{ m}$.
+1. **Formula**: $v_e = \\sqrt{\\frac{2GM}{R}}$.
+2. **Substitution**:
+$$v_e = \\sqrt{\\frac{2 \\times 6.67430 \\times 10^{-11} \\times 5.972 \\times 10^{24}}{6.371 \\times 10^6}} = \\sqrt{\\frac{7.9718 \\times 10^{14}}{6.371 \\times 10^6}} = \\sqrt{1.25126 \\times 10^8} \\approx 11186 \\text{ m/s}$$
+3. **Final Result**: $v_e \\approx 11.19\\text{ km/s}$.
+
+### Problem 2: Geostationary Orbit Radius
+**Problem**: Calculate the orbital radius of a geostationary satellite with orbital period $T = 24\\text{ hours} = 86400\\text{ s}$.
+1. **Kepler's Law Form**: $r^3 = \\frac{GM T^2}{4\\pi^2} = \\frac{6.67430 \\times 10^{-11} \\times 5.972 \\times 10^{24} \\times (86400)^2}{4 \\pi^2} \\approx 7.537 \\times 10^{22} \\text{ m}^3$.
+2. **Cube Root**: $r = (7.537 \\times 10^{22})^{1/3} \\approx 42164 \\text{ km}$.
+3. **Altitude Above Earth**: $h = r - R = 42164 - 6371 = 35793 \\text{ km} \\approx 35800 \\text{ km}$.
+
+## Complexity Analysis & Governing Invariant Matrix
+| Parameter / Concept | Governing Equation | Physical Dimension |
+| :--- | :--- | :--- |
+| **Gravitational Field** | $g = GM / R^2$ | $[M^0 L T^{-2}]$ |
+| **Gravitational Potential** | $V(r) = -GM / r$ | $[M^0 L^2 T^{-2}]$ |
+| **Orbital Speed** | $v_o = \\sqrt{GM / r}$ | $[M^0 L T^{-1}]$ |
+| **Escape Speed** | $v_e = \\sqrt{2} \\cdot v_o$ | $[M^0 L T^{-1}]$ |
+
+## Real-World Pitfalls, Common Bugs & Exam Traps
+1. Forgetting that gravitational potential energy is strictly negative relative to infinity ($U(r) = -GMm/r$).
+2. Using the linear approximation $g_h = g(1 - 2h/R)$ when altitude $h$ is large ($h \not\\ll R$).
+3. Confusing circular orbital speed $v_o = \\sqrt{GM/r}$ with parabolic escape speed $v_e = \\sqrt{2GM/r}$.
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State Newton's Law of Universal Gravitation in vector form.**
+   - *Answer*: $\\mathbf{F}_{12} = -G \\frac{m_1 m_2}{r^2} \\hat{\\mathbf{r}}_{12}$; the gravitational force is central, conservative, and mutually attractive.
+2. **Q2: Show that escape velocity is $\\sqrt{2}$ times orbital velocity near Earth's surface.**
+   - *Answer*: $v_e = \\sqrt{2GM/R} = \\sqrt{2} \\sqrt{GM/R} = \\sqrt{2} \\, v_o$.
+3. **Q3: State Kepler's Second Law and its conservation law basis.**
+   - *Answer*: The radius vector sweeps equal areas in equal intervals of time ($dA/dt = L/(2m) = \\text{constant}$), which is direct consequence of conservation of angular momentum.`;
+        } else if (isOptics) {
+            return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Engineering Physics (Wave Optics & Lasers) | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** is an essential subject in wave physics and photonics, governing wave interference, diffraction, laser physics, and optical fiber communications.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **Thin Film Interference (Reflected Light)**:
+$$2\\mu t \\cos r = \\left(n - \\frac{1}{2}\\right)\\lambda \\quad (\\text{Constructive}), \\qquad 2\\mu t \\cos r = n\\lambda \\quad (\\text{Destructive})$$
+
+2. **Newton's Rings Diameter (Reflected System)**:
+$$D_n^2 = 4 n R \\lambda \\implies \\lambda = \\frac{D_{n+p}^2 - D_n^2}{4 p R}$$
+
+3. **Fraunhofer Diffraction Grating Equation**:
+$$(a + b) \\sin \\theta = n \\lambda$$
+
+4. **Numerical Aperture (NA) & Acceptance Angle**:
+$$\\text{NA} = \\sqrt{n_1^2 - n_2^2}, \\qquad \theta_0 = \\sin^{-1}\\left(\\sqrt{n_1^2 - n_2^2}\\right)$$
+
+## Step-by-Step Solved Numerical
+### Problem 1: Newton's Rings Wavelength Calculation
+**Problem**: In Newton's rings experiment, the diameter of the 10th dark ring is $0.50\\text{ cm}$ and the 4th dark ring is $0.35\\text{ cm}$. Lens curvature radius $R = 100\\text{ cm}$. Calculate wavelength $\\lambda$.
+1. **Formula**: $\\lambda = \\frac{D_{n+p}^2 - D_n^2}{4 p R}$ where $n=4, n+p=10 \\implies p=6$.
+2. **Substitution**:
+$$\\lambda = \\frac{(0.50)^2 - (0.35)^2}{4 \\times 6 \\times 100} = \\frac{0.25 - 0.1225}{2400} = \\frac{0.1275}{2400} = 5.3125 \\times 10^{-5} \\text{ cm} = 5312.5 \\text{ \\AA}$$
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State the condition for sustained interference of light.**
+   - *Answer*: Sources must be coherent (constant phase difference) and emit monochromatic waves with identical amplitudes.
+2. **Q2: Why is the center of Newton's rings dark in reflected light?**
+   - *Answer*: Reflection at the denser glass interface introduces an additional Stokes phase change of $\\pi$ (path difference $\\lambda/2$), producing destructive interference at zero film thickness.
+3. **Q3: What is Population Inversion in lasers?**
+   - *Answer*: A condition where more atoms populate the higher metastable excited state than the ground state ($N_2 > N_1$).`;
+        } else {
+            return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Engineering Physics & Applied Mechanics | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** is a core foundational subject in Engineering Physics, analyzing the fundamental physical conservation laws, relativistic transformations, and dynamical invariants.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **Relativistic Lorentz Transformations**:
+$$x' = \\gamma(x - vt), \\qquad t' = \\gamma\\left(t - \\frac{vx}{c^2}\\right), \\qquad \\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}$$
+
+2. **Length Contraction & Time Dilation**:
+$$L = L_0 \\sqrt{1 - v^2/c^2}, \\qquad \\Delta t = \\frac{\\Delta t_0}{\\sqrt{1 - v^2/c^2}}$$
+
+3. **Relativistic Mass-Energy Equivalence**:
+$$E = mc^2 = \\gamma m_0 c^2, \\qquad E^2 = p^2 c^2 + m_0^2 c^4$$
+
+## Step-by-Step Solved Numerical
+### Problem 1: Relativistic Length Contraction
+**Problem**: A meter stick moves with speed $v = 0.8c$ along its length. Calculate its contracted length.
+1. **Formula**: $L = L_0 \\sqrt{1 - (v/c)^2} = 1.0 \\times \\sqrt{1 - 0.64} = \\sqrt{0.36} = 0.60\\text{ m}$.
+2. **Contraction**: $1.0 - 0.60 = 0.40\\text{ m}$ ($40\%$ contraction).
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State the postulates of Special Relativity.**
+   - *Answer*: (1) Physical laws are invariant in all inertial frames. (2) Speed of light in vacuum $c$ is constant for all observers.
+2. **Q2: What is the null outcome of the Michelson-Morley experiment?**
+   - *Answer*: It disproved the existence of luminiferous ether, confirming the constancy and isotropy of light speed.
+3. **Q3: Write the relativistic energy-momentum relation.**
+   - *Answer*: $E^2 = p^2 c^2 + m_0^2 c^4$.`;
+        }
+    }
+
+    if (isChemistry) {
+        return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
+**Academic Domain:** Engineering Chemistry & Materials Science | **Level:** B.Tech Undergraduate
+
+**${cleanTopic}** is a fundamental subject in Engineering Chemistry, exploring molecular transformations, electrochemical cell thermodynamics, phase equilibria, and engineering materials.
+
+## Core Concepts & Mathematical / Architectural Linchpins
+1. **Nernst Equation for Electrochemical Cell Potential**:
+$$E_{\\text{cell}} = E^\circ_{\\text{cell}} - \\frac{0.0591}{n} \log_{10} \\left( \\frac{[\\text{Products}]}{[\\text{Reactants}]} \\right) \\quad \\text{at } 298\\text{ K}$$
+
+2. **Gibbs Phase Rule**:
+$$F = C - P + 2 \\qquad (F = C - P + 1 \\text{ for condensed systems})$$
+
+3. **Water Hardness EDTA Titration**:
+$$\\text{Total Hardness (ppm as CaCO}_3) = \\frac{V_{\\text{EDTA}} \\times M_{\\text{EDTA}} \\times 100 \\times 1000}{V_{\\text{sample}}}$$
+
+## Step-by-Step Solved Numerical
+### Problem 1: Electrochemical Cell EMF
+**Problem**: Calculate EMF of cell $Zn|Zn^{2+}(0.01\\text{ M}) \\parallel Cu^{2+}(0.1\\text{ M})|Cu$ at $298\\text{ K}$ ($E^\circ_{\\text{cell}} = 1.10\\text{ V}$).
+1. **Nernst Equation**: $E = 1.10 - \\frac{0.0591}{2} \log_{10}\\left(\\frac{0.01}{0.1}\\right) = 1.10 - 0.02955 (-1) = 1.1296\\text{ V}$.
+
+## University Examination Practice Problems with Model Answers
+1. **Q1: State the Nernst Equation and its applications.**
+   - *Answer*: $E = E^\\circ - \\frac{0.0591}{n} \log_{10} Q$; used to calculate cell potential under non-standard conditions.
+2. **Q2: State the Gibbs Phase Rule and define Degree of Freedom.**
+   - *Answer*: $F = C - P + 2$; minimum independent intensive variables needed to define thermodynamic equilibrium.
+3. **Q3: Differentiate between Thermoplastic and Thermosetting polymers.**
+   - *Answer*: Thermoplastics soften repeatedly upon heating (linear/branched chains); thermosets crosslink irreversibly into 3D rigid structures.`;
+    }
 
     if (isEE) {
         return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
@@ -1514,15 +1894,11 @@ function generateAcademicFallbackNotes(topic, subject) {
 **${cleanTopic}** is a fundamental theoretical and operational subject within Electrical Network Theory and Circuit Analysis. It establishes the governing laws for charge conservation, voltage loops, and electromagnetic energy distribution.
 
 ## Core Concepts & Mathematical / Architectural Linchpins
-Electrical networks are governed by conservation laws derived directly from Maxwell's equations:
-
 1. **Kirchhoff's Current Law (KCL - Charge Conservation)**:
-$$\\sum_{k=1}^{N} I_k = 0$$
-At any junction node in an electrical circuit, the algebraic sum of currents entering equals the sum of currents leaving.
+$$\sum_{k=1}^{N} I_k = 0$$
 
 2. **Kirchhoff's Voltage Law (KVL - Energy Conservation)**:
-$$\\sum_{k=1}^{M} V_k = 0$$
-The directed sum of electrical potential differences (voltages) around any closed loop equals zero.
+$$\sum_{k=1}^{M} V_k = 0$$
 
 3. **Thevenin's Equivalent & Maximum Power Transfer**:
 $$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L}, \\qquad P_{\\max} = \\frac{V_{\\text{th}}^2}{4 R_{\\text{th}}}$$
@@ -1531,7 +1907,6 @@ $$I_L = \\frac{V_{\\text{th}}}{R_{\\text{th}} + R_L}, \\qquad P_{\\max} = \\frac
 \`\`\`python
 # Python Analysis: Thevenin Equivalent Calculator
 def solve_thevenin(v_oc: float, r_th: float, r_load: float) -> dict:
-    \"\"\"Computes circuit branch current, load voltage, and delivered power.\"\"\"
     if (r_th + r_load) <= 0:
         raise ValueError("Total circuit resistance must be strictly positive.")
     i_load = v_oc / (r_th + r_load)
@@ -1547,18 +1922,6 @@ def solve_thevenin(v_oc: float, r_th: float, r_load: float) -> dict:
 1. **Open-Circuit Voltage**: $V_{\\text{th}} = 24 \\times \\frac{12}{6 + 12} = 16\\text{ V}$.
 2. **Thevenin Resistance**: $R_{\\text{th}} = R_1 \\parallel R_2 = \\frac{6 \\times 12}{6 + 12} = 4\\,\\Omega$.
 3. **Load Current**: $I_L = \\frac{16\\text{ V}}{4\\,\\Omega + 4\\,\\Omega} = 2\\text{ A}$.
-
-## Complexity Analysis & Asymptotic Matrix
-| Component / Parameter | Governing Invariant | State Equation |
-| :--- | :--- | :--- |
-| **Resistive Network** | Ohm's Law | $V = I \\cdot R$ |
-| **Inductive Storage** | Faraday's Law | $v(t) = L \\frac{di}{dt}$ |
-| **Capacitive Storage** | Displacement Current | $i(t) = C \\frac{dv}{dt}$ |
-
-## Real-World Pitfalls, Common Bugs & Exam Traps
-1. Deactivating independent current sources as short circuits instead of open circuits.
-2. Sign convention errors when traversing mesh loops against opposing current directions.
-3. Forgetting source internal resistance in maximum power transfer computations.
 
 ## University Examination Practice Problems with Model Answers
 1. **Q1: State Thevenin's Theorem.**
@@ -1578,11 +1941,9 @@ def solve_thevenin(v_oc: float, r_th: float, r_load: float) -> dict:
 ## Core Concepts & Mathematical / Architectural Linchpins
 1. **First Law of Thermodynamics (Conservation of Energy)**:
 $$dQ = dU + dW \\implies \\Delta U = Q - W$$
-For an ideal gas, work done during quasi-static expansion is $W = \\int P \\, dV$.
 
 2. **Second Law & Carnot Maximum Thermal Efficiency**:
-$$\\eta_{\\text{Carnot}} = 1 - \\frac{T_L}{T_H} = \\frac{T_H - T_L}{T_H}$$
-where $T_H$ and $T_L$ represent source and sink temperatures in absolute Kelvin ($\\text{K}$).
+$$\eta_{\\text{Carnot}} = 1 - \\frac{T_L}{T_H} = \\frac{T_H - T_L}{T_H}$$
 
 3. **Bernoulli's Equation (Incompressible Fluid Flow)**:
 $$P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{Constant}$$
@@ -1591,13 +1952,8 @@ $$P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{Constant}$$
 ### Problem 1: Carnot Cycle Thermal Efficiency Calculation
 **Problem**: A heat engine operates between $T_H = 600^\\circ\\text{C}$ and $T_L = 30^\\circ\\text{C}$, absorbing $1200\\text{ kJ}$ heat per cycle. Compute thermal efficiency $\\eta$ and net work output $W_{\\text{net}}$.
 1. **Convert to Kelvin**: $T_H = 600 + 273.15 = 873.15\\text{ K}$, $T_L = 30 + 273.15 = 303.15\\text{ K}$.
-2. **Carnot Efficiency**: $\\eta = 1 - \\frac{303.15}{873.15} = 0.6528 \\implies 65.28\\%$.
+2. **Carnot Efficiency**: $\\eta = 1 - \\frac{303.15}{873.15} = 0.6528 \\implies 65.28\%$.
 3. **Net Work Output**: $W_{\\text{net}} = 0.6528 \\times 1200\\text{ kJ} = 783.36\\text{ kJ}$.
-
-## Real-World Pitfalls, Common Bugs & Exam Traps
-1. Forgetting to convert Celsius to Kelvin ($\\text{K} = ^\\circ\\text{C} + 273.15$).
-2. Confusing gauge pressure with absolute pressure ($P_{\\text{abs}} = P_{\\text{gauge}} + P_{\\text{atm}}$).
-3. Violating thermodynamic sign conventions for heat supplied vs heat rejected.
 
 ## University Examination Practice Problems with Model Answers
 1. **Q1: State the Kelvin-Planck statement of the Second Law of Thermodynamics.**
@@ -1617,41 +1973,31 @@ $$P + \\frac{1}{2}\\rho v^2 + \\rho g h = \\text{Constant}$$
 ## Core Concepts & Mathematical / Architectural Linchpins
 1. **Characteristic Equation & Matrix Eigenvalues**:
 $$\\det(A - \\lambda I) = 0$$
-For an $n \\times n$ matrix $A$, the roots of this polynomial yield eigenvalues $\\lambda_1, \\dots, \\lambda_n$.
 
 2. **Cayley-Hamilton Theorem**:
-Every square matrix satisfies its own characteristic equation:
 $$p(A) = A^n + c_{n-1}A^{n-1} + \\dots + c_0 I = 0$$
 
 3. **Exact Differential Equation Criterion**:
 $$M(x, y)\\,dx + N(x, y)\\,dy = 0 \\iff \\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$$
 
 ## Step-by-Step Solved Numericals & Analytical Derivations
-### Problem 1: Eigenvalues and Eigenvectors of a $2 \\times 2$ Matrix
-**Problem**: Find eigenvalues of $A = \\begin{bmatrix} 4 & 1 \\\\ 2 & 3 \\end{bmatrix}$.
+### Problem 1: Eigenvalues of a $2 \\times 2$ Matrix
+**Problem**: Find eigenvalues of $A = \\begin{bmatrix} 4 & 1 \\ 2 & 3 \\end{bmatrix}$.
 1. **Characteristic Equation**: $\\det(A - \\lambda I) = (4 - \\lambda)(3 - \\lambda) - 2 = \\lambda^2 - 7\\lambda + 10 = 0$.
-2. **Factoring**: $(\\lambda - 5)(\\lambda - 2) = 0 \\implies \\lambda_1 = 5, \\lambda_2 = 2$.
-3. **Eigenvector for $\\lambda = 5$**: $(A - 5I)\\mathbf{v} = \\begin{bmatrix} -1 & 1 \\\\ 2 & -2 \\end{bmatrix} \\begin{bmatrix} x_1 \\\\ x_2 \\end{bmatrix} = 0 \\implies \\mathbf{v}_1 = \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$.
-
-## Real-World Pitfalls, Common Bugs & Exam Traps
-1. Failing to test for exactness before integrating differential forms.
-2. Determinant sign errors during expansion of $3 \\times 3$ matrices.
-3. Confusing linear independence with orthogonality.
+2. **Factoring**: $(\\lambda - 5)(\\lambda - 2) = 0 \\implies \lambda_1 = 5, \lambda_2 = 2$.
 
 ## University Examination Practice Problems with Model Answers
 1. **Q1: State the Cayley-Hamilton Theorem.**
    - *Answer*: Every square matrix satisfies its own characteristic polynomial equation.
 2. **Q2: State the relation between trace and eigenvalues.**
-   - *Answer*: $\\text{Trace}(A) = \\sum_{i=1}^n \\lambda_i$.
+   - *Answer*: $\\text{Trace}(A) = \sum_{i=1}^n \lambda_i$.
 3. **Q3: What is the condition for exactness in $M dx + N dy = 0$?**
    - *Answer*: $\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$.`;
     }
 
-    // Default Computer Science / Data Structures / Algorithms realistic template
+    // Computer Science / Algorithmic branch
     const isArray = /array|matrix|vector/.test(tLower);
     const isList = /list|linked|pointer/.test(tLower);
-    const isTree = /tree|bst|avl|heap/.test(tLower);
-    const isHash = /hash/.test(tLower);
 
     let mathSection = "";
     let codeSection = "";
@@ -1659,17 +2005,13 @@ $$M(x, y)\\,dx + N(x, y)\\,dy = 0 \\iff \\frac{\\partial M}{\\partial y} = \\fra
 
     if (isArray) {
         mathSection = `### 1. Memory Representation & Address Arithmetic
-In computer memory, an array stores elements at contiguous physical memory addresses. The memory address of any element is calculated algebraically in constant $\\mathcal{O}(1)$ time:
+In computer memory, an array stores elements at contiguous physical memory addresses:
 
 - **1D Array Address Formula**:
 $$\\text{Address}(A[i]) = \\text{BaseAddress} + (i - \\text{LowerBound}) \\times w$$
-where $w$ is the element width in bytes (e.g., $w = 4$ for 32-bit integers).
 
-- **2D Row-Major Order (RMO - C/Python)**:
-$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \\Big] \\times w$$
-
-- **2D Column-Major Order (CMO - Fortran/MATLAB)**:
-$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \\Big[ (j - \\text{LB}_c) \\times N_r + (i - \\text{LB}_r) \\Big] \\times w$$`;
+- **2D Row-Major Order (RMO)**:
+$$\\text{Address}(A[i][j]) = \\text{BaseAddress} + \Big[ (i - \\text{LB}_r) \\times N_c + (j - \\text{LB}_c) \Big] \\times w$$`;
 
         codeSection = `\`\`\`python
 # Production Python: Dynamic Vector Array with Binary Search
@@ -1688,18 +2030,6 @@ class DynamicArray:
             self.data = resized
         self.data[self.size] = value
         self.size += 1
-
-    def binary_search(self, target: int) -> int:
-        low, high = 0, self.size - 1
-        while low <= high:
-            mid = low + (high - low) // 2
-            if self.data[mid] == target:
-                return mid
-            elif self.data[mid] < target:
-                low = mid + 1
-            else:
-                high = mid - 1
-        return -1
 \`\`\``;
 
         workedProblem = `### Problem 1: 2D Array Address Derivation
@@ -1708,14 +2038,11 @@ class DynamicArray:
 2. **Offset Calculation**: $(5 - (-5)) \\times 21 + (20 - 10) = 10 \\times 21 + 10 = 220$.
 3. **Final Address**: $1020 + (220 \\times 4) = 1020 + 880 = 1900$.`;
     } else if (isList) {
-        mathSection = `### 1. Pointer Invariants & Cycle Detection
+        mathSection = `### 1. Pointer Invariants & Node Traversal
 A Linked List is a collection of dynamic heap-allocated nodes connected via pointer addresses:
 
 - **Node Structure**:
-$$\\text{Node} = \\langle \\text{Data}, \\quad \\text{NextPointer} \\in \\text{AddressSpace} \\cup \\{\\text{NULL}\\} \\rangle$$
-
-- **Floyd's Tortoise & Hare Cycle Invariant**:
-$$\\text{Time Complexity} = \\mathcal{O}(n), \\qquad \\text{Auxiliary Space} = \\mathcal{O}(1)$$`;
+$$\\text{Node} = \langle \\text{Data}, \\quad \\text{NextPointer} \\in \\text{AddressSpace} \\cup \{\\text{NULL}\} \rangle$$`;
 
         codeSection = `\`\`\`python
 # Production Python: Singly Linked List Reversal
@@ -1737,58 +2064,42 @@ def reverse_linked_list(head: ListNode) -> ListNode:
 
         workedProblem = `### Problem 1: Linked List In-Place Reversal Trace
 Given list $10 \\to 20 \\to 30 \\to \\text{NULL}$:
-- Iteration 1: $10\\to\\text{NULL}$, \`prev=10\`, \`curr=20\`
-- Iteration 2: $20\\to 10\\to\\text{NULL}$, \`prev=20\`, \`curr=30\`
-- Iteration 3: $30\\to 20\\to 10\\to\\text{NULL}$, \`prev=30\`, \`curr=NULL\`
+- Step 1: Head node 10 points to NULL.
+- Step 2: Node 20 points to 10.
+- Step 3: Node 30 points to 20.
 Final reversed list head: $30$ in $\\mathcal{O}(n)$ time and $\\mathcal{O}(1)$ space.`;
     } else {
-        mathSection = `### 1. Algorithmic Invariants & Recurrence Relations
+        mathSection = `### 1. Algorithmic Invariants & State Relations
 The operational behavior of **${cleanTopic}** is defined by asymptotic complexity and state invariants:
 
-- **Master Theorem Recurrence Form**:
+- **Divide and Conquer Recurrence**:
 $$T(n) = a \\, T\\left(\\frac{n}{b}\\right) + f(n)$$
 - **Algorithmic Bounds**:
-$$\\mathcal{O}(1) \\le \\text{Optimal State} \\le \\mathcal{O}(n \\log n)$$`;
+$$\\mathcal{O}(1) \\le \\mathcal{O}(\log n) \\le \\mathcal{O}(n) \\le \\mathcal{O}(n \log n) \\le \\mathcal{O}(n^2)$$`;
 
         codeSection = `\`\`\`python
-# Production Python: Core Implementation for ${cleanTopic}
-class ${cleanTopic.replace(/[^a-zA-Z0-9]/g, '') || "Engine"}:
-    def __init__(self, capacity: int = 100):
-        self.capacity = capacity
-        self.items = []
-
-    def insert(self, item) -> bool:
-        if item is None or len(self.items) >= self.capacity:
-            return False
-        self.items.append(item)
-        return True
-
-    def find(self, target) -> int:
-        for idx, val in enumerate(self.items):
-            if val == target:
-                return idx
-        return -1
+# Production Python: Algorithmic Implementation of ${cleanTopic}
+def execute_${cleanTopic.toLowerCase().replace(/[^a-z0-9]/g, '_')}(inputs: list) -> list:
+    """Processes input elements preserving operational invariants."""
+    if not inputs:
+        return []
+    return [item for item in inputs if item is not None]
 \`\`\``;
 
         workedProblem = `### Problem 1: Asymptotic Recurrence Solution
 **Problem**: Solve $T(n) = 2T(n/2) + \\Theta(n)$.
 1. $a = 2, b = 2, f(n) = \\Theta(n^1)$.
-2. $\\log_b a = \\log_2 2 = 1 \\implies n^{\\log_b a} = n^1 = f(n)$.
-3. Case 2 of Master Theorem applies $\\implies T(n) = \\Theta(n \\log n)$.`;
+2. $\log_b a = \log_2 2 = 1 \\implies n^{\log_b a} = n^1 = f(n)$.
+3. Case 2 of Master Theorem applies $\\implies T(n) = \\Theta(n \log n)$.`;
     }
 
     return `# Executive Overview & Theoretical Foundations: ${cleanTopic}
 **Academic Domain:** Computer Science & Engineering | **Level:** B.Tech Undergraduate
 
-**${cleanTopic}** constitutes a core conceptual and algorithmic foundation in modern Computer Science and Engineering. Mastering this topic provides the structural basis for high-throughput software architecture, memory optimization, and university end-semester examinations.
+**${cleanTopic}** constitutes a core conceptual and algorithmic foundation in modern Computer Science and Engineering. Mastering this topic provides the structural basis for high-throughput software architecture, algorithmic efficiency, and university end-semester examinations.
 
 ## Core Concepts & Mathematical / Architectural Linchpins
 ${mathSection}
-
-## Physical Memory Layout & Structural Representation
-1. **Memory Allocation**: Managed in contiguous physical memory buffers or heap-allocated pointer chains to guarantee deterministic execution invariants.
-2. **Cache Locality**: Exploits CPU L1/L2 cache line spatial locality to maximize memory bus throughput.
-3. **Pointer Arithmetic**: Guarantees boundary safety and eliminates memory corruption.
 
 ## Production-Grade Implementation & Boundary Validation
 ${codeSection}
@@ -1799,25 +2110,23 @@ ${workedProblem}
 ## Complexity Analysis & Asymptotic Matrix
 | Operation / Stage | Best Case | Average Case | Worst Case | Auxiliary Space |
 | :--- | :--- | :--- | :--- | :--- |
-| **Lookup / Random Access** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
-| **Insertion at Boundary** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ amortized | $\\mathcal{O}(n)$ shifting | $\\mathcal{O}(1)$ |
-| **Arbitrary Search** | $\\mathcal{O}(1)$ | $\\mathcal{O}(\\log n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
+| **Lookup / Retrieval** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
+| **Insertion / State Update** | $\\mathcal{O}(1)$ | $\\mathcal{O}(1)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
 | **Full Traversal** | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(n)$ | $\\mathcal{O}(1)$ |
 
 ## Real-World Pitfalls, Common Bugs & Exam Traps
-1. **Off-by-One Index Errors**: Loop boundary inaccuracies producing segmentation faults or buffer overflows.
-2. **Unchecked Null/Dangling Pointers**: Dereferencing deallocated or uninitialized memory addresses.
-3. **Capacity Overflow**: Failing to verify memory allocation bounds before inserting elements.
+1. **Boundary Index Errors**: Inaccurate loop or base-case conditions leading to runtime faults.
+2. **Resource Leaks**: Failing to clean up allocated structures or unclosed handles.
+3. **Capacity Constraints**: Omitting bounds verification before processing large workloads.
 
 ## University Examination Practice Problems with Model Answers
-1. **Q1: Define ${cleanTopic} in Computer Science.**
-   - *Answer*: A foundational structure or computational methodology that models data and operational workflows under deterministic time and space bounds.
-2. **Q2: Why is random access in an array performed in $\\mathcal{O}(1)$ time?**
-   - *Answer*: Because physical memory addresses are calculated directly via index arithmetic without sequential element traversal.
-3. **Q3: State the worst-case time complexity of Binary Search.**
-   - *Answer*: $\\mathcal{O}(\\log n)$ by repeatedly halving the active search interval.`;
+1. **Q1: Define ${cleanTopic}.**
+   - *Answer*: A core theoretical and computational methodology that organizes data and operations under deterministic time and space constraints.
+2. **Q2: State the primary operational invariant for ${cleanTopic}.**
+   - *Answer*: It enforces structured state transitions guaranteeing deterministic outputs and preventing deadlocks.
+3. **Q3: What is the optimal time complexity for operations in ${cleanTopic}?**
+   - *Answer*: Asymptotically bounded between $\\mathcal{O}(1)$ and $\\mathcal{O}(n \log n)$ under standard balanced conditions.`;
 }
-
 
 function parseMarkdownHeaders(rawContent) {
     if (!rawContent) return [];
@@ -2107,22 +2416,7 @@ function renderNoteDocumentContent(content) {
     const cleanContent = sanitizeStudyNotesContent(content);
     const markdownContentEl = document.getElementById("modal-markdown-content") || document.getElementById("noteMainDocument");
     if (markdownContentEl) {
-        let html = "";
-        if (typeof marked !== 'undefined') {
-            if (typeof marked.parse === 'function') {
-                try {
-                    marked.setOptions({ gfm: true, breaks: true });
-                    html = marked.parse(cleanContent);
-                } catch (e) {
-                    html = renderMarkdownToHtml(cleanContent);
-                }
-            } else if (typeof marked === 'function') {
-                html = marked(cleanContent);
-            }
-        }
-        if (!html) {
-            html = renderMarkdownToHtml(cleanContent);
-        }
+        const html = renderMarkdownToHtml(cleanContent);
         markdownContentEl.innerHTML = html;
         applyKaTeXToElement(markdownContentEl);
         renderMathFormulas(markdownContentEl);
@@ -2573,513 +2867,8 @@ function renderCareers(careers, careerRelevanceText) {
     }
 }
 
-// --- Year-wise Notes Library Helpers ---
-const YEAR_SUBJECTS = {
-    1: {
-        title: "First Year Engineering Subjects (Common for AKTU)",
-        subjects: [
-            {
-                name: "Engineering Physics",
-                units: [
-                    { number: 1, name: "Relativistic Mechanics", file: "newtons_laws_notes.txt", chapters: "Frame of reference, Michelson- Morley experiment, Special theory of relativity, Lorentz transformation." },
-                    { number: 2, name: "Electromagnetic Field Theory", file: "temp_engineering_physics_1788020499.txt", chapters: "Continuity equation, Maxwell's equations, Poynting vector, wave propagation in dielectrics." },
-                    { number: 3, name: "Quantum Mechanics", file: "temp_engineering_physics_1788020499.txt", chapters: "Wave-particle duality, de Broglie waves, Heisenberg uncertainty relation, Schrodinger wave equation." },
-                    { number: 4, name: "Wave Optics", file: "temp_engineering_physics_1788020499.txt", chapters: "Interference of light, double slit, Newton's rings, Fresnel and Fraunhofer diffraction, diffraction grating." },
-                    { number: 5, name: "Lasers and Fiber Optics", file: "temp_engineering_physics_1788020499.txt", chapters: "Einstein's coefficients, Ruby laser, He-Ne laser, optical fiber types, numerical aperture, attenuation." }
-                ]
-            },
-            {
-                name: "Engineering Chemistry",
-                units: [
-                    { number: 1, name: "Atomic & Molecular Structure", file: "temp_engineering_physics_1788020499.txt", chapters: "Molecular orbital theory, LCAO method, metallic bonding, liquid crystals, green chemistry principles." },
-                    { number: 2, name: "Spectroscopic Techniques", file: "temp_engineering_physics_1788020499.txt", chapters: "Elementary ideas and applications of UV-visible, IR, Raman, and NMR spectroscopy." },
-                    { number: 3, name: "Electrochemistry & Corrosion", file: "temp_engineering_physics_1788020499.txt", chapters: "Nernst equation, galvanic cells, batteries, dry/wet corrosion, passivation, prevention methods." },
-                    { number: 4, name: "Water Technology", file: "temp_engineering_physics_1788020499.txt", chapters: "Hardness of water, estimation by EDTA, boiler troubles, lime-soda softening, reverse osmosis." },
-                    { number: 5, name: "Polymers & Organometallics", file: "temp_engineering_physics_1788020499.txt", chapters: "Classification, preparation and properties of thermoplastics and thermosets, Grignard reagent." }
-                ]
-            },
-            {
-                name: "Engineering Mathematics-I",
-                units: [
-                    { number: 1, name: "Differential Calculus-I", file: "calculus_integration_notes.txt", chapters: "Successive differentiation, Leibniz's theorem, curve tracing, asymptotes, curvature." },
-                    { number: 2, name: "Differential Calculus-II", file: "calculus_integration_notes.txt", chapters: "Partial derivatives, Euler's theorem, total derivative, Jacobians, Taylor series for two variables." },
-                    { number: 3, name: "Matrices", file: "calculus_integration_notes.txt", chapters: "Rank of matrix, inverse, linear system solutions, eigen values, Cayley-Hamilton theorem." },
-                    { number: 4, name: "Multivariable Calculus-I", file: "calculus_integration_notes.txt", chapters: "Multiple integrals, double and triple integration, change of order, area and volume." },
-                    { number: 5, name: "Vector Calculus", file: "calculus_integration_notes.txt", chapters: "Gradient, divergence, curl, line, surface and volume integrals, Green's and Stokes' theorems." }
-                ]
-            },
-            {
-                name: "Engineering Mathematics-II",
-                units: [
-                    { number: 1, name: "Ordinary Differential Equations", file: "calculus_integration_notes.txt", chapters: "Linear differential equations of higher order with constant coefficients, Euler-Cauchy equations." },
-                    { number: 2, name: "Multivariable Calculus-II", file: "calculus_integration_notes.txt", chapters: "Beta and Gamma functions, Dirichlet's integral, application to center of gravity." },
-                    { number: 3, name: "Sequences & Series", file: "calculus_integration_notes.txt", chapters: "Sequences, infinite series, convergence, ratio test, comparison test, Cauchy root test." },
-                    { number: 4, name: "Complex Variable-Differentiation", file: "calculus_integration_notes.txt", chapters: "Analytic functions, Cauchy-Riemann equations, harmonic functions, conformal mapping." },
-                    { number: 5, name: "Complex Variable-Integration", file: "calculus_integration_notes.txt", chapters: "Cauchy's integral theorem, Taylor's and Laurent's series, residues, evaluation of real integrals." }
-                ]
-            },
-            {
-                name: "Basic Electrical Engineering",
-                units: [
-                    { number: 1, name: "DC Circuits", file: "newtons_laws_notes.txt", chapters: "Mesh and nodal analysis, Superposition, Thevenin's, Norton's, and Maximum Power Transfer theorems." },
-                    { number: 2, name: "AC Circuits", file: "newtons_laws_notes.txt", chapters: "Representation of sinusoidal waveforms, active, reactive and apparent power, RLC series-parallel, resonance." },
-                    { number: 3, name: "Transformers", file: "newtons_laws_notes.txt", chapters: "EMF equation of transformer, equivalent circuit, losses, efficiency, voltage regulation." },
-                    { number: 4, name: "Electrical Machines", file: "newtons_laws_notes.txt", chapters: "Construction and working principle of DC machines, single phase induction motor, synchronous generator." },
-                    { number: 5, name: "Electrical Installations", file: "newtons_laws_notes.txt", chapters: "Switch fuse unit, MCB, ELCB, wire types, earthing systems, battery characteristics." }
-                ]
-            },
-            {
-                name: "Programming for Problem Solving",
-                units: [
-                    { number: 1, name: "Introduction to Computer & C", file: "linked_list_reversal_notes.txt", chapters: "Computer systems, compilers, assemblers, algorithms, flowcharts, C syntax, data types." },
-                    { number: 2, name: "Expressions & Decision Making", file: "linked_list_reversal_notes.txt", chapters: "Arithmetic expressions, operator precedence, conditional branching, if-else, switch-case." },
-                    { number: 3, name: "Loops and Functions", file: "linked_list_reversal_notes.txt", chapters: "For loop, while loop, do-while loop, user-defined functions, recursion, call by value/reference." },
-                    { number: 4, name: "Arrays and Pointers", file: "linked_list_reversal_notes.txt", chapters: "1D arrays, 2D arrays, string operations, pointers, address operators, arrays with pointers." },
-                    { number: 5, name: "Structures and File I/O", file: "linked_list_reversal_notes.txt", chapters: "Structures, unions, file opening modes, writing and reading data files, library functions." }
-                ]
-            },
-            {
-                name: "Fundamentals of Electronics",
-                units: [
-                    { number: 1, name: "Semiconductor Diode", file: "temp_engineering_physics_1788020499.txt", chapters: "P-N junction diode, V-I characteristics, rectifiers (half, full and bridge type), Zener diode." },
-                    { number: 2, name: "Bipolar Junction Transistor", file: "temp_engineering_physics_1788020499.txt", chapters: "BJT construction, input-output CE, CB and CC configuration characteristics, DC load line." },
-                    { number: 3, name: "Field Effect Transistors", file: "temp_engineering_physics_1788020499.txt", chapters: "JFET working principles, JFET transfer characteristics, MOSFET structures and types." },
-                    { number: 4, name: "Operational Amplifiers", file: "temp_engineering_physics_1788020499.txt", chapters: "Op-Amp characteristics, inverting/non-inverting configuration, adder, subtractor, integrator." },
-                    { number: 5, name: "Instruments & CRO", file: "temp_engineering_physics_1788020499.txt", chapters: "Digital multi-meters, CRO block diagram, measurement of phase, voltage and frequency." }
-                ]
-            },
-            {
-                name: "Fundamentals of Mechanical",
-                units: [
-                    { number: 1, name: "Mechanics & Materials", file: "newtons_laws_notes.txt", chapters: "Hooke's law, stress-strain diagram, force systems, Lami's theorem, truss analysis." },
-                    { number: 2, name: "Thermal Engineering", file: "newtons_laws_notes.txt", chapters: "Zero, First and Second laws of thermodynamics, Carnot engine, steam generators." },
-                    { number: 3, name: "Fluid Mechanics", file: "newtons_laws_notes.txt", chapters: "Fluid properties, viscosity, Pascal's law, Bernoulli's equation, discharge measurement." },
-                    { number: 4, name: "Power Transmission", file: "newtons_laws_notes.txt", chapters: "Belts, ropes, gear trains, couplings, clutch operations, journal/roller bearings." },
-                    { number: 5, name: "Manufacturing Processes", file: "newtons_laws_notes.txt", chapters: "Casting patterns, electric arc welding, gas welding, lathe operations, milling." }
-                ]
-            },
-            {
-                name: "Environment and Ecology",
-                units: [
-                    { number: 1, name: "Ecosystems", file: "newtons_laws_notes.txt", chapters: "Structure and function, food chain, food web, ecological succession, biogeochemical cycles." },
-                    { number: 2, name: "Natural Resources", file: "newtons_laws_notes.txt", chapters: "Forests, water, mineral resources, dams, solar/wind energy systems." },
-                    { number: 3, name: "Environmental Pollution", file: "newtons_laws_notes.txt", chapters: "Air, water and soil pollution indicators, waste disposal and control." },
-                    { number: 4, name: "Social Environmental Issues", file: "newtons_laws_notes.txt", chapters: "Climate change, global warming, acid rain, ozone layer depletion, sustainable development." },
-                    { number: 5, name: "Human Population & Health", file: "newtons_laws_notes.txt", chapters: "Population explosion, environmental health hazards, women and child welfare." }
-                ]
-            },
-            {
-                name: "Soft Skills & Soft Communication",
-                units: [
-                    { number: 1, name: "Technical Communication Fundamentals", file: "newtons_laws_notes.txt", chapters: "Nature and scope of communication, barriers to communication, channels." },
-                    { number: 2, name: "Technical Writing", file: "newtons_laws_notes.txt", chapters: "Report writing formats, research proposals, abstracting, technical reports." },
-                    { number: 3, name: "Business Correspondence", file: "newtons_laws_notes.txt", chapters: "Professional letters, resume preparation, job applications, memorandum formats." },
-                    { number: 4, name: "Presentation & Seminar Techniques", file: "newtons_laws_notes.txt", chapters: "Audience analysis, delivery styles, slide preparations, voice modulation." },
-                    { number: 5, name: "Functional English Grammar", file: "newtons_laws_notes.txt", chapters: "Sentence construction, active/passive voice, common errors, vocabulary enhancement." }
-                ]
-            }
-        ]
-    },
-    2: {
-        title: "Second Year B.Tech CSE Subjects (AKTU)",
-        subjects: [
-            {
-                name: "Data Structures & Algorithms",
-                units: [
-                    { number: 1, name: "Asymptotic Notation & Arrays", file: "linked_list_reversal_notes.txt", chapters: "Big-O, Omega, Theta notations, multi-dimensional arrays, address calculations, sparse matrix." },
-                    { number: 2, name: "Linked Lists & Inversion", file: "linked_list_reversal_notes.txt", chapters: "Singly linked lists, circular list, doubly linked list operations, linked list inversion." },
-                    { number: 3, name: "Stacks & Queues", file: "linked_list_reversal_notes.txt", chapters: "Stack implementation, recursion, infix to postfix conversions, queues, circular queues, deques." },
-                    { number: 4, name: "Trees and Binary Search Trees", file: "linked_list_reversal_notes.txt", chapters: "Binary tree properties, traversals, binary search tree (BST) operations, AVL trees." },
-                    { number: 5, name: "Sorting & Searching", file: "linked_list_reversal_notes.txt", chapters: "Bubble, insertion, quick, merge and heap sorting, linear and binary search, hashing." }
-                ]
-            },
-            {
-                name: "Computer Organization & Architecture",
-                units: [
-                    { number: 1, name: "Register Transfer & Microoperations", file: "linked_list_reversal_notes.txt", chapters: "Bus transfer, memory transfer, arithmetic micro-operations, logic micro-operations." },
-                    { number: 2, name: "Basic Computer Organization", file: "linked_list_reversal_notes.txt", chapters: "Instruction codes, computer registers, timing and control, instruction cycles." },
-                    { number: 3, name: "Central Processing Unit", file: "linked_list_reversal_notes.txt", chapters: "General register organization, stack organization, instruction formats, addressing modes." },
-                    { number: 4, name: "Computer Arithmetic", file: "linked_list_reversal_notes.txt", chapters: "Addition, subtraction, multiplication algorithms (Booth's), division algorithms." },
-                    { number: 5, name: "Memory Organization", file: "linked_list_reversal_notes.txt", chapters: "Memory hierarchy, main memory, auxiliary memory, associative, cache memory mappings." }
-                ]
-            },
-            {
-                name: "Discrete Mathematics",
-                units: [
-                    { number: 1, name: "Sets, Relations & Functions", file: "calculus_integration_notes.txt", chapters: "Set operations, equivalence relations, partial ordering, lattices, functions." },
-                    { number: 2, name: "Algebraic Structures", file: "calculus_integration_notes.txt", chapters: "Groups, subgroups, cyclic groups, rings, integral domains, fields." },
-                    { number: 3, name: "Propositional Logic", file: "calculus_integration_notes.txt", chapters: "Tautologies, contradictions, logical equivalences, quantifiers, rules of inference." },
-                    { number: 4, name: "Combinatorics & Recurrence", file: "calculus_integration_notes.txt", chapters: "Pigeonhole principle, permutations, combinations, recurrence relations." },
-                    { number: 5, name: "Graph Theory", file: "calculus_integration_notes.txt", chapters: "Graphs, subgraphs, paths, cycles, Eulerian and Hamiltonian paths, trees." }
-                ]
-            },
-            {
-                name: "Object Oriented Programming",
-                units: [
-                    { number: 1, name: "OOP Paradigm & C++ Basics", file: "linked_list_reversal_notes.txt", chapters: "Encapsulation, inheritance, polymorphism, classes, objects, access specifiers." },
-                    { number: 2, name: "Constructors & Operator Overloading", file: "linked_list_reversal_notes.txt", chapters: "Default, parameterized and copy constructors, operator overloading, friend functions." },
-                    { number: 3, name: "Inheritance and Virtual Functions", file: "linked_list_reversal_notes.txt", chapters: "Single, multiple, multi-level inheritance, virtual base classes, runtime polymorphism." },
-                    { number: 4, name: "Templates and Exception Handling", file: "linked_list_reversal_notes.txt", chapters: "Function templates, class templates, try-throw-catch exception models." },
-                    { number: 5, name: "Streams and Files", file: "linked_list_reversal_notes.txt", chapters: "File stream operations, binary I/O, file pointers, sequential and random access." }
-                ]
-            },
-            {
-                name: "Operating Systems",
-                units: [
-                    { number: 1, name: "Introduction & Process Scheduling", file: "linked_list_reversal_notes.txt", chapters: "OS services, system calls, process state transitions, PCB, CPU scheduling." },
-                    { number: 2, name: "Process Synchronization & Deadlocks", file: "linked_list_reversal_notes.txt", chapters: "Critical section, semaphores, monitors, deadlock prevention and Banker's algorithm." },
-                    { number: 3, name: "Memory Management", file: "linked_list_reversal_notes.txt", chapters: "Logical/physical address space, paging, segmentation, virtual memory, page replacement." },
-                    { number: 4, name: "File System & Disk Scheduling", file: "linked_list_reversal_notes.txt", chapters: "File concepts, directory systems, allocation methods, disk scheduling (FCFS, SSTF, SCAN)." },
-                    { number: 5, name: "Case Study: Linux & Windows", file: "linked_list_reversal_notes.txt", chapters: "Linux kernel modules, process management in Linux, security features." }
-                ]
-            },
-            {
-                name: "Database Management Systems",
-                units: [
-                    { number: 1, name: "Database Systems & ER Modeling", file: "linked_list_reversal_notes.txt", chapters: "Data independence, database languages, ER diagram mapping, weak entities." },
-                    { number: 2, name: "Relational Data Model & SQL", file: "linked_list_reversal_notes.txt", chapters: "Relational algebra, SQL DDL/DML queries, integrity constraints, joins." },
-                    { number: 3, name: "Relational Database Design", file: "linked_list_reversal_notes.txt", chapters: "Functional dependencies, normalization (1NF, 2NF, 3NF, BCNF), dependency preservation." },
-                    { number: 4, name: "Transaction Processing & Concurrency", file: "linked_list_reversal_notes.txt", chapters: "ACID properties, serializability, lock-based protocols, two-phase locking (2PL)." },
-                    { number: 5, name: "Concurrency & Recovery Systems", file: "linked_list_reversal_notes.txt", chapters: "Deadlock handling, log-based recovery, shadow paging, check-points." }
-                ]
-            },
-            {
-                name: "Theory of Automata & Languages",
-                units: [
-                    { number: 1, name: "Finite Automata", file: "linked_list_reversal_notes.txt", chapters: "DFA, NFA definitions, equivalence of DFA & NFA, minimization of finite automata." },
-                    { number: 2, name: "Regular Expressions & Languages", file: "linked_list_reversal_notes.txt", chapters: "Regular grammar, pumping lemma for regular sets, closure properties of regular sets." },
-                    { number: 3, name: "Context Free Grammars & Pushdown Automata", file: "linked_list_reversal_notes.txt", chapters: "CFG derivations, ambiguity in grammar, PDA design, equivalence of CFG and PDA." },
-                    { number: 4, name: "Turing Machines", file: "linked_list_reversal_notes.txt", chapters: "Turing machine models, design of TM, recursive and recursively enumerable languages." },
-                    { number: 5, name: "Undecidability", file: "linked_list_reversal_notes.txt", chapters: "Church-Turing thesis, halting problem, Post's correspondence problem (PCP)." }
-                ]
-            },
-            {
-                name: "Cyber Security",
-                units: [
-                    { number: 1, name: "Cyber Security Overview", file: "linked_list_reversal_notes.txt", chapters: "Information security, threat assessment, cyber crimes, computer forensics." },
-                    { number: 2, name: "Application & Network Security", file: "linked_list_reversal_notes.txt", chapters: "Email security, firewall configurations, intrusion detection systems, VPN." },
-                    { number: 3, name: "Security Protocols", file: "linked_list_reversal_notes.txt", chapters: "SSL, TLS, IPsec, secure electronic transactions (SET), secure shell." },
-                    { number: 4, name: "Cryptography", file: "linked_list_reversal_notes.txt", chapters: "Symmetric and asymmetric encryption, DES, AES, RSA algorithms, digital signatures." },
-                    { number: 5, name: "Cyber Laws & Policies", file: "linked_list_reversal_notes.txt", chapters: "IT Act 2000, intellectual property rights, copyright issues, privacy policy." }
-                ]
-            },
-            {
-                name: "Universal Human Values",
-                units: [
-                    { number: 1, name: "Value Education", file: "newtons_laws_notes.txt", chapters: "Understanding value education, self-exploration, basic human aspirations." },
-                    { number: 2, name: "Harmony in Human Being", file: "newtons_laws_notes.txt", chapters: "Harmony of Self (I) with Body (Sanyam and Swasthya), correct needs." },
-                    { number: 3, name: "Harmony in Family & Society", file: "newtons_laws_notes.txt", chapters: "Trust (Vishwas) and Respect (Samman), relationship values, societal harmony." },
-                    { number: 4, name: "Harmony in Nature", file: "newtons_laws_notes.txt", chapters: "Four orders in nature, interconnectedness, mutual fulfillment." },
-                    { number: 5, name: "Professional Ethics", file: "newtons_laws_notes.txt", chapters: "Ethical human conduct, professional ethics competence, vision of harmony." }
-                ]
-            },
-            {
-                name: "Technical Communication",
-                units: [
-                    { number: 1, name: "Technical Communication Basics", file: "newtons_laws_notes.txt", chapters: "Channels of communication, active listening, non-verbal signals." },
-                    { number: 2, name: "Technical Writing Mechanics", file: "newtons_laws_notes.txt", chapters: "Defining user manuals, writing abstracts, editing engineering drafts." },
-                    { number: 3, name: "Business & Corporate Correspondence", file: "newtons_laws_notes.txt", chapters: "Minutes of meetings, circulars, letters of inquiry, complaints." },
-                    { number: 4, name: "Advanced Presentation Skills", file: "newtons_laws_notes.txt", chapters: "Handling Q&A sessions, structural outlines, dynamic visual aids." },
-                    { number: 5, name: "Communication Ethics", file: "newtons_laws_notes.txt", chapters: "Ethical reporting, copying restrictions, professional integrity in writing." }
-                ]
-            }
-        ]
-    },
-    3: {
-        title: "Third Year B.Tech CSE Subjects (AKTU)",
-        subjects: [
-            {
-                name: "Design & Analysis of Algorithms",
-                units: [
-                    { number: 1, name: "Divide and Conquer", file: "linked_list_reversal_notes.txt", chapters: "Recurrences solving, Master theorem, Merge sort, Quick sort, Heap sort." },
-                    { number: 2, name: "Greedy Algorithms", file: "linked_list_reversal_notes.txt", chapters: "Fractional Knapsack, Huffman coding, Kruskal's & Prim's minimum spanning tree." },
-                    { number: 3, name: "Dynamic Programming", file: "linked_list_reversal_notes.txt", chapters: "Matrix chain multiplication, Longest common subsequence, 0/1 Knapsack problem." },
-                    { number: 4, name: "Backtracking & Branch and Bound", file: "linked_list_reversal_notes.txt", chapters: "N-Queens problem, TSP, graph coloring, Hamiltonian cycles." },
-                    { number: 5, name: "Complexity Classes", file: "linked_list_reversal_notes.txt", chapters: "P, NP, NP-Hard, NP-Complete, vertex cover, clique problem." }
-                ]
-            },
-            {
-                name: "Computer Networks",
-                units: [
-                    { number: 1, name: "Physical & Data Link Layer", file: "linked_list_reversal_notes.txt", chapters: "OSI/TCP-IP reference models, sliding window protocols, error detection/correction." },
-                    { number: 2, name: "Medium Access Control", file: "linked_list_reversal_notes.txt", chapters: "CSMA/CD, CSMA/CA, Ethernet, Token Ring, wireless LANs." },
-                    { number: 3, name: "Network Layer", file: "linked_list_reversal_notes.txt", chapters: "IPv4/IPv6 addressing, routing algorithms (Distance Vector, Link State), congestion control." },
-                    { number: 4, name: "Transport Layer", file: "linked_list_reversal_notes.txt", chapters: "UDP, TCP, flow and error control, connection management." },
-                    { number: 5, name: "Application Layer", file: "linked_list_reversal_notes.txt", chapters: "DNS, SMTP, FTP, HTTP, network security cryptography principles." }
-                ]
-            },
-            {
-                name: "Compiler Design",
-                units: [
-                    { number: 1, name: "Lexical Analysis", file: "linked_list_reversal_notes.txt", chapters: "Role of lexical analyzer, tokens, regular expressions, transition diagrams, lex tool." },
-                    { number: 2, name: "Syntax Analysis", file: "linked_list_reversal_notes.txt", chapters: "CFGs, Parsing types, LL(1) parsing, LR parsing (SLR, LALR, CLR), parser generators." },
-                    { number: 3, name: "Syntax Directed Translation", file: "linked_list_reversal_notes.txt", chapters: "Syntax-directed definitions, dependency graphs, S-attributed and L-attributed definitions." },
-                    { number: 4, name: "Intermediate Code Generation", file: "linked_list_reversal_notes.txt", chapters: "Three-address code, quadruples, triples, indirect triples, boolean expressions, declarations." },
-                    { number: 5, name: "Code Optimization & Generation", file: "linked_list_reversal_notes.txt", chapters: "Principal sources of optimization, loop optimization, DAG representation of basic blocks." }
-                ]
-            },
-            {
-                name: "Software Engineering",
-                units: [
-                    { number: 1, name: "Software Process Models", file: "linked_list_reversal_notes.txt", chapters: "SDLC phases, Waterfall model, Spiral model, RAD model, Agile development models." },
-                    { number: 2, name: "Requirements Engineering", file: "linked_list_reversal_notes.txt", chapters: "Feasibility studies, SRS document, validation, behavioral models." },
-                    { number: 3, name: "Software Design", file: "linked_list_reversal_notes.txt", chapters: "Cohesion & coupling, object-oriented design, UML class/use-case diagrams." },
-                    { number: 4, name: "Software Testing", file: "linked_list_reversal_notes.txt", chapters: "White-box testing, black-box testing, unit testing, integration and system testing." },
-                    { number: 5, name: "Software Project Management", file: "linked_list_reversal_notes.txt", chapters: "COCOMO estimation model, risk management, version control systems (Git)." }
-                ]
-            },
-            {
-                name: "Web Technologies",
-                units: [
-                    { number: 1, name: "HTML5 & CSS3", file: "linked_list_reversal_notes.txt", chapters: "Structural elements, CSS selectors, box model, responsive layouts, media queries." },
-                    { number: 2, name: "Client-side Scripting", file: "linked_list_reversal_notes.txt", chapters: "JavaScript syntax, DOM manipulation, events, asynchronous programming (AJAX)." },
-                    { number: 3, name: "Server-side Programming", file: "linked_list_reversal_notes.txt", chapters: "Introduction to PHP/Node.js, form handling, session management, database connectivity." },
-                    { number: 4, name: "XML and Web Services", file: "linked_list_reversal_notes.txt", chapters: "XML schema, DTD, SOAP, RESTful APIs, JSON data parsing." },
-                    { number: 5, name: "Web Frameworks", file: "linked_list_reversal_notes.txt", chapters: "Bootstrap grid system, React component structures, web deployment guidelines." }
-                ]
-            },
-            {
-                name: "Microprocessors & Microcontrollers",
-                units: [
-                    { number: 1, name: "8085 Architecture", file: "temp_engineering_physics_1788020499.txt", chapters: "Pin configurations, register structure, timing diagram, instruction cycles." },
-                    { number: 2, name: "8086 Architecture", file: "temp_engineering_physics_1788020499.txt", chapters: "Memory segmentation, segment registers, index registers, addressing modes." },
-                    { number: 3, name: "Assembly Language Programming", file: "temp_engineering_physics_1788020499.txt", chapters: "8086 instructions, data transfer, arithmetic, logical and control flow instructions." },
-                    { number: 4, name: "Interfacing Devices", file: "temp_engineering_physics_1788020499.txt", chapters: "8255 PPI, 8254 timer, A/D & D/A converters interfacing." },
-                    { number: 5, name: "8051 Microcontroller", file: "temp_engineering_physics_1788020499.txt", chapters: "Architecture, pin diagram, I/O ports, internal RAM structure, instruction set." }
-                ]
-            },
-            {
-                name: "Data Science & Machine Learning Basics",
-                units: [
-                    { number: 1, name: "Python for Data Science", file: "linked_list_reversal_notes.txt", chapters: "NumPy arrays, Pandas DataFrames, Matplotlib plotting, data cleaning." },
-                    { number: 2, name: "Linear Regression", file: "linked_list_reversal_notes.txt", chapters: "Least squares method, gradient descent, coefficient of determination (R2)." },
-                    { number: 3, name: "Logistic Regression", file: "linked_list_reversal_notes.txt", chapters: "Sigmoid function, cost functions, binary classification metrics." },
-                    { number: 4, name: "Clustering Algorithms", file: "linked_list_reversal_notes.txt", chapters: "K-means algorithm, silhouette analysis, hierarchical clustering methods." },
-                    { number: 5, name: "Feature Selection & Reduction", file: "linked_list_reversal_notes.txt", chapters: "Feature engineering, principal component analysis (PCA) basics." }
-                ]
-            },
-            {
-                name: "Theory of Computation",
-                units: [
-                    { number: 1, name: "Formal Grammars", file: "linked_list_reversal_notes.txt", chapters: "Chomsky hierarchy of languages, terminal/non-terminal symbols, derivation trees." },
-                    { number: 2, name: "Context-Free Languages", file: "linked_list_reversal_notes.txt", chapters: "Pumping lemma for CFLs, closure properties, parsing tree reductions." },
-                    { number: 3, name: "Linear Bounded Automata", file: "linked_list_reversal_notes.txt", chapters: "Context sensitive grammars, LBA transitions, Turing machines comparison." },
-                    { number: 4, name: "Halting & Decidability", file: "linked_list_reversal_notes.txt", chapters: "Universal Turing machines, halting problem proof, recursive languages." },
-                    { number: 5, name: "Intractable Problems", file: "linked_list_reversal_notes.txt", chapters: "Polynomial-time reductions, Cook-Levin theorem, SAT problem verification." }
-                ]
-            },
-            {
-                name: "Digital Electronics",
-                units: [
-                    { number: 1, name: "Number Systems", file: "temp_engineering_physics_1788020499.txt", chapters: "Binary, octal, hexadecimal representations, binary arithmetic, BCD, excess-3." },
-                    { number: 2, name: "Boolean Algebra", file: "temp_engineering_physics_1788020499.txt", chapters: "Karnaugh maps (up to 4 variables), SOP/POS simplification, logic gates." },
-                    { number: 3, name: "Combinational Circuits", file: "temp_engineering_physics_1788020499.txt", chapters: "Half/full adders, multiplexers, demultiplexers, encoders, decoders." },
-                    { number: 4, name: "Sequential Circuits", file: "temp_engineering_physics_1788020499.txt", chapters: "Flip-flops (SR, JK, D, T), latch operations, master-slave configurations." },
-                    { number: 5, name: "Registers and Counters", file: "temp_engineering_physics_1788020499.txt", chapters: "Shift registers, ripple counters, synchronous counters, ring counters." }
-                ]
-            },
-            {
-                name: "Constitution of India",
-                units: [
-                    { number: 1, name: "Historical Background", file: "newtons_laws_notes.txt", chapters: "Constituent Assembly, preamble, basic features of the Constitution." },
-                    { number: 2, name: "Fundamental Rights & Duties", file: "newtons_laws_notes.txt", chapters: "Right to equality, freedom of religion, directive principles of state policy." },
-                    { number: 3, name: "The Union Legislature", file: "newtons_laws_notes.txt", chapters: "Presidential powers, Lok Sabha and Rajya Sabha structures, legislative procedure." },
-                    { number: 4, name: "The Judiciary", file: "newtons_laws_notes.txt", chapters: "Supreme Court, High Courts, judicial review, public interest litigation." },
-                    { number: 5, name: "Emergency Provisions", file: "newtons_laws_notes.txt", chapters: "National, state, and financial emergency, constitutional amendments." }
-                ]
-            }
-        ]
-    },
-    4: {
-        title: "Fourth Year B.Tech CSE Subjects (AKTU)",
-        subjects: [
-            {
-                name: "Artificial Intelligence",
-                units: [
-                    { number: 1, name: "Searching Strategies", file: "linked_list_reversal_notes.txt", chapters: "Uninformed (BFS, DFS), informed (A*, AO*), constraint satisfaction." },
-                    { number: 2, name: "Knowledge Representation", file: "linked_list_reversal_notes.txt", chapters: "Propositional logic, predicate logic, resolution, semantic networks, frames." },
-                    { number: 3, name: "Natural Language Processing", file: "linked_list_reversal_notes.txt", chapters: "Syntactic analysis, semantic analysis, parsing techniques, speech recognition." },
-                    { number: 4, name: "Game Playing", file: "linked_list_reversal_notes.txt", chapters: "Minimax search, alpha-beta pruning, utility evaluation." },
-                    { number: 5, name: "Expert Systems", file: "linked_list_reversal_notes.txt", chapters: "Rule-based shells, inference engines, MYCIN structure." }
-                ]
-            },
-            {
-                name: "Cloud Computing & DevOps",
-                units: [
-                    { number: 1, name: "Cloud Models & Virtualization", file: "linked_list_reversal_notes.txt", chapters: "Hypervisors, SaaS, PaaS, IaaS, private and public cloud configurations." },
-                    { number: 2, name: "Containers & Orchestration", file: "linked_list_reversal_notes.txt", chapters: "Docker container builds, Kubernetes pod structures, services, controllers." },
-                    { number: 3, name: "DevOps & CI/CD", file: "linked_list_reversal_notes.txt", chapters: "Jenkins automation, GitHub Actions, unit testing pipelines, automated deployments." },
-                    { number: 4, name: "Infrastructure as Code", file: "linked_list_reversal_notes.txt", chapters: "Terraform configurations, resource blocks, state file management." },
-                    { number: 5, name: "Cloud Monitoring", file: "linked_list_reversal_notes.txt", chapters: "Prometheus alerts, Grafana dashboards, ELK log analysis." }
-                ]
-            },
-            {
-                name: "Machine Learning",
-                units: [
-                    { number: 1, name: "Decision Trees & SVMs", file: "linked_list_reversal_notes.txt", chapters: "Information gain, Gini index, support vector machine maximum margins." },
-                    { number: 2, name: "Neural Networks & Backpropagation", file: "linked_list_reversal_notes.txt", chapters: "Multi-layer perceptrons, activation functions, gradient descent backpropagation." },
-                    { number: 3, name: "Deep Learning Architectures", file: "linked_list_reversal_notes.txt", chapters: "Convolutional Neural Networks (CNN), Recurrent Neural Networks (RNN)." },
-                    { number: 4, name: "Model Tuning & Regularization", file: "linked_list_reversal_notes.txt", chapters: "L1/L2 regularization, dropouts, early stopping, cross-validation metrics." },
-                    { number: 5, name: "Reinforcement Learning", file: "linked_list_reversal_notes.txt", chapters: "Q-learning, Bellman equation, policy iteration, value iteration." }
-                ]
-            },
-            {
-                name: "Distributed Systems",
-                units: [
-                    { number: 1, name: "Distributed Architectures", file: "linked_list_reversal_notes.txt", chapters: "System models, communication protocols, RPC, RMI." },
-                    { number: 2, name: "Clock Synchronization", file: "linked_list_reversal_notes.txt", chapters: "Logical clocks, Lamport timestamps, vector clocks, mutual exclusion." },
-                    { number: 3, name: "Consensus & Agreement", file: "linked_list_reversal_notes.txt", chapters: "Byzantine agreement, Paxos consensus, Raft algorithm." },
-                    { number: 4, name: "Distributed File Systems", file: "linked_list_reversal_notes.txt", chapters: "NFS, HDFS architectures, replica management, consistency." },
-                    { number: 5, name: "Fault Tolerance", file: "linked_list_reversal_notes.txt", chapters: "Process resilience, reliable multicasting, check-pointing and recovery." }
-                ]
-            },
-            {
-                name: "Cryptography & Network Security",
-                units: [
-                    { number: 1, name: "Security Attacks & Services", file: "linked_list_reversal_notes.txt", chapters: "Active vs passive attacks, classical cipher techniques (substitution, transposition)." },
-                    { number: 2, name: "Block Ciphers", file: "linked_list_reversal_notes.txt", chapters: "Feistel cipher structure, DES, double/triple DES, AES cipher operations." },
-                    { number: 3, name: "Asymmetric Cryptography", file: "linked_list_reversal_notes.txt", chapters: "RSA algorithm, Diffie-Hellman key exchange, elliptic curve cryptography." },
-                    { number: 4, name: "Hash Functions & Signatures", file: "linked_list_reversal_notes.txt", chapters: "SHA-512, MD5, Message Authentication Codes (MAC), digital signature standards." },
-                    { number: 5, name: "System Security", file: "linked_list_reversal_notes.txt", chapters: "Intruders, malicious software, viruses, firewalls, secure electronic transactions." }
-                ]
-            },
-            {
-                name: "Big Data Analytics",
-                units: [
-                    { number: 1, name: "Introduction to Big Data", file: "linked_list_reversal_notes.txt", chapters: "Characteristics (V's of Big Data), analytics lifecycle, storage systems." },
-                    { number: 2, name: "MapReduce Framework", file: "linked_list_reversal_notes.txt", chapters: "Map phase, reduce phase, execution pipeline, job scheduling." },
-                    { number: 3, name: "NoSQL Databases", file: "linked_list_reversal_notes.txt", chapters: "HBase, Cassandra, MongoDB collections, document store indexing." },
-                    { number: 4, name: "Spark Streaming & In-Memory Processing", file: "linked_list_reversal_notes.txt", chapters: "Resilient Distributed Datasets (RDD), Spark SQL operations, MLlib." },
-                    { number: 5, name: "Graph Analytics", file: "linked_list_reversal_notes.txt", chapters: "Graph databases (Neo4j), PageRank algorithm implementations." }
-                ]
-            },
-            {
-                name: "Internet of Things",
-                units: [
-                    { number: 1, name: "IoT Architectures", file: "linked_list_reversal_notes.txt", chapters: "Sensors, actuators, gateways, IoT protocol stacks, communication models." },
-                    { number: 2, name: "IoT Protocols", file: "linked_list_reversal_notes.txt", chapters: "MQTT, CoAP, HTTP, AMQP, ZigBee, 6LoWPAN network configurations." },
-                    { number: 3, name: "IoT Hardware Platforms", file: "linked_list_reversal_notes.txt", chapters: "Arduino IDE, Raspberry Pi pin assignments, GPIO interfaces." },
-                    { number: 4, name: "Cloud Analytics & IoT", file: "linked_list_reversal_notes.txt", chapters: "AWS IoT core, stream analytics, device shadows, rule actions." },
-                    { number: 5, name: "IoT Security Threats", file: "linked_list_reversal_notes.txt", chapters: "Device authentication, physical attacks, firmware security patches." }
-                ]
-            },
-            {
-                name: "Digital Image Processing",
-                units: [
-                    { number: 1, name: "Image Fundamentals", file: "linked_list_reversal_notes.txt", chapters: "Visual perception, digitization, pixel connectivity, image transforms (DFT, DCT)." },
-                    { number: 2, name: "Image Enhancement", file: "linked_list_reversal_notes.txt", chapters: "Histogram equalization, spatial filtering, smoothing, sharpening filters." },
-                    { number: 3, name: "Image Restoration", file: "linked_list_reversal_notes.txt", chapters: "Noise models, inverse filtering, Wiener filter restorations." },
-                    { number: 4, name: "Image Segmentation", file: "linked_list_reversal_notes.txt", chapters: "Point, line, edge detection, Hough transform, thresholding, region growing." },
-                    { number: 5, name: "Compression & Representation", file: "linked_list_reversal_notes.txt", chapters: "Lossless vs lossy compression, Huffman coding, run-length coding, JPEG standard." }
-                ]
-            },
-            {
-                name: "Mobile Computing",
-                units: [
-                    { number: 1, name: "Wireless Transmission", file: "linked_list_reversal_notes.txt", chapters: "Signals, multiplexing (SDM, FDM, TDM, CDM), spread spectrum." },
-                    { number: 2, name: "Telecommunication Systems", file: "linked_list_reversal_notes.txt", chapters: "GSM architecture, handovers, GPRS configurations, UMTS." },
-                    { number: 3, name: "Mobile Network Layer", file: "linked_list_reversal_notes.txt", chapters: "Mobile IP, DHCP, routing in ad-hoc networks (AODV, DSR)." },
-                    { number: 4, name: "Mobile Transport Layer", file: "linked_list_reversal_notes.txt", chapters: "Indirect TCP, snooping TCP, mobile TCP, WAP architecture." },
-                    { number: 5, name: "Mobile Platforms & Security", file: "linked_list_reversal_notes.txt", chapters: "Android/iOS architectures, mobile application security guidelines." }
-                ]
-            },
-            {
-                name: "Software Testing & Quality",
-                units: [
-                    { number: 1, name: "Testing Principles", file: "linked_list_reversal_notes.txt", chapters: "Software errors, defects, test cases design, verification vs validation." },
-                    { number: 2, name: "Black-Box Testing Techniques", file: "linked_list_reversal_notes.txt", chapters: "Boundary value analysis, equivalence partitioning, decision tables." },
-                    { number: 3, name: "White-Box Testing Techniques", file: "linked_list_reversal_notes.txt", chapters: "Control flow testing, path coverage, data flow testing, mutation testing." },
-                    { number: 4, name: "Quality Assurance Models", file: "linked_list_reversal_notes.txt", chapters: "ISO 9000 standard, CMMI maturity levels, Six Sigma quality controls." },
-                    { number: 5, name: "Test Automation", file: "linked_list_reversal_notes.txt", chapters: "Static analysis tools, dynamic analysis tools, unit test tools (JUnit)." }
-                ]
-            }
-        ]
-    }
-};
-
-function selectYearNotes(year) {
-    const data = YEAR_SUBJECTS[year];
-    if (!data) return;
-    
-    const panel = document.getElementById("yearSubjectsPanel");
-    const title = document.getElementById("selectedYearTitle");
-    const list = document.getElementById("yearSubjectsList");
-    
-    if (!panel || !title || !list) return;
-    
-    title.textContent = data.title;
-    list.innerHTML = "";
-    list.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3";
-    
-    data.subjects.forEach((subject, idx) => {
-        const btn = document.createElement("button");
-        btn.className = "flex items-center justify-between text-left bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 p-3 rounded-lg text-xs font-semibold text-slate-700 hover:text-indigo-700 transition duration-150 group";
-        btn.onclick = () => viewSubjectUnits(year, idx);
-        btn.innerHTML = `
-            <span>${subject.name}</span>
-            <i class="fa-solid fa-chevron-right text-[10px] opacity-40 group-hover:opacity-100 transition-transform group-hover:translate-x-0.5 font-sans"></i>
-        `;
-        list.appendChild(btn);
-    });
-    
-    panel.classList.remove("hidden");
-    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-function viewSubjectUnits(year, subjectIndex) {
-    const yearData = YEAR_SUBJECTS[year];
-    if (!yearData) return;
-    const subject = yearData.subjects[subjectIndex];
-    if (!subject) return;
-
-    const panel = document.getElementById("yearSubjectsPanel");
-    const title = document.getElementById("selectedYearTitle");
-    const list = document.getElementById("yearSubjectsList");
-    
-    if (!panel || !title || !list) return;
-
-    title.textContent = `${subject.name} - Units & Chapters`;
-    list.innerHTML = "";
-    list.className = "grid grid-cols-1 gap-4 w-full";
-
-    const backBtnContainer = document.createElement("div");
-    backBtnContainer.className = "col-span-full mb-2";
-    backBtnContainer.innerHTML = `
-        <button onclick="selectYearNotes(${year})" class="glass-btn glass-btn-secondary inline-flex items-center space-x-2 font-semibold px-3 py-1.5 rounded-lg text-xs transition">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to Subjects</span>
-        </button>
-    `;
-    list.appendChild(backBtnContainer);
-
-    subject.units.forEach(unit => {
-        const cleanSubjectName = subject.name.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_");
-        const filename = `aktu_${cleanSubjectName}_unit_${unit.number}.html`;
-        
-        const unitCard = document.createElement("div");
-        unitCard.className = "bg-slate-50/50 border border-slate-200/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition hover:bg-white hover:shadow-xs";
-        
-        unitCard.innerHTML = `
-            <div class="flex-1">
-                <div class="flex items-center space-x-2">
-                    <span class="glass-badge glass-badge-indigo px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Unit ${unit.number}</span>
-                    <h5 class="font-bold text-sm text-slate-800">${unit.name}</h5>
-                </div>
-                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans"><strong class="text-slate-755">Topics:</strong> ${unit.chapters}</p>
-            </div>
-            <div class="flex-shrink-0 self-stretch md:self-center flex items-center">
-            </div>
-        `;
-        list.appendChild(unitCard);
-    });
-}
-
-function closeYearSubjects() {
-    const panel = document.getElementById("yearSubjectsPanel");
-    if (panel) {
-        panel.classList.add("hidden");
-    }
-}
+function closeYearSubjects() {}
+window.closeYearSubjects = closeYearSubjects;
 
 async function toggleSettingsModal() {
     const modal = document.getElementById("settingsModal");

@@ -73,7 +73,7 @@ async def handle_academic_search(q: str = "", query: str = ""):
         if config.is_gemini_mocked():
             raise Exception("Gemini API mock/sandbox mode active")
 
-        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        candidate_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
         model = None
         for m_name in candidate_models:
             try:
