@@ -6,15 +6,16 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-# Database URL - Defaults to local SQLite database
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./omnilearn.db")
+# Database URL - Defaults to local SQLite database in project root
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'omnilearn.db'}")
 
 # Upload Storage Directory
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", BASE_DIR / "storage" / "notes"))
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-# External API Credentials
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# External API Credentials (Permanently configured with user key as default)
+DEFAULT_GEMINI_KEY = "AQ.Ab8RN6JNBGCSG6DUtd89CbYyaLlOVvMsc9mAw_68Ach24aPZwg"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", DEFAULT_GEMINI_KEY).strip() or DEFAULT_GEMINI_KEY
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 GOOGLE_SEARCH_CX = os.getenv("GOOGLE_SEARCH_CX", "")
 GOOGLE_SEARCH_KEY = os.getenv("GOOGLE_SEARCH_KEY", "")
