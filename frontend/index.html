@@ -39,6 +39,8 @@
       };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- Mermaid.js for Dynamic Flowcharts & Architecture Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -132,7 +134,7 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=4.6.0">
+    <link rel="stylesheet" href="css/style.css?v=4.9.1">
     <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
     <script>
       (function() {
@@ -200,24 +202,24 @@
 
     <!-- Navbar -->
     <header class="navbar-omni shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetSearch()">
-                <span class="omni-nav-icon"><i class="fa-solid fa-graduation-cap text-2xl"></i></span>
-                <span class="text-xl font-extrabold tracking-tight omni-brand-text">OmniLearn</span>
+        <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer shrink-0" onclick="resetSearch()">
+                <span class="omni-nav-icon"><i class="fa-solid fa-graduation-cap text-xl sm:text-2xl"></i></span>
+                <span class="text-lg sm:text-xl font-extrabold tracking-tight omni-brand-text">OmniLearn</span>
             </div>
             
-            <!-- Navbar Search Bar (Visible after search is initiated) -->
-            <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-2 sm:mx-4 md:mx-8">
+            <!-- Navbar Search Bar (Visible after search is initiated on tablet/desktop) -->
+            <div id="navSearchContainer" class="hidden sm:block flex-1 max-w-xl mx-4 md:mx-8">
                 <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
                            class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-10 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700">
-                    <span class="absolute left-3 top-2.5 text-slate-300">
+                    <span class="absolute left-3 top-2.5 text-slate-300 pointer-events-none">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
                 </form>
             </div>
             
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
                 <!-- Theme Toggle Button -->
                 <button id="themeToggleBtn" onclick="toggleTheme()" class="nav-control-btn" title="Toggle Light / Dark Mode">
                     <i id="themeToggleIcon" class="fa-solid fa-moon text-amber-300"></i>
@@ -231,6 +233,17 @@
                     <span id="bookmarkCount" class="nav-counter-badge">0</span>
                 </button>
             </div>
+        </div>
+
+        <!-- Mobile Navbar Search Sub-Bar (Full-width, cleanly displayed on mobile < 640px when search is active) -->
+        <div id="mobileNavSearchContainer" class="hidden sm:hidden px-3.5 pb-2.5 pt-0 max-w-7xl mx-auto">
+            <form id="mobileNavSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full">
+                <input type="text" id="mobileNavSearchInput" placeholder="Search another topic..." 
+                       class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-9 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm" autocomplete="off">
+                <span class="absolute left-3 top-2.5 text-slate-300 pointer-events-none text-xs">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+            </form>
         </div>
     </header>
 
@@ -370,6 +383,43 @@
                         </div>
                         <div id="summaryText" data-alias="overview-text" class="overview-text text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none">
                             <div id="overview-text">Loading summary...</div>
+                        </div>
+
+                        <!-- Interactive Conceptual Architecture & Diagram Section -->
+                        <div id="conceptDiagramSection" class="hidden my-3 rounded-xl overflow-hidden diagram-card-omni shadow-md transition-all">
+                            <div class="flex items-center justify-between px-3.5 sm:px-4 py-2.5 diagram-card-header gap-2 flex-wrap sm:flex-nowrap">
+                                <div class="flex items-center gap-2 min-w-0 flex-1">
+                                    <span class="w-6 h-6 rounded-md flex items-center justify-center diagram-icon-badge shrink-0">
+                                        <i class="fa-solid fa-diagram-project text-indigo-400 text-xs"></i>
+                                    </span>
+                                    <span class="text-xs font-bold uppercase tracking-wider diagram-label shrink-0">
+                                        Architecture &amp; Diagram
+                                    </span>
+                                    <span id="diagramTitle" class="text-xs font-semibold diagram-title truncate max-w-[130px] sm:max-w-xs md:max-w-sm"></span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span id="diagramBadge" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full diagram-badge">Structural Model</span>
+                                    <button id="toggleDiagramZoomBtn" onclick="toggleDiagramZoom()" class="diagram-zoom-btn px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm" title="Toggle zoom/expand">
+                                        <i id="diagramZoomIcon" class="fa-solid fa-maximize text-[11px]"></i>
+                                        <span id="diagramZoomText" class="hidden sm:inline">Expand</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-3 diagram-card-body">
+                                <p id="diagramSubtitle" class="text-xs md:text-sm leading-relaxed diagram-subtitle-text font-medium opacity-90"></p>
+                                <!-- Interactive Canvas Viewer -->
+                                <div id="diagramViewerContainer" class="diagram-viewer-container w-full rounded-xl p-3 flex items-center justify-center overflow-x-auto relative min-h-[220px]">
+                                    <!-- Injected SVG or Mermaid -->
+                                </div>
+                                <!-- Structural Explanation & Legend -->
+                                <div id="diagramExplanationBlock" class="diagram-explanation-box p-3.5 rounded-xl space-y-2">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider diagram-section-subhead flex items-center gap-1.5">
+                                        <i class="fa-solid fa-circle-info text-cyan-500"></i> Structural Mechanics &amp; Invariants
+                                    </div>
+                                    <p id="diagramExplanationText" class="text-xs md:text-sm leading-relaxed diagram-body-text"></p>
+                                    <div id="diagramLegendContainer" class="flex flex-wrap gap-2 pt-1.5"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Explainable Real-World Example & Practical Walkthrough Section (No Code) -->
@@ -768,8 +818,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=4.6.0"></script>
-    <script src="app.js?v=4.6.0"></script>
-    <script src="main.js?v=4.6.0"></script>
+    <script src="js/edu_canvas.js?v=4.9.1"></script>
+    <script src="app.js?v=4.9.1"></script>
+    <script src="main.js?v=4.9.1"></script>
 </body>
 </html>

@@ -211,8 +211,8 @@
         particles = [];
         const w = window.innerWidth;
         const h = window.innerHeight;
-        // Higher density of words across desktop and mobile screens
-        const count = Math.min(92, Math.max(52, Math.floor((w * h) / 17000)));
+        // Balanced, ambient density of academic words for an elegant background without visual clutter
+        const count = Math.min(22, Math.max(10, Math.floor((w * h) / 45000)));
 
         // Shuffle words bank
         const pool = [...ACADEMIC_WORDS_BANK].sort(() => 0.5 - Math.random());
@@ -222,15 +222,15 @@
             const depth = Math.random(); // 0 (far) to 1 (near)
             
             // Varied font sizes, weights and base alpha based on depth
-            const fontSize = depth > 0.75 ? 15 : depth > 0.4 ? 13 : 11.5;
+            const fontSize = depth > 0.75 ? 13.5 : depth > 0.4 ? 12 : 11;
             const fontWeight = depth > 0.75 ? "600" : depth > 0.4 ? "500" : "400";
             const baseAlpha = depth > 0.75 
-                ? (Math.random() * 0.18 + 0.32) 
+                ? (Math.random() * 0.08 + 0.18) 
                 : depth > 0.4 
-                    ? (Math.random() * 0.15 + 0.22) 
-                    : (Math.random() * 0.12 + 0.14);
+                    ? (Math.random() * 0.06 + 0.12) 
+                    : (Math.random() * 0.05 + 0.08);
 
-            const speedMultiplier = depth > 0.75 ? 0.35 : depth > 0.4 ? 0.28 : 0.20;
+            const speedMultiplier = depth > 0.75 ? 0.22 : depth > 0.4 ? 0.16 : 0.12;
 
             particles.push({
                 x: Math.random() * w,
@@ -272,6 +272,17 @@
 
     function animateCanvas() {
         if (!canvas || !ctx) return;
+
+        // Completely pause and clear canvas if dashboard is currently active
+        const isDashboardActive = document.body.classList.contains("dashboard-active") || 
+            (document.getElementById("dashboardScreen") && !document.getElementById("dashboardScreen").classList.contains("hidden"));
+        
+        if (isDashboardActive) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            animationFrameId = requestAnimationFrame(animateCanvas);
+            return;
+        }
+
         const w = window.innerWidth;
         const h = window.innerHeight;
 

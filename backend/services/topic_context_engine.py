@@ -18,12 +18,18 @@ def clean_title_casing(title: str) -> str:
 
 class TopicContextEngine:
     @staticmethod
+    def build_topic_diagram(clean_q: str, topic: str, detected_domain: str) -> dict:
+        from backend.services.diagram_engine import DiagramEngine
+        return DiagramEngine.build_diagram(clean_q, topic, detected_domain)
+
+    @staticmethod
     def build_topic_context(clean_q: str, detected_domain: str) -> dict:
         data = TopicContextEngine._build_topic_context_raw(clean_q, detected_domain)
         # Normalize newlines for markdown rendering
         for k in ["overview", "theoretical_foundations", "core_formulations"]:
             if k in data and isinstance(data[k], str):
                 data[k] = data[k].replace(chr(92) + "n", chr(10))
+        data["diagram"] = TopicContextEngine.build_topic_diagram(clean_q, data.get("topic", clean_q), detected_domain)
         return data
 
     @staticmethod
@@ -118,12 +124,12 @@ class TopicContextEngine:
                     f"An **{topic}** is a fundamental linear data structure that stores elements of identical data type in a contiguous block of physical computer memory. "
                     f"Because memory addresses are strictly contiguous, each element can be accessed instantaneously via its numeric index through simple pointer arithmetic.\n\n"
                     f"### Core Structural Invariants\n"
-                    fr"- **Contiguous Memory Allocation**: Elements occupy adjacent memory addresses $\\text{{Base}} + i \\times S$, with zero gap between consecutive slots.\n"
-                    fr"- **Constant-Time Random Access**: Calculating the hardware memory address of $A[i]$ requires a single multiplication and addition, providing deterministic $\\mathcal{{O}}(1)$ read/write time.\n"
+                    fr"- **Contiguous Memory Allocation**: Elements occupy adjacent memory addresses $\text{{Base}} + i \times S$, with zero gap between consecutive slots.\n"
+                    fr"- **Constant-Time Random Access**: Calculating the hardware memory address of $A[i]$ requires a single multiplication and addition, providing deterministic $O(1)$ read/write time.\n"
                     fr"- **Spatial Cache Locality**: Sequential arrangement enables modern CPU memory controllers to prefetch entire cache lines (typically 64 bytes), dramatically accelerating sequential scans compared to pointer-based structures.\n\n"
                     f"### Key Varieties & Engineering Realities\n"
                     fr"- **Static Array**: Fixed capacity defined at compile or initialization time. Cannot grow without allocating a new block.\n"
-                    fr"- **Dynamic Array (Vector/ArrayList)**: Automatically grows by allocating a doubled memory buffer (amortized $\\mathcal{{O}}(1)$ append) when capacity is exhausted.\n"
+                    fr"- **Dynamic Array (Vector/ArrayList)**: Automatically grows by allocating a doubled memory buffer (amortized $O(1)$ append) when capacity is exhausted.\n"
                     fr"- **Multi-Dimensional Array / Matrix**: Arranged in row-major or column-major contiguous layout, vital for graphics, physics simulations, and deep learning tensors."
                 ),
                 "theoretical_foundations": f"Rooted in the Von Neumann computer architecture and random-access machine (RAM) model, where memory is an indexed sequence of addressable words.",
@@ -328,13 +334,13 @@ class TopicContextEngine:
                     fr"- **Zero-Pointer Contiguous Array Packing**: Rather than storing child pointers, a heap is mapped directly into an array: root at index 0, left child at $2i + 1$, right child at $2i + 2$, and parent at $\\lfloor(i-1)/2\\rfloor$.\n"
                     fr"- **Constant-Time Peak ($\\mathcal{{O}}(1)$)**: The extreme element (minimum or maximum) is always located at root index 0."
                 ),
-                "theoretical_foundations": f"Invented by J.W.J. Williams in 1964 as part of the HeapSort algorithm, providing the fastest comparison-based sort with optimal in-place $O(n \log n)$ worst-case guarantees.",
+                "theoretical_foundations": fr"Invented by J.W.J. Williams in 1964 as part of the HeapSort algorithm, providing the fastest comparison-based sort with optimal in-place $O(n \log n)$ worst-case guarantees.",
                 "core_formulations": (
                     r"- **Parent-Child Array Indices**: $$\text{Left}(i) = 2i + 1, \quad \text{Right}(i) = 2i + 2, \quad \text{Parent}(i) = \lfloor (i - 1)/2 \rfloor$$\n"
                     r"- **Min-Heap Invariant**: $$\forall i > 0, \, A[\text{Parent}(i)] \le A[i]$$\n"
                     r"- **Time Complexity**: Find-Min/Max: $\mathcal{O}(1)$; Insert: $\mathcal{O}(\log n)$; Extract-Min/Max: $\mathcal{O}(\log n)$; Build-Heap: $\mathcal{O}(n)$."
                 ),
-                "did_you_know": f"While inserting $n$ elements into a heap one by one takes $O(n \log n)$ time, Robert W. Floyd published a famous 'sift-down' method in 1964 that constructs a complete heap in linear $O(n)$ time."
+                "did_you_know": fr"While inserting $n$ elements into a heap one by one takes $O(n \log n)$ time, Robert W. Floyd published a famous 'sift-down' method in 1964 that constructs a complete heap in linear $O(n)$ time."
             }
 
         # 11. Binary Search
@@ -344,7 +350,7 @@ class TopicContextEngine:
                 "category": detected_domain,
                 "difficulty_score": 5.2,
                 "difficulty_level": "Intermediate",
-                "ai_evaluation": f"{topic} demands precise boundary condition validation ($L \le R$ vs $L < R$), overflow-safe midpoint calculation, and monotonic predicate search formulation.",
+                "ai_evaluation": fr"{topic} demands precise boundary condition validation ($L \le R$ vs $L < R$), overflow-safe midpoint calculation, and monotonic predicate search formulation.",
                 "overview": (
                     f"**{topic}** is an efficient divide-and-conquer search algorithm that finds the position of a target value within a **monotonically sorted** sequence. "
                     f"By comparing the target value to the middle element of the active range, it eliminates exactly half of the remaining search space in each iteration.\n\n"

@@ -41,6 +41,42 @@ function applyQuickExampleTheme(theme) {
     }
 }
 
+function applyConceptDiagramTheme(theme) {
+    const diagSection = document.getElementById("conceptDiagramSection");
+    if (!diagSection) return;
+    const isDark = theme === "dark" || document.documentElement.classList.contains("dark");
+    if (isDark) {
+        diagSection.style.setProperty("background", "linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 29, 0.98) 100%)", "important");
+        diagSection.style.setProperty("border", "1px solid rgba(255, 255, 255, 0.12)", "important");
+        diagSection.style.setProperty("color", "#E2E8F0", "important");
+        const hdr = diagSection.querySelector(".diagram-card-header");
+        if (hdr) {
+            hdr.style.setProperty("background", "rgba(15, 23, 42, 0.95)", "important");
+            hdr.style.setProperty("border-bottom", "1px solid rgba(255, 255, 255, 0.08)", "important");
+        }
+        const canvas = diagSection.querySelector(".diagram-viewer-container");
+        if (canvas) {
+            canvas.style.setProperty("background", "rgba(2, 6, 23, 0.65)", "important");
+            canvas.style.setProperty("border", "1px solid rgba(255, 255, 255, 0.07)", "important");
+        }
+    } else {
+        diagSection.style.setProperty("background", "#FFFFFF", "important");
+        diagSection.style.setProperty("border", "1px solid #E2E8F0", "important");
+        diagSection.style.setProperty("box-shadow", "0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03)", "important");
+        diagSection.style.setProperty("color", "#1E293B", "important");
+        const hdr = diagSection.querySelector(".diagram-card-header");
+        if (hdr) {
+            hdr.style.setProperty("background", "#F8FAFC", "important");
+            hdr.style.setProperty("border-bottom", "1px solid #E2E8F0", "important");
+        }
+        const canvas = diagSection.querySelector(".diagram-viewer-container");
+        if (canvas) {
+            canvas.style.setProperty("background", "#F8FAFC", "important");
+            canvas.style.setProperty("border", "1px solid #E2E8F0", "important");
+        }
+    }
+}
+
 function applyTheme(theme) {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
@@ -54,6 +90,7 @@ function applyTheme(theme) {
     localStorage.setItem("omni_theme", theme);
     updateThemeToggleUI(theme);
     applyQuickExampleTheme(theme);
+    applyConceptDiagramTheme(theme);
 }
 
 function toggleTheme() {
@@ -213,6 +250,9 @@ function setCardsLoadingState(query) {
     showScreen("dashboardScreen");
     const navSearchContainer = document.getElementById("navSearchContainer");
     if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+    const mobileNavSearchContainer = document.getElementById("mobileNavSearchContainer");
+    if (mobileNavSearchContainer) mobileNavSearchContainer.classList.remove("hidden");
+    document.body.classList.add("dashboard-active");
 
     // Title & Badges
     const titleEl = document.getElementById("summaryTopicTitle");
@@ -231,6 +271,12 @@ function setCardsLoadingState(query) {
                 <div class="h-4 bg-slate-200 rounded w-4/5"></div>
                 <div class="h-4 bg-slate-200 rounded w-2/3"></div>
             </div>`;
+    }
+
+    // Conceptual Diagram Skeleton - Keep hidden until fresh data arrives
+    const diagSection = document.getElementById("conceptDiagramSection");
+    if (diagSection) {
+        diagSection.classList.add("hidden");
     }
 
     // Quick Example Skeleton - Keep hidden until fresh data arrives
@@ -369,10 +415,12 @@ async function executeSearch(targetQuery, updateHistory = true) {
     // 1. Synchronize all search input elements across the page instantly
     const mainInput = document.getElementById("mainSearchInput");
     const navInput = document.getElementById("navSearchInput");
+    const mobileNavInput = document.getElementById("mobileNavSearchInput");
     const noteInput = document.getElementById("noteSearchInput");
 
     if (mainInput) mainInput.value = query;
     if (navInput) navInput.value = query;
+    if (mobileNavInput) mobileNavInput.value = query;
     if (noteInput) {
         noteInput.value = "";
         noteInput.placeholder = `Search inside notes (OCR)...`;
@@ -401,7 +449,7 @@ async function executeSearch(targetQuery, updateHistory = true) {
     let cachedData = searchResultCache.get(cacheKey);
     if (!cachedData) {
         try {
-            const rawStored = sessionStorage.getItem("omni_cache_" + cacheKey);
+            const rawStored = sessionStorage.getItem("omni_cache_v49_" + cacheKey);
             if (rawStored) {
                 cachedData = JSON.parse(rawStored);
                 searchResultCache.set(cacheKey, cachedData);
@@ -415,6 +463,9 @@ async function executeSearch(targetQuery, updateHistory = true) {
         showScreen("dashboardScreen");
         const navSearchContainer = document.getElementById("navSearchContainer");
         if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+        const mobileNavSearchContainer = document.getElementById("mobileNavSearchContainer");
+        if (mobileNavSearchContainer) mobileNavSearchContainer.classList.remove("hidden");
+        document.body.classList.add("dashboard-active");
         try {
             updateDashboardUI(cachedData);
             hasInstantRendered = true;
@@ -454,7 +505,7 @@ async function executeSearch(targetQuery, updateHistory = true) {
         currentSearchData = data;
         searchResultCache.set(cacheKey, data);
         try {
-            sessionStorage.setItem("omni_cache_" + cacheKey, JSON.stringify(data));
+            sessionStorage.setItem("omni_cache_v49_" + cacheKey, JSON.stringify(data));
         } catch (_) {}
 
         // 5. Instantly and completely re-render all dashboard sections with dynamic data
@@ -516,17 +567,20 @@ function handleSearch(event, explicitQuery) {
 
     const mainInput = document.getElementById("mainSearchInput");
     const navInput = document.getElementById("navSearchInput");
+    const mobileNavInput = document.getElementById("mobileNavSearchInput");
     const landingVisible = !document.getElementById("landingScreen").classList.contains("hidden");
 
     let query = "";
-    if (document.activeElement === navInput && navInput && navInput.value.trim()) {
+    if (document.activeElement === mobileNavInput && mobileNavInput && mobileNavInput.value.trim()) {
+        query = mobileNavInput.value.trim();
+    } else if (document.activeElement === navInput && navInput && navInput.value.trim()) {
         query = navInput.value.trim();
     } else if (document.activeElement === mainInput && mainInput && mainInput.value.trim()) {
         query = mainInput.value.trim();
     } else if (landingVisible) {
-        query = mainInput ? mainInput.value.trim() : (navInput ? navInput.value.trim() : "");
+        query = mainInput ? mainInput.value.trim() : (navInput ? navInput.value.trim() : (mobileNavInput ? mobileNavInput.value.trim() : ""));
     } else {
-        query = navInput ? navInput.value.trim() : (mainInput ? mainInput.value.trim() : "");
+        query = (mobileNavInput && mobileNavInput.value.trim()) || (navInput && navInput.value.trim()) || (mainInput && mainInput.value.trim()) || "";
     }
 
     if (query) {
@@ -542,11 +596,16 @@ function fillAndSearch(topic) {
 function resetSearch(updateHistory = true) {
     const mainInput = document.getElementById("mainSearchInput");
     const navInput = document.getElementById("navSearchInput");
+    const mobileNavInput = document.getElementById("mobileNavSearchInput");
     if (mainInput) mainInput.value = "";
     if (navInput) navInput.value = "";
+    if (mobileNavInput) mobileNavInput.value = "";
 
     const navContainer = document.getElementById("navSearchContainer");
     if (navContainer) navContainer.classList.add("hidden");
+    const mobileNavContainer = document.getElementById("mobileNavSearchContainer");
+    if (mobileNavContainer) mobileNavContainer.classList.add("hidden");
+    document.body.classList.remove("dashboard-active");
 
     showScreen("landingScreen");
     currentQuery = "";
@@ -571,6 +630,21 @@ function showScreen(screenId) {
             }
         }
     });
+
+    const eduBg = document.getElementById("eduBackgroundLayer");
+    if (screenId === "dashboardScreen" || screenId === "loadingScreen") {
+        document.body.classList.add("dashboard-active");
+        if (eduBg) {
+            eduBg.style.display = "none";
+            eduBg.setAttribute("aria-hidden", "true");
+        }
+    } else if (screenId === "landingScreen") {
+        document.body.classList.remove("dashboard-active");
+        if (eduBg) {
+            eduBg.style.display = "";
+            eduBg.removeAttribute("aria-hidden");
+        }
+    }
 }
 
 // Modular Step-by-Step UI Card Formatter (minimizes cognitive fatigue)
@@ -699,6 +773,13 @@ function renderDashboard(data) {
         }
     } catch (sumErr) {
         console.error("Failed to render summary overview:", sumErr);
+    }
+
+    // 1.4 Render Interactive Conceptual Architecture & Diagram
+    try {
+        renderConceptDiagram(data.diagram, topicTitle);
+    } catch (diagErr) {
+        console.error("Failed to render conceptual diagram:", diagErr);
     }
 
     // 1.5 Render Explainable Practical Example & Real-World Walkthrough (No Code)
@@ -1093,6 +1174,129 @@ function copyQuickExampleContent() {
 }
 window.copyQuickExampleContent = copyQuickExampleContent;
 window.copyQuickExampleCode = copyQuickExampleContent;
+
+// ==========================================================================
+// INTERACTIVE CONCEPTUAL ARCHITECTURE & DIAGRAM RENDERER
+// ==========================================================================
+window.isDiagramZoomed = false;
+function toggleDiagramZoom() {
+    const canvas = document.getElementById("diagramViewerContainer");
+    const btnIcon = document.getElementById("diagramZoomIcon");
+    const btnText = document.getElementById("diagramZoomText");
+    if (!canvas) return;
+
+    window.isDiagramZoomed = !window.isDiagramZoomed;
+    if (window.isDiagramZoomed) {
+        canvas.classList.add("diagram-zoomed");
+        if (btnIcon) {
+            btnIcon.classList.remove("fa-maximize");
+            btnIcon.classList.add("fa-minimize");
+        }
+        if (btnText) btnText.textContent = "Collapse";
+    } else {
+        canvas.classList.remove("diagram-zoomed");
+        if (btnIcon) {
+            btnIcon.classList.remove("fa-minimize");
+            btnIcon.classList.add("fa-maximize");
+        }
+        if (btnText) btnText.textContent = "Expand";
+    }
+}
+window.toggleDiagramZoom = toggleDiagramZoom;
+
+function renderConceptDiagram(diagram, topicName) {
+    const section = document.getElementById("conceptDiagramSection");
+    if (!section) return;
+
+    if (!diagram || (!diagram.svg_content && !diagram.mermaid_code)) {
+        section.classList.add("hidden");
+        return;
+    }
+
+    section.classList.remove("hidden");
+    const isDark = document.documentElement.classList.contains("dark") || 
+                   document.documentElement.getAttribute("data-theme") === "dark";
+    applyConceptDiagramTheme(isDark ? "dark" : "light");
+
+    // 1. Populate header, title, badge
+    const titleEl = document.getElementById("diagramTitle");
+    if (titleEl) {
+        const dTitle = diagram.title ? diagram.title.replace(/^[^:]+:\s*/, "") : (topicName || "Conceptual Model");
+        titleEl.textContent = `— ${dTitle}`;
+    }
+
+    const badgeEl = document.getElementById("diagramBadge");
+    if (badgeEl) {
+        badgeEl.textContent = diagram.badge || "Architecture & Topology";
+    }
+
+    const subtitleEl = document.getElementById("diagramSubtitle");
+    if (subtitleEl) {
+        subtitleEl.textContent = diagram.subtitle || "Structural invariants, state transitions, and memory layout";
+    }
+
+    // 2. Render Canvas (SVG or Mermaid)
+    const viewer = document.getElementById("diagramViewerContainer");
+    if (viewer) {
+        viewer.innerHTML = "";
+        
+        if (diagram.svg_content) {
+            viewer.innerHTML = `<div class="w-full flex justify-center py-2">${diagram.svg_content}</div>`;
+        } else if (diagram.mermaid_code && window.mermaid) {
+            try {
+                window.mermaid.initialize({
+                    startOnLoad: false,
+                    theme: isDark ? 'dark' : 'default',
+                    securityLevel: 'loose'
+                });
+                const renderId = `mermaid_diag_${Date.now()}`;
+                window.mermaid.render(renderId, diagram.mermaid_code)
+                    .then(({ svg }) => {
+                        viewer.innerHTML = `<div class="w-full flex justify-center py-2">${svg}</div>`;
+                    })
+                    .catch(mErr => {
+                        console.warn("[OmniLearn] Mermaid render issue:", mErr);
+                        if (diagram.svg_content) {
+                            viewer.innerHTML = `<div class="w-full flex justify-center py-2">${diagram.svg_content}</div>`;
+                        }
+                    });
+            } catch (mErr) {
+                console.warn("[OmniLearn] Mermaid render issue:", mErr);
+                if (diagram.svg_content) {
+                    viewer.innerHTML = `<div class="w-full flex justify-center py-2">${diagram.svg_content}</div>`;
+                }
+            }
+        }
+    }
+
+    // 3. Explanation & Invariants
+    const explanationEl = document.getElementById("diagramExplanationText");
+    if (explanationEl) {
+        explanationEl.textContent = diagram.explanation || "System structural representation demonstrating core operational invariants.";
+    }
+
+    // 4. Legend Chips
+    const legendContainer = document.getElementById("diagramLegendContainer");
+    if (legendContainer) {
+        legendContainer.innerHTML = "";
+        const legendItems = Array.isArray(diagram.legend) ? diagram.legend : [];
+        if (legendItems.length > 0) {
+            legendItems.forEach(item => {
+                const chip = document.createElement("div");
+                chip.className = "diagram-legend-chip flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border shadow-xs";
+                const dot = document.createElement("span");
+                dot.className = "w-2.5 h-2.5 rounded-full shrink-0";
+                dot.style.backgroundColor = item.color || "#38bdf8";
+                const label = document.createElement("span");
+                label.textContent = item.label || "";
+                chip.appendChild(dot);
+                chip.appendChild(label);
+                legendContainer.appendChild(chip);
+            });
+        }
+    }
+}
+window.renderConceptDiagram = renderConceptDiagram;
 
 function prepareMathMarkdown(rawText) {
     if (!rawText || typeof rawText !== 'string') return "";

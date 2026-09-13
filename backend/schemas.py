@@ -101,4 +101,5 @@ class SearchResponse(BaseModel):
     examFrequency: Optional[List[int]] = None
     quick_example: Optional[Dict[str, Any]] = None
     quickExample: Optional[Dict[str, Any]] = None
+    diagram: Optional[Dict[str, Any]] = None
 

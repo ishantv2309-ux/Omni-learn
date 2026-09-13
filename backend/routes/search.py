@@ -142,6 +142,18 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                     )
                     cached_json["quick_example"] = cached_qe
                     cached_json["quickExample"] = cached_qe
+                if not cached_json.get("diagram") or (isinstance(cached_json.get("diagram"), dict) and cached_json["diagram"].get("type") == "svg"):
+                    cached_diag = GeminiService.build_topic_diagram(
+                        cached_json.get("topic") or cached_json.get("title") or clean_query,
+                        clean_query,
+                        cached_json.get("category") or cached_json.get("domain") or "Academic Curriculum"
+                    )
+                    cached_json["diagram"] = cached_diag
+                    cache_record.result_json = cached_json
+                    try:
+                        db.commit()
+                    except Exception:
+                        db.rollback()
                 return SearchResponse.model_validate(cached_json)
 
     print(f"Cache miss. Performing live aggregation for: '{clean_query}'")
@@ -379,7 +391,8 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         "study_notes": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or (note_responses[0].ocr_text if note_responses else "")),
         "notes_content": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or gemini_data.get("notes_content") or (note_responses[0].ocr_text if note_responses else "")),
         "exam_frequency": exam_freq_dicts,
-        "examFrequency": exam_freq_list
+        "examFrequency": exam_freq_list,
+        "diagram": gemini_data.get("diagram") or GeminiService.build_topic_diagram(canonical_topic, clean_query, category_name)
     }
     
     # Serialize to pydantic model for validation & formatting

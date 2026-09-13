@@ -791,8 +791,12 @@ input:focus, select:focus {
    GLOBAL NAVBAR (Clean, Translucent, Always High Contrast)
    ========================================================================== */
 .navbar-omni {
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     transition: var(--transition-smooth) !important;
 }
 
@@ -823,7 +827,7 @@ html.dark body {
 /* Navbar in Dark Mode */
 html[data-theme="dark"] .navbar-omni,
 html.dark .navbar-omni {
-    background: rgba(10, 14, 23, 0.88) !important;
+    background: rgba(10, 14, 23, 0.96) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     color: #FFFFFF !important;
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
@@ -837,7 +841,9 @@ html.dark .omni-brand-text {
 }
 
 html[data-theme="dark"] #navSearchInput,
-html.dark #navSearchInput {
+html.dark #navSearchInput,
+html[data-theme="dark"] #mobileNavSearchInput,
+html.dark #mobileNavSearchInput {
     background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: #FFFFFF !important;
@@ -845,7 +851,9 @@ html.dark #navSearchInput {
 }
 
 html[data-theme="dark"] #navSearchInput:focus,
-html.dark #navSearchInput:focus {
+html.dark #navSearchInput:focus,
+html[data-theme="dark"] #mobileNavSearchInput:focus,
+html.dark #mobileNavSearchInput:focus {
     background: rgba(255, 255, 255, 0.09) !important;
     border-color: #60A5FA !important;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important;
@@ -1197,10 +1205,10 @@ html.light body {
 
 html[data-theme="light"] .navbar-omni,
 html.light .navbar-omni {
-    background: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(255, 255, 255, 0.97) !important;
     border-bottom: 1px solid #E2E8F0 !important;
     color: #0F172A !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06) !important;
 }
 
 html[data-theme="light"] .omni-brand-text,
@@ -1237,7 +1245,9 @@ html.light #mainSearchInput {
 }
 
 html[data-theme="light"] #navSearchInput,
-html.light #navSearchInput {
+html.light #navSearchInput,
+html[data-theme="light"] #mobileNavSearchInput,
+html.light #mobileNavSearchInput {
     background: #F1F5F9 !important;
     border: 1px solid #CBD5E1 !important;
     color: #0F172A !important;
@@ -1409,19 +1419,25 @@ html.light .glass-nav-btn span {
 }
 
 html[data-theme="light"] #navSearchInput,
-html.light #navSearchInput {
+html.light #navSearchInput,
+html[data-theme="light"] #mobileNavSearchInput,
+html.light #mobileNavSearchInput {
     background: #F1F5F9 !important;
     border: 1px solid #CBD5E1 !important;
     color: #0F172A !important;
 }
 
 html[data-theme="light"] #navSearchInput::placeholder,
-html.light #navSearchInput::placeholder {
+html.light #navSearchInput::placeholder,
+html[data-theme="light"] #mobileNavSearchInput::placeholder,
+html.light #mobileNavSearchInput::placeholder {
     color: #64748B !important;
 }
 
 html[data-theme="light"] #navSearchContainer span,
-html.light #navSearchContainer span {
+html.light #navSearchContainer span,
+html[data-theme="light"] #mobileNavSearchContainer span,
+html.light #mobileNavSearchContainer span {
     color: #64748B !important;
 }
 
@@ -2182,11 +2198,27 @@ html.light .tradeoff-col-disadv {
     pointer-events: auto;
 }
 
-/* Ensure content layers stay above the background canvas */
-header.navbar-omni,
+/* Stacking Context Hierarchy: Header (Sticky 100) > Main (Relative 1) > Background Canvas (0) */
+header.navbar-omni {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+}
+
 main {
-    position: relative;
-    z-index: 10;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Completely hide floating canvas words & background layer whenever dashboard or loading is active */
+body.dashboard-active #eduBackgroundLayer,
+body:has(#dashboardScreen:not(.hidden)) #eduBackgroundLayer,
+body:has(#loadingScreen:not(.hidden)) #eduBackgroundLayer,
+#dashboardScreen:not(.hidden) ~ #eduBackgroundLayer {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 /* Educational Panel Styling (Glassmorphism & Theme Support) */
@@ -2771,22 +2803,23 @@ table {
     }
 
     #navSearchContainer {
-        margin-left: 0.35rem !important;
-        margin-right: 0.35rem !important;
+        display: none !important;
     }
 
-    #navSearchInput {
-        padding-top: 0.45rem !important;
-        padding-bottom: 0.45rem !important;
-        padding-left: 2rem !important;
+    #mobileNavSearchContainer {
+        display: block;
+        padding-left: 0.875rem !important;
+        padding-right: 0.875rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    #mobileNavSearchContainer input {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 2.25rem !important;
         padding-right: 0.75rem !important;
-        font-size: 0.8rem !important;
-    }
-
-    #navSearchForm span {
-        left: 0.625rem !important;
-        top: 0.45rem !important;
-        font-size: 0.8rem !important;
+        font-size: 0.85rem !important;
+        border-radius: 0.75rem !important;
     }
 
     .nav-control-btn {
@@ -3354,4 +3387,233 @@ table {
         padding: 0 !important;
     }
 }
+
+/* ==========================================================================
+   CONCEPTUAL ARCHITECTURE & DIAGRAM CARD STYLING
+   ========================================================================== */
+#conceptDiagramSection,
+.diagram-card-omni {
+    border-radius: 0.875rem;
+    transition: all 0.25s ease;
+    overflow: hidden;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+.diagram-viewer-container {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+}
+
+.diagram-viewer-container svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    transition: transform 0.3s ease;
+}
+
+.diagram-viewer-container.diagram-zoomed {
+    min-height: 480px;
+    padding: 2rem 1rem;
+    overflow-x: auto;
+}
+
+.diagram-viewer-container.diagram-zoomed svg {
+    min-width: 640px;
+    max-height: 450px;
+}
+
+/* Dark Mode Diagram Card */
+html[data-theme="dark"] #conceptDiagramSection,
+html.dark #conceptDiagramSection,
+html[data-theme="dark"] .diagram-card-omni,
+html.dark .diagram-card-omni {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 29, 0.98) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+html[data-theme="dark"] #conceptDiagramSection > div:first-child,
+html.dark #conceptDiagramSection > div:first-child,
+html[data-theme="dark"] .diagram-card-header,
+html.dark .diagram-card-header {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .diagram-icon-badge,
+html.dark .diagram-icon-badge {
+    background: rgba(99, 102, 241, 0.18) !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    color: #818CF8 !important;
+}
+
+html[data-theme="dark"] .diagram-label,
+html.dark .diagram-label {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .diagram-title,
+html.dark .diagram-title {
+    color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .diagram-badge,
+html.dark .diagram-badge {
+    background: rgba(14, 165, 233, 0.18) !important;
+    color: #7DD3FC !important;
+    border: 1px solid rgba(14, 165, 233, 0.35) !important;
+}
+
+html[data-theme="dark"] .diagram-zoom-btn,
+html.dark .diagram-zoom-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+html[data-theme="dark"] .diagram-zoom-btn:hover,
+html.dark .diagram-zoom-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .diagram-viewer-container,
+html.dark .diagram-viewer-container {
+    background: rgba(2, 6, 23, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-theme="dark"] .diagram-subtitle-text,
+html.dark .diagram-subtitle-text {
+    color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .diagram-explanation-box,
+html.dark .diagram-explanation-box {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: 3.5px solid #06B6D4 !important;
+}
+
+html[data-theme="dark"] .diagram-section-subhead,
+html.dark .diagram-section-subhead {
+    color: #67E8F9 !important;
+}
+
+html[data-theme="dark"] .diagram-body-text,
+html.dark .diagram-body-text {
+    color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .diagram-legend-chip,
+html.dark .diagram-legend-chip {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #CBD5E1 !important;
+}
+
+/* Light Mode Diagram Card */
+html:not(.dark) #conceptDiagramSection,
+html[data-theme="light"] #conceptDiagramSection,
+html.light #conceptDiagramSection,
+html:not(.dark) .diagram-card-omni,
+html[data-theme="light"] .diagram-card-omni,
+html.light .diagram-card-omni {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) #conceptDiagramSection > div:first-child,
+html[data-theme="light"] #conceptDiagramSection > div:first-child,
+html.light #conceptDiagramSection > div:first-child,
+html:not(.dark) .diagram-card-header,
+html[data-theme="light"] .diagram-card-header,
+html.light .diagram-card-header {
+    background: #F8FAFC !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+html[data-theme="light"] .diagram-icon-badge,
+html.light .diagram-icon-badge {
+    background: #EEF2FF !important;
+    border: 1px solid #C7D2FE !important;
+    color: #4F46E5 !important;
+}
+
+html[data-theme="light"] .diagram-label,
+html.light .diagram-label {
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .diagram-title,
+html.light .diagram-title {
+    color: #64748B !important;
+}
+
+html[data-theme="light"] .diagram-badge,
+html.light .diagram-badge {
+    background: #E0F2FE !important;
+    color: #0284C7 !important;
+    border: 1px solid #BAE6FD !important;
+}
+
+html[data-theme="light"] .diagram-zoom-btn,
+html.light .diagram-zoom-btn {
+    background: #FFFFFF !important;
+    color: #475569 !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+html[data-theme="light"] .diagram-zoom-btn:hover,
+html.light .diagram-zoom-btn:hover {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+
+html[data-theme="light"] .diagram-viewer-container,
+html.light .diagram-viewer-container {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+html[data-theme="light"] .diagram-subtitle-text,
+html.light .diagram-subtitle-text {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .diagram-explanation-box,
+html.light .diagram-explanation-box {
+    background: #F0FDFA !important;
+    border: 1px solid #CCFBF1 !important;
+    border-left: 3.5px solid #0D9488 !important;
+}
+
+html[data-theme="light"] .diagram-section-subhead,
+html.light .diagram-section-subhead {
+    color: #0F766E !important;
+}
+
+html[data-theme="light"] .diagram-body-text,
+html.light .diagram-body-text {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .diagram-legend-chip,
+html.light .diagram-legend-chip {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #334155 !important;
+}
+
 

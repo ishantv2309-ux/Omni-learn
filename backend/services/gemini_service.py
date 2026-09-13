@@ -1345,9 +1345,16 @@ class GeminiService:
             "careerRelevance": f"Applied across engineering systems and research specializations in {category} relevant to {topic}.",
             "exam_frequency": [10, 14, 18, 22, 25],
             "examFrequency": [10, 14, 18, 22, 25],
-            "roadmap": roadmap
+            "roadmap": roadmap,
+            "diagram": GeminiService.build_topic_diagram(topic, clean_q, category)
         }
 
+
+    @staticmethod
+    def build_topic_diagram(topic_title: str, clean_q: str, detected_domain: str) -> dict:
+        """Delegates to DiagramEngine to generate responsive vector diagrams."""
+        from backend.services.diagram_engine import DiagramEngine
+        return DiagramEngine.build_diagram(clean_q, topic_title, detected_domain)
 
     @staticmethod
     def build_topic_context(clean_q: str, detected_domain: str) -> dict:
@@ -1379,7 +1386,8 @@ class GeminiService:
             "core_formulations": ctx["core_formulations"],
             "quick_example": quick_example,
             "quickExample": quick_example,
-            "did_you_know": ctx["did_you_know"]
+            "did_you_know": ctx["did_you_know"],
+            "diagram": ctx.get("diagram") or GeminiService.build_topic_diagram(topic, clean_q, detected_domain)
         }
 
     @staticmethod
