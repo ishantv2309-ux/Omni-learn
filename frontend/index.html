@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0e17">
     <title>OmniLearn - All-in-One Student Learning Hub</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -131,7 +132,7 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=4.5.1">
+    <link rel="stylesheet" href="css/style.css?v=4.6.0">
     <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
     <script>
       (function() {
@@ -206,7 +207,7 @@
             </div>
             
             <!-- Navbar Search Bar (Visible after search is initiated) -->
-            <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-8">
+            <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-2 sm:mx-4 md:mx-8">
                 <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
                            class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-10 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700">
@@ -248,12 +249,12 @@
             <div class="search-topics-glass-card max-w-2xl mx-auto rounded-3xl p-5 sm:p-7 relative transition-all duration-300 shadow-2xl">
                 <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full shadow-lg rounded-2xl search-form-wrapper group">
                     <input type="text" id="mainSearchInput" placeholder="" 
-                           class="w-full pl-12 sm:pl-14 pr-28 sm:pr-32 py-4 sm:py-4.5 rounded-2xl text-base sm:text-lg transition font-medium" autocomplete="off">
-                    <span class="absolute left-4 sm:left-5 top-4 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
-                        <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+                           class="w-full pl-10 sm:pl-14 pr-24 sm:pr-32 py-3.5 sm:py-4.5 rounded-2xl text-sm sm:text-lg transition font-medium" autocomplete="off">
+                    <span class="absolute left-3.5 sm:left-5 top-3.5 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-base sm:text-xl"></i>
                     </span>
-                    <div class="absolute right-2.5 top-2.5 bottom-2.5 flex items-center">
-                        <button type="submit" id="mainSearchSubmitBtn" class="search-btn-modern h-full px-5 sm:px-6 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                    <div class="absolute right-2 top-2 bottom-2 sm:right-2.5 sm:top-2.5 sm:bottom-2.5 flex items-center">
+                        <button type="submit" id="mainSearchSubmitBtn" class="search-btn-modern h-full px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-md">
                             <i id="mainSearchBtnIcon" class="fa-solid fa-wand-magic-sparkles text-xs"></i>
                             <span id="mainSearchBtnText">Search</span>
                         </button>
@@ -373,15 +374,15 @@
 
                         <!-- Explainable Real-World Example & Practical Walkthrough Section (No Code) -->
                         <div id="quickExampleSection" class="hidden my-3 rounded-xl overflow-hidden example-card-omni shadow-md transition-all">
-                            <div class="flex items-center justify-between px-4 py-2.5 example-card-header">
-                                <div class="flex items-center gap-2 min-w-0">
+                            <div class="flex items-center justify-between px-3.5 sm:px-4 py-2.5 example-card-header gap-2 flex-wrap sm:flex-nowrap">
+                                <div class="flex items-center gap-2 min-w-0 flex-1">
                                     <span class="w-6 h-6 rounded-md flex items-center justify-center example-icon-badge shrink-0">
                                         <i class="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
                                     </span>
                                     <span class="text-xs font-bold uppercase tracking-wider example-label shrink-0">
                                         Practical Example
                                     </span>
-                                    <span id="quickExampleTitle" class="text-xs font-semibold example-title truncate max-w-[160px] sm:max-w-xs md:max-w-sm"></span>
+                                    <span id="quickExampleTitle" class="text-xs font-semibold example-title truncate max-w-[130px] sm:max-w-xs md:max-w-sm"></span>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
                                     <span id="quickExampleBadge" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full example-badge">Case Study</span>
@@ -494,10 +495,10 @@
             </div>
 
             <!-- Main Panel Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 sm:gap-6">
                 
-                <!-- LEFT PANEL: YouTube Guides & Web Resource Links (6 Cols) -->
-                <div class="lg:col-span-6 flex flex-col space-y-6 min-w-0">
+                <!-- LEFT PANEL: YouTube Guides & Web Resource Links (md:col-span-1 lg:col-span-6) -->
+                <div class="md:col-span-1 lg:col-span-6 flex flex-col space-y-5 sm:space-y-6 min-w-0">
                     <!-- Career Relevance (roadmap.sh) -->
                     <div id="careersContainerCard" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 hidden transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-4 flex items-center">
@@ -529,8 +530,8 @@
                     </div>
                 </div>
 
-                <!-- RIGHT PANEL: PYQ Analytics, Graph & Roadmap (6 Cols) -->
-                <div class="lg:col-span-6 flex flex-col space-y-6 min-w-0">
+                <!-- RIGHT PANEL: PYQ Analytics, Graph & Roadmap (md:col-span-1 lg:col-span-6) -->
+                <div class="md:col-span-1 lg:col-span-6 flex flex-col space-y-5 sm:space-y-6 min-w-0">
                     
                     <!-- Topic Frequency Graph -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
@@ -583,7 +584,7 @@
     </footer>
 
     <!-- Bookmarks Sidebar -->
-    <div id="bookmarksSidebar" class="fixed inset-y-0 right-0 max-w-md w-full glass-drawer z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-200/60">
+    <div id="bookmarksSidebar" class="fixed inset-y-0 right-0 w-full sm:max-w-md glass-drawer z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-200/60">
         <div class="p-5 border-b border-slate-200/60 flex items-center justify-between glass-modal-header">
             <h3 class="font-bold text-lg text-slate-800 flex items-center">
                 <i class="fa-solid fa-bookmark text-indigo-600 mr-2"></i>Your Bookmarks
@@ -621,15 +622,15 @@
                     <!-- Export & Action Buttons with Semi-Transparent Glass Badges -->
                     <a id="viewOriginalFileBtn" href="#" target="_blank" class="modal-glass-badge-btn hidden" title="View Original File in Browser">
                         <i class="fa-solid fa-arrow-up-right-from-square text-indigo-400"></i>
-                        <span>View File</span>
+                        <span class="hidden sm:inline">View File</span>
                     </a>
                     <button id="downloadTxtBtn" class="modal-glass-badge-btn" title="Download Complete Notes (.txt / Markdown)">
                         <i class="fa-solid fa-download text-indigo-400"></i>
-                        <span>Download TXT</span>
+                        <span class="hidden sm:inline">Download TXT</span>
                     </button>
                     <button id="exportPdfBtn" class="modal-glass-badge-btn" title="Export as PDF / Print">
                         <i class="fa-solid fa-file-pdf text-rose-400"></i>
-                        <span>Export PDF</span>
+                        <span class="hidden sm:inline">Export PDF</span>
                     </button>
                     <button id="bookmarkNoteBtn" onclick="toggleNoteBookmarkFromModal()" class="modal-glass-badge-icon" title="Bookmark this Note">
                         <i class="fa-regular fa-bookmark text-base"></i>
@@ -643,7 +644,7 @@
             <!-- Split-Pane Body -->
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 <!-- LEFT SIDEBAR: Table of Contents & In-Note Search -->
-                <div id="noteModalSidebar" style="width: 280px; border-right: 1px solid rgba(255,255,255,0.1); padding: 16px; background: rgba(15, 23, 42, 0.85);" class="flex flex-col flex-shrink-0 overflow-hidden">
+                <div id="noteModalSidebar" class="note-modal-sidebar w-full md:w-[280px] lg:w-[300px] flex flex-col flex-shrink-0 overflow-hidden">
                     <!-- In-Note Search Input -->
                     <div class="relative mb-3">
                         <input type="text" id="modalTextSearchInput" oninput="highlightModalText()" placeholder="Search terms inside notes..." 
@@ -677,8 +678,8 @@
                 </div>
                 
                 <!-- RIGHT MAIN DOCUMENT VIEW: Clean Technical Document Reader -->
-                <div id="noteMainDocumentScroll" style="flex: 1; padding: 32px; color: #f1f5f9; line-height: 1.7; font-family: 'Inter', system-ui, sans-serif; background: rgba(30, 41, 59, 0.4); overflow-y: auto;" class="custom-scrollbar flex flex-col">
-                    <div id="noteContentArea" class="notes-reader-document flex-1 select-text max-w-5xl mx-auto w-full p-6 rounded-xl" style="background-color: #0f172a; color: #e2e8f0;">
+                <div id="noteMainDocumentScroll" class="note-modal-document-scroll flex-1 custom-scrollbar flex flex-col overflow-y-auto">
+                    <div id="noteContentArea" class="notes-reader-document flex-1 select-text max-w-5xl mx-auto w-full p-4 sm:p-6 md:p-8 rounded-xl" style="background-color: #0f172a; color: #e2e8f0;">
                         <div id="modal-markdown-content" class="w-full">
                             <!-- Fully parsed dynamic Markdown rendered here -->
                         </div>
@@ -767,8 +768,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=4.5.1"></script>
-    <script src="app.js?v=4.5.1"></script>
-    <script src="main.js?v=4.5.1"></script>
+    <script src="js/edu_canvas.js?v=4.6.0"></script>
+    <script src="app.js?v=4.6.0"></script>
+    <script src="main.js?v=4.6.0"></script>
 </body>
 </html>
