@@ -913,6 +913,138 @@ class GeminiService:
             "example_text": f"Everyday practical walkthrough explaining how {clean_topic} works simply and reliably."
         }
 
+    @staticmethod
+    def _synthesize_domain_use_cases(topic: str, category: str = "") -> List[Dict[str, str]]:
+        """Synthesizes three clean, realistic, everyday real-world use cases for any academic topic."""
+        low_t = (topic or "").lower()
+        low_c = (category or "").lower()
+        
+        if any(k in low_t or k in low_c for k in ["os", "operating system", "process", "memory", "thread", "kernel", "scheduling", "deadlock"]):
+            return [
+                {
+                    "title": "Smartphone Multitasking & App Switching",
+                    "impact": "Smooth User Experience",
+                    "description": f"Enables modern phones to run background music, chat notifications, and navigation simultaneously without crashing or freezing."
+                },
+                {
+                    "title": "Cloud Server Virtualization",
+                    "impact": "Maximum Resource Utilization",
+                    "description": f"Coordinates thousands of isolated user workloads on shared data center hardware safely with strict memory and CPU isolation."
+                },
+                {
+                    "title": "Mission-Critical Aviation & Medical Devices",
+                    "impact": "Deterministic Fault Tolerance",
+                    "description": f"Guarantees that vital sensor inputs and life-support controls execute within strict microsecond deadlines without deadlock."
+                }
+            ]
+        elif any(k in low_t or k in low_c for k in ["network", "tcp", "ip", "udp", "routing", "http", "socket"]):
+            return [
+                {
+                    "title": "High-Definition Video Streaming",
+                    "impact": "Buffer-Free Entertainment",
+                    "description": f"Segments live video into lightweight data packets that travel across global routers and reassemble seamlessly on smart TVs."
+                },
+                {
+                    "title": "Global Online Banking & Payments",
+                    "impact": "Encrypted Transaction Delivery",
+                    "description": f"Guarantees secure, end-to-end encrypted packet delivery when users transfer money between banks worldwide."
+                },
+                {
+                    "title": "Online Multiplayer Gaming",
+                    "impact": "Ultra-Low Latency Sync",
+                    "description": f"Transmits player coordinates and actions in sub-15ms bursts across distributed game servers globally."
+                }
+            ]
+        elif any(k in low_t or k in low_c for k in ["database", "sql", "acid", "transaction", "storage", "index"]):
+            return [
+                {
+                    "title": "E-Commerce Checkout & Inventory",
+                    "impact": "Zero Overselling",
+                    "description": f"Ensures that when thousands of shoppers buy the last clearance items, inventory counts remain 100% accurate and consistent."
+                },
+                {
+                    "title": "Hospital Patient Records System",
+                    "impact": "Instant & Reliable Medical Data",
+                    "description": f"Allows doctors and nurses across emergency rooms to retrieve up-to-the-second medical histories without data corruption."
+                },
+                {
+                    "title": "Airline Seat Reservation",
+                    "impact": "Atomicity Under Concurrency",
+                    "description": f"Locks seats temporarily during booking so two passengers can never accidentally purchase the exact same ticket."
+                }
+            ]
+        elif any(k in low_t or k in low_c for k in ["physics", "force", "motion", "gravity", "thermodynamics", "optics"]):
+            return [
+                {
+                    "title": "Automobile Crash Safety Systems",
+                    "impact": "Passenger Life Protection",
+                    "description": f"Engineers apply principles of {topic} to design crumple zones and deploy airbags at the exact millisecond of impact."
+                },
+                {
+                    "title": "Commercial Aircraft Aerodynamics",
+                    "impact": "Fuel Efficiency & Flight Stability",
+                    "description": f"Governs wing lift, drag minimization, and safe flight dynamics across changing weather conditions."
+                },
+                {
+                    "title": "Renewable Wind & Solar Energy Grids",
+                    "impact": "Clean Power Generation",
+                    "description": f"Translates natural energy flows into stable alternating electrical currents for city power lines."
+                }
+            ]
+        elif any(k in low_t or k in low_c for k in ["math", "calculus", "algebra", "geometry", "statistics", "probability"]):
+            return [
+                {
+                    "title": "Financial Portfolio Risk Analysis",
+                    "impact": "Capital Protection & Wealth Growth",
+                    "description": f"Calculates probability distributions and market volatility to help retirement funds balance risk and growth."
+                },
+                {
+                    "title": "Architectural Structural Engineering",
+                    "impact": "Skyscraper Earthquake Resistance",
+                    "description": f"Calculates precise load stresses, wind shears, and material bending moments before constructing tall buildings."
+                },
+                {
+                    "title": "Computer Graphics & 3D Video Game Engines",
+                    "impact": "Photorealistic Rendering",
+                    "description": f"Transforms vector coordinates, lighting vectors, and camera angles at 120 frames per second on modern graphics cards."
+                }
+            ]
+        elif any(k in low_t or k in low_c for k in ["law", "tort", "contract", "jurisprudence", "constitution"]):
+            return [
+                {
+                    "title": "Commercial Business Contracts",
+                    "impact": "Enforceable Agreements & Fair Trade",
+                    "description": f"Protects business partners by defining clear obligations, default remedies, and breach liabilities."
+                },
+                {
+                    "title": "Consumer Product Safety Liability",
+                    "impact": "Public Protection & Accountability",
+                    "description": f"Holds manufacturers accountable for defects and ensures fair financial remedies for injured consumers."
+                },
+                {
+                    "title": "Intellectual Property & Software Licensing",
+                    "impact": "Innovation & Creator Safeguards",
+                    "description": f"Secures inventors and software creators against unauthorized copying while establishing clear commercial usage terms."
+                }
+            ]
+        else:
+            return [
+                {
+                    "title": f"Real-World Industry Deployment of {topic}",
+                    "impact": "Operational Efficiency & Standardization",
+                    "description": f"Provides teams with a standardized, reliable method to execute complex operations without guesswork or costly mistakes."
+                },
+                {
+                    "title": f"Quality Assurance & Error Prevention",
+                    "impact": "System Reliability & Safety",
+                    "description": f"Ensures that all stages of work conform to proven principles, catching defects early before deployment."
+                },
+                {
+                    "title": f"Scalable Resource Optimization",
+                    "impact": "Cost Reduction & Performance",
+                    "description": f"Minimizes wasted time and material resources while maximizing throughput and predictable performance."
+                }
+            ]
 
     @staticmethod
     def generate_topic_details(query: str) -> Dict[str, Any]:
@@ -1218,137 +1350,36 @@ class GeminiService:
 
 
     @staticmethod
+    def build_topic_context(clean_q: str, detected_domain: str) -> dict:
+        """Delegates to TopicContextEngine to generate rich, textbook-grade academic context."""
+        from backend.services.topic_context_engine import TopicContextEngine
+        return TopicContextEngine.build_topic_context(clean_q, detected_domain)
+
+    @staticmethod
     def _synthesize_academic_fallback(clean_q: str, detected_domain: str) -> dict:
         """Synthesizes rich, textbook-grade academic intelligence for any topic across disciplines.
-        Guarantees that OmniLearn runs anywhere reliably with rich use cases and zero generic placeholders.
+        Guarantees that OmniLearn runs anywhere reliably with rich context, use cases, and zero generic placeholders.
         """
         topic = GeminiService.clean_title_casing(clean_q.title())
-        t_low = clean_q.lower()
 
-        # Let build_quick_example generate rich domain/topic-specific practical examples and use cases
+        # 1. Generate clean, intuitive real-life analogies and everyday use cases
         quick_example = GeminiService.build_quick_example(topic, detected_domain)
 
-        if "Computer Science" in detected_domain or "Data Science" in detected_domain:
-            diff_score = 7.2
-            diff_level = "Intermediate" if any(k in t_low for k in ["array", "stack", "queue", "linear", "binary search"]) else "Advanced"
-            ai_eval = f"{topic} requires precise computational state management, memory hierarchy awareness, and asymptotic complexity analysis."
-            overview = f"{topic} is a foundational concept in computer science and software systems, establishing the structural invariants and execution logic required for deterministic, scalable problem solving."
-            tf = (
-                f"Theoretical study of {topic} is rooted in discrete mathematics, memory architecture models, and algorithmic complexity. "
-                f"Correctness is formally established through state invariants, inductive proofs, and termination conditions."
-            )
-            if any(k in t_low for k in ["array", "vector"]):
-                cf = (
-                    fr"- **Contiguous Memory Offset Formula**: $$\text{{Address}}(A[i]) = \text{{Base}} + i \times S$$\n"
-                    fr"- **Multi-Dimensional Stride Arithmetic**: $$\text{{Address}}(A[i][j]) = \text{{Base}} + (i \times N + j) \times S$$\n"
-                    fr"- **Asymptotic Bounds**: Indexed Access: $\mathcal{{O}}(1)$; Linear Scan: $\mathcal{{O}}(n)$; Appending: Amortized $\mathcal{{O}}(1)$."
-                )
-            elif any(k in t_low for k in ["linked list"]):
-                cf = (
-                    fr"- **Pointer Node Invariant**: $$\text{{Node}}_i = \langle \text{{data}}, \&\text{{Node}}_{{i+1}} \rangle$$\n"
-                    fr"- **In-Place Reversal State Delta**: $$\text{{next}} = \text{{curr}}.\text{{next}}; \quad \text{{curr}}.\text{{next}} = \text{{prev}}; \quad \text{{prev}} = \text{{curr}}; \quad \text{{curr}} = \text{{next}}$$\n"
-                    fr"- **Complexity Analysis**: Insertion/Deletion at Pointer: $\mathcal{{O}}(1)$; Lookup / Traversal: $\mathcal{{O}}(n)$."
-                )
-            elif any(k in t_low for k in ["stack"]):
-                cf = (
-                    fr"- **LIFO State Transformation**: $$\text{{Push}}(S, x): S' = x \circ S; \quad \text{{Pop}}(S): (x, S') \implies x = \text{{head}}(S)$$\n"
-                    fr"- **Operational Bounds**: Push: $\mathcal{{O}}(1)$; Pop: $\mathcal{{O}}(1)$; Peek: $\mathcal{{O}}(1)$."
-                )
-            elif any(k in t_low for k in ["queue"]):
-                cf = (
-                    fr"- **FIFO State Transformation**: $$\text{{Enqueue}}(Q, x): Q' = Q \circ x; \quad \text{{Dequeue}}(Q): (x, Q') \implies x = \text{{head}}(Q)$$\n"
-                    fr"- **Circular Buffer Indexing**: $$\text{{tail}}_{{\text{{next}}}} = (\text{{tail}} + 1) \pmod N$$\n"
-                    fr"- **Operational Bounds**: Enqueue: $\mathcal{{O}}(1)$; Dequeue: $\mathcal{{O}}(1)$."
-                )
-            elif any(k in t_low for k in ["tree", "bst"]):
-                cf = (
-                    fr"- **Binary Search Invariant**: $$\forall x \in \text{{Left}}(u), x < u; \quad \forall y \in \text{{Right}}(u), y > u$$\n"
-                    fr"- **Height Bound (Balanced)**: $$h \le 1.44 \log_2(n + 2) - 0.328$$\n"
-                    fr"- **Asymptotic Complexity**: Search, Insert, Delete: $\mathcal{{O}}(\log n)$ balanced, $\mathcal{{O}}(n)$ degenerate."
-                )
-            else:
-                cf = (
-                    fr"- **Time Complexity**: $\mathcal{{O}}(n \log n)$ average case; $\mathcal{{O}}(1)$ auxiliary space bounds where optimal.\n"
-                    fr"- **Recurrence Relation**: $T(n) = a T(n/b) + f(n)$ governed by the Master Theorem.\n"
-                    fr"- **State Invariant**: Sequence integrity $S_{{k+1}} = \delta(S_k, x)$ is preserved across all execution iterations."
-                )
-            trivia = f"Formalized analysis of algorithmic structures like {topic} directly originates from early computational frameworks of the mid-20th century, enabling deterministic scaling in modern computer systems."
-
-        elif "Physics" in detected_domain:
-            diff_score = 7.6
-            diff_level = "Advanced"
-            ai_eval = f"{topic} requires rigorous calculus-based vector analysis, conservation law formulations, and dynamic equilibrium models."
-            overview = f"{topic} governs fundamental physical interactions and energy transfers, establishing how matter, fields, and forces behave under deterministic natural laws."
-            tf = (
-                f"Formulated on classical mechanics, Maxwellian field equations, and Lagrangian energy dynamics. "
-                f"Governed by global conservation laws: conservation of linear momentum, angular momentum, and total mechanical energy."
-            )
-            cf = (
-                fr"- **Governing Equation of Motion**: $$\mathbf{{F}}_{{\text{{net}}}} = \frac{{d\mathbf{{p}}}}{{dt}} = m\mathbf{{a}}$$\n"
-                fr"- **Energy Conservation Principle**: $$E_{{\text{{total}}}} = K + U = \frac{{1}}{{2}}mv^2 + V(r) = \text{{constant}}$$\n"
-                fr"- **Field Flux / Integral Form**: $$\oint \mathbf{{E}} \cdot d\mathbf{{A}} = \frac{{Q_{{\text{{enc}}}}}}{{\varepsilon_0}}$$"
-            )
-            trivia = f"Physical principles underlying {topic} were refined through classical experiments by Galileo, Newton, and 19th-century thermodynamics pioneers."
-
-        elif "Mathematics" in detected_domain:
-            diff_score = 7.8
-            diff_level = "Advanced"
-            ai_eval = f"{topic} requires formal axiomatic reasoning, continuous mapping derivations, and coordinate-free algebraic or analytic formulations."
-            overview = f"{topic} provides rigorous analytical tools for modeling continuous change, algebraic structures, and geometric relationships across multidimensional spaces."
-            tf = (
-                f"Formulated on the axioms of real analysis, linear vector space theory, and differential geometry. "
-                f"Key theorems establish existence, uniqueness, and convergence of functional mappings under bounded metrics."
-            )
-            cf = (
-                fr"- **Fundamental Analytical Form**: $$\int_a^b f'(x)\,dx = f(b) - f(a)$$\n"
-                fr"- **Differential Invariant**: $$\frac{{d}}{{dx}}\left[\int_{{u(x)}}^{{v(x)}} f(t)\,dt\right] = f(v(x))v'(x) - f(u(x))u'(x)$$\n"
-                fr"- **Series Expansion Bound**: $$f(x) = \sum_{{n=0}}^\infty \frac{{f^{{(n)}}(a)}}{{n!}}(x - a)^n + R_n(x)$$"
-            )
-            trivia = f"Rigorous modern foundations of {topic} were consolidated by Cauchy, Weierstrass, and Riemann in 19th-century mathematical analysis."
-
-        elif "Law" in detected_domain or "Jurisprudence" in detected_domain:
-            diff_score = 6.9
-            diff_level = "Intermediate"
-            ai_eval = f"{topic} demands precise legal doctrine interpretation, statutory classification, and precedent analysis."
-            overview = f"{topic} is an established legal doctrine defining rights, liabilities, and procedural fairness within common law and statutory jurisprudence."
-            tf = (
-                f"Derived from foundational Roman legal maxims and modern constitutional due process. "
-                f"Distinguishes between actionable legal wrongs (*injuria*) and non-actionable incidental harms (*damnum sine injuria*)."
-            )
-            cf = (
-                fr"- **Core Maxim**: $$\text{{Damnum}} \neq \text{{Injuria}} \implies \text{{No Cause of Action}}$$\n"
-                fr"- **Natural Justice**: $$\textit{{Audi alteram partem}} \quad \text{{(No one shall be condemned unheard)}}$$\n"
-                fr"- **Constitutional Due Process**: Standard of substantive fairness and procedural equality before law."
-            )
-            trivia = f"Principles of {topic} date back to foundational landmark rulings such as the Gloucester Grammar School Case (1410) and Ashby v. White (1703)."
-
-        else:
-            diff_score = 7.1
-            diff_level = "Intermediate"
-            ai_eval = f"{topic} integrates systematic conceptual frameworks with empirical analysis and curriculum-standard methodologies in {detected_domain}."
-            overview = f"{topic} is an essential academic subject focusing on structural principles, empirical methodologies, and systemic applications in modern higher education."
-            tf = (
-                f"Built on established empirical frameworks, standard university curriculum syllabi, and verifiable analytical principles of {detected_domain}."
-            )
-            cf = (
-                fr"- **Governing Relationship**: $$\Delta Y = f(X_1, X_2, \dots, X_n)$$\n"
-                fr"- **Equilibrium Condition**: $$\sum \mathbf{{F}} = 0 \quad \Big| \quad \Delta S \ge 0$$\n"
-                fr"- **Optimization Metric**: $$\min \mathcal{{L}}(\theta) \quad \text{{subject to constraints}}$$"
-            )
-            trivia = f"Studies in {topic} form the structural backbone of modern university examinations and professional engineering certifications."
+        # 2. Generate comprehensive, multi-section academic context
+        ctx = GeminiService.build_topic_context(clean_q, detected_domain)
 
         return {
-            "topic": topic,
-            "category": detected_domain,
-            "difficulty_score": diff_score,
-            "difficulty_level": diff_level,
-            "ai_evaluation": ai_eval,
-            "overview": overview,
-            "theoretical_foundations": tf,
-            "core_formulations": cf,
+            "topic": ctx["topic"],
+            "category": ctx["category"],
+            "difficulty_score": ctx["difficulty_score"],
+            "difficulty_level": ctx["difficulty_level"],
+            "ai_evaluation": ctx["ai_evaluation"],
+            "overview": ctx["overview"],
+            "theoretical_foundations": ctx["theoretical_foundations"],
+            "core_formulations": ctx["core_formulations"],
             "quick_example": quick_example,
             "quickExample": quick_example,
-            "did_you_know": trivia
+            "did_you_know": ctx["did_you_know"]
         }
 
     @staticmethod

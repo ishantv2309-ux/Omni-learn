@@ -101,6 +101,38 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                     cached_json["query"] = clean_query
                 if not cached_json.get("curated_videos") and cached_json.get("youtube_videos"):
                     cached_json["curated_videos"] = cached_json["youtube_videos"]
+
+                # Auto-upgrade cached topics that have stale or 1-sentence generic overviews
+                raw_ov = (cached_json.get("overview") or cached_json.get("summary") or "").strip()
+                if (not raw_ov or len(raw_ov) < 350 
+                    or "is a foundational concept in computer science and software systems" in raw_ov 
+                    or "governs fundamental physical interactions" in raw_ov):
+                    upgraded_ctx = GeminiService.build_topic_context(
+                        cached_json.get("topic") or cached_json.get("title") or clean_query,
+                        cached_json.get("category") or cached_json.get("domain") or "Computer Science & Engineering"
+                    )
+                    cached_json["overview"] = upgraded_ctx["overview"]
+                    cached_json["summary"] = upgraded_ctx["overview"]
+                    cached_json["theoretical_foundations"] = upgraded_ctx["theoretical_foundations"]
+                    cached_json["core_formulations"] = upgraded_ctx["core_formulations"]
+                    cached_json["ai_evaluation"] = upgraded_ctx["ai_evaluation"]
+                    cached_json["aiEvaluation"] = upgraded_ctx["ai_evaluation"]
+                    cached_json["difficulty_reasons"] = upgraded_ctx["ai_evaluation"]
+                    cached_json["difficulty_score"] = upgraded_ctx["difficulty_score"]
+                    cached_json["difficultyScore"] = upgraded_ctx["difficulty_score"]
+                    cached_json["difficulty_level"] = upgraded_ctx["difficulty_level"]
+                    cached_json["difficultyLevel"] = upgraded_ctx["difficulty_level"]
+                    cached_json["did_you_know"] = upgraded_ctx["did_you_know"]
+                    cached_json["didYouKnow"] = upgraded_ctx["did_you_know"]
+                    cached_json["fun_fact"] = upgraded_ctx["did_you_know"]
+                    cached_json["detailed_breakdown"] = f"### 1. Theoretical Foundations\n\n{upgraded_ctx['theoretical_foundations']}\n\n### 2. Core Formulations & Algorithms\n\n{upgraded_ctx['core_formulations']}"
+                    cached_json["detailedBreakdown"] = cached_json["detailed_breakdown"]
+                    cache_record.result_json = cached_json
+                    try:
+                        db.commit()
+                        print(f"Auto-upgraded cached topic context for: '{clean_query}'")
+                    except Exception as db_e:
+                        db.rollback()
                 if not cached_json.get("quick_example") and not cached_json.get("quickExample"):
                     cached_qe = GeminiService.build_quick_example(
                         cached_json.get("topic") or cached_json.get("title") or clean_query,

@@ -573,6 +573,80 @@ function showScreen(screenId) {
     });
 }
 
+// Modular Step-by-Step UI Card Formatter (minimizes cognitive fatigue)
+function formatModularSteps(breakdownText, stepByStepList) {
+    let steps = [];
+    if (Array.isArray(stepByStepList) && stepByStepList.length > 0) {
+        steps = stepByStepList.map((item, idx) => ({
+            stepNum: idx + 1,
+            title: typeof item === 'object' ? (item.title || item.name || `Step ${idx + 1}`) : `Step ${idx + 1}`,
+            desc: typeof item === 'object' ? (item.description || item.desc || item.details || '') : String(item || '')
+        }));
+    } else if (typeof breakdownText === 'string' && breakdownText.trim()) {
+        const text = breakdownText.trim();
+        const rawSteps = text.split(/(?:^|\n)\s*\d+\.\s+/).filter(s => s.trim().length > 0);
+        if (rawSteps.length >= 2) {
+            steps = rawSteps.map((step, idx) => {
+                let title = '';
+                let desc = step.trim();
+                const match = desc.match(/^\*\*([^*]+)\*\*[:\s-]*(.*)/s);
+                if (match) {
+                    title = match[1].trim();
+                    desc = match[2].trim();
+                } else {
+                    const firstColon = desc.indexOf(':');
+                    if (firstColon > 0 && firstColon < 50) {
+                        title = desc.slice(0, firstColon).trim();
+                        desc = desc.slice(firstColon + 1).trim();
+                    } else {
+                        title = `Step ${idx + 1}`;
+                    }
+                }
+                return { stepNum: idx + 1, title, desc };
+            });
+        }
+    }
+
+    if (steps.length === 0) {
+        return formatSummaryMarkdown(breakdownText || "");
+    }
+
+    const stepColors = [
+        { badge: "bg-emerald-500 text-white", border: "border-emerald-200/80 dark:border-emerald-800/50", bg: "bg-emerald-50/40 dark:bg-emerald-950/20", title: "text-emerald-900 dark:text-emerald-300" },
+        { badge: "bg-indigo-500 text-white", border: "border-indigo-200/80 dark:border-indigo-800/50", bg: "bg-indigo-50/40 dark:bg-indigo-950/20", title: "text-indigo-900 dark:text-indigo-300" },
+        { badge: "bg-violet-500 text-white", border: "border-violet-200/80 dark:border-violet-800/50", bg: "bg-violet-50/40 dark:bg-violet-950/20", title: "text-violet-900 dark:text-violet-300" },
+        { badge: "bg-amber-500 text-white", border: "border-amber-200/80 dark:border-amber-800/50", bg: "bg-amber-50/40 dark:bg-amber-950/20", title: "text-amber-900 dark:text-amber-300" }
+    ];
+
+    const colClass = steps.length === 2 ? "grid-cols-1 sm:grid-cols-2" : (steps.length >= 3 ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1");
+
+    return `
+        <div class="grid ${colClass} gap-3 mt-1">
+            ${steps.map((s, idx) => {
+                const color = stepColors[idx % stepColors.length];
+                const numStr = String(s.stepNum).padStart(2, '0');
+                return `
+                    <div class="example-step-card p-3.5 rounded-xl border ${color.border} ${color.bg} transition-all duration-200 flex flex-col justify-between shadow-2xs hover:shadow-xs">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-5 h-5 rounded-full ${color.badge} font-black text-[10px] flex items-center justify-center shrink-0 shadow-2xs">
+                                    ${numStr}
+                                </span>
+                                <h4 class="text-xs font-bold ${color.title} leading-snug break-words">
+                                    ${escapeHtml(s.title)}
+                                </h4>
+                            </div>
+                            <div class="text-xs leading-relaxed example-body-text text-slate-600 dark:text-slate-300">
+                                ${formatSummaryMarkdown(s.desc)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
 // --- Dashboard Render Methods ---
 function renderDashboard(data) {
     if (!data) return;
@@ -656,7 +730,7 @@ function renderDashboard(data) {
                 const qeBreakdown = document.getElementById("quickExampleBreakdown");
                 if (qeBreakdown) {
                     const breakdownText = qe.breakdown || qe.explanation || (qe.code ? `Step-by-step logic:\n${qe.code}` : "");
-                    qeBreakdown.innerHTML = formatSummaryMarkdown(breakdownText);
+                    qeBreakdown.innerHTML = formatModularSteps(breakdownText, qe.step_by_step);
                 }
                 
                 const qeTakeaway = document.getElementById("quickExampleTakeaway");
@@ -668,35 +742,99 @@ function renderDashboard(data) {
                 // Render Industrial Production Use Cases & Applications
                 const qeUseCasesBlock = document.getElementById("quickExampleUseCasesBlock");
                 const qeUseCasesList = document.getElementById("quickExampleUseCasesList");
-                const rawCases = qe.use_cases || qe.applications || qe.production_use_cases;
+                const rawCases = qe.use_cases || qe.applications || qe.production_use_cases || qe.real_world_applications;
                 if (qeUseCasesBlock && qeUseCasesList) {
                     if (Array.isArray(rawCases) && rawCases.length > 0) {
-                        const icons = [
-                            "fa-solid fa-microchip text-indigo-400",
-                            "fa-solid fa-network-wired text-blue-400",
-                            "fa-solid fa-server text-violet-400",
-                            "fa-solid fa-cubes text-emerald-400",
-                            "fa-solid fa-bolt-lightning text-amber-400"
+                        const domainThemes = [
+                            {
+                                bg: "bg-blue-500/10 dark:bg-blue-400/15",
+                                text: "text-blue-600 dark:text-blue-400",
+                                icon: "fa-solid fa-folder-tree",
+                                tag: "OS & Files"
+                            },
+                            {
+                                bg: "bg-indigo-500/10 dark:bg-indigo-400/15",
+                                text: "text-indigo-600 dark:text-indigo-400",
+                                icon: "fa-solid fa-cart-shopping",
+                                tag: "E-Commerce"
+                            },
+                            {
+                                bg: "bg-violet-500/10 dark:bg-violet-400/15",
+                                text: "text-violet-600 dark:text-violet-400",
+                                icon: "fa-solid fa-magnifying-glass",
+                                tag: "Search Engines"
+                            },
+                            {
+                                bg: "bg-emerald-500/10 dark:bg-emerald-400/15",
+                                text: "text-emerald-600 dark:text-emerald-400",
+                                icon: "fa-solid fa-database",
+                                tag: "Databases"
+                            },
+                            {
+                                bg: "bg-amber-500/10 dark:bg-amber-400/15",
+                                text: "text-amber-600 dark:text-amber-400",
+                                icon: "fa-solid fa-bolt-lightning",
+                                tag: "Cloud Systems"
+                            }
                         ];
+
                         qeUseCasesList.innerHTML = rawCases.map((item, idx) => {
-                            const iconClass = icons[idx % icons.length];
+                            const theme = domainThemes[idx % domainThemes.length];
                             const isObj = item && typeof item === 'object';
-                            const title = isObj ? (item.title || item.name || 'Production System') : 'Industrial Application';
-                            const impact = isObj ? (item.impact || item.system || item.role || 'Production System') : 'Industry Application';
+                            const title = isObj ? (item.title || item.name || item.domain || 'Production System') : 'Industrial Application';
+                            const impact = isObj ? (item.impact || item.badge || item.system || item.role || 'Production System') : 'Industry Application';
                             const desc = isObj ? (item.description || item.details || item.desc || '') : String(item || '');
+                            
+                            // Contextual icon detection
+                            let cardIcon = theme.icon;
+                            const tLower = title.toLowerCase();
+                            if (tLower.includes("file") || tLower.includes("folder") || tLower.includes("os") || tLower.includes("kernel") || tLower.includes("directory")) cardIcon = "fa-solid fa-folder-tree";
+                            else if (tLower.includes("shop") || tLower.includes("cart") || tLower.includes("commerce") || tLower.includes("store") || tLower.includes("catalog")) cardIcon = "fa-solid fa-cart-shopping";
+                            else if (tLower.includes("search") || tLower.includes("google") || tLower.includes("trie") || tLower.includes("autocomplete") || tLower.includes("lookup")) cardIcon = "fa-solid fa-magnifying-glass";
+                            else if (tLower.includes("database") || tLower.includes("index") || tLower.includes("sql") || tLower.includes("record") || tLower.includes("storage")) cardIcon = "fa-solid fa-database";
+                            else if (tLower.includes("photo") || tLower.includes("gallery") || tLower.includes("image") || tLower.includes("media")) cardIcon = "fa-solid fa-images";
+                            else if (tLower.includes("seat") || tLower.includes("flight") || tLower.includes("cinema") || tLower.includes("ticket")) cardIcon = "fa-solid fa-chair";
+                            else if (tLower.includes("game") || tLower.includes("score") || tLower.includes("leaderboard")) cardIcon = "fa-solid fa-trophy";
+                            else if (tLower.includes("stream") || tLower.includes("music") || tLower.includes("spotify") || tLower.includes("audio")) cardIcon = "fa-solid fa-headphones";
+                            else if (tLower.includes("browser") || tLower.includes("web") || tLower.includes("history")) cardIcon = "fa-solid fa-compass";
+                            else if (tLower.includes("undo") || tLower.includes("redo") || tLower.includes("editor")) cardIcon = "fa-solid fa-rotate-left";
+                            else if (tLower.includes("print") || tLower.includes("document")) cardIcon = "fa-solid fa-print";
+                            else if (tLower.includes("call") || tLower.includes("support")) cardIcon = "fa-solid fa-headset";
+                            else if (tLower.includes("delivery") || tLower.includes("food") || tLower.includes("order")) cardIcon = "fa-solid fa-utensils";
+                            else if (tLower.includes("route") || tLower.includes("map") || tLower.includes("subway") || tLower.includes("gps")) cardIcon = "fa-solid fa-map-location-dot";
+                            else if (tLower.includes("social") || tLower.includes("network") || tLower.includes("friend")) cardIcon = "fa-solid fa-users";
+                            else if (tLower.includes("package") || tLower.includes("shipping") || tLower.includes("fedex")) cardIcon = "fa-solid fa-truck-fast";
+                            else if (tLower.includes("flight") || tLower.includes("airline")) cardIcon = "fa-solid fa-plane-departure";
+
                             return `
-                                <div class="p-3 rounded-lg example-usecase-card transition-all">
-                                    <div class="flex items-center justify-between gap-2 mb-1.5">
-                                        <span class="text-xs font-bold example-usecase-title flex items-center gap-1.5 min-w-0 truncate">
-                                            <i class="${iconClass} text-xs shrink-0"></i>
-                                            <span class="truncate">${escapeHtml(title)}</span>
-                                        </span>
-                                        <span class="usecase-impact-pill text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0">
-                                            ${escapeHtml(impact)}
-                                        </span>
-                                    </div>
-                                    <div class="text-xs leading-relaxed example-body-text">
-                                        ${formatSummaryMarkdown(desc)}
+                                <div class="example-usecase-card p-4 rounded-xl transition-all duration-200 flex flex-col justify-between hover:shadow-md">
+                                    <div>
+                                        <!-- Top Row: Architectural Invariant Badge (No Truncation) & Tag Indicator -->
+                                        <div class="flex items-center justify-between gap-2 mb-2.5">
+                                            <span class="usecase-impact-pill text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                                                <i class="fa-solid fa-layer-group text-[9px] opacity-80"></i>
+                                                <span class="leading-none">${escapeHtml(impact)}</span>
+                                            </span>
+                                            <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                                                <i class="fa-solid fa-microchip text-[9px]"></i>
+                                                <span>${escapeHtml(theme.tag)}</span>
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- Middle Row: Dedicated Icon Container & Full Clean Title (NO Truncation) -->
+                                        <div class="flex items-start gap-2.5 mb-2">
+                                            <div class="w-8 h-8 rounded-lg ${theme.bg} ${theme.text} flex items-center justify-center shrink-0 mt-0.5 shadow-2xs text-sm">
+                                                <i class="${cardIcon}"></i>
+                                            </div>
+                                            <h4 class="text-xs sm:text-[13px] font-bold example-usecase-title leading-snug break-words">
+                                                ${escapeHtml(title)}
+                                            </h4>
+                                        </div>
+                                        
+                                        <!-- Bottom Row: Real-World Technical Description -->
+                                        <div class="text-xs leading-relaxed example-body-text text-slate-600 dark:text-slate-300 pl-0.5">
+                                            ${formatSummaryMarkdown(desc)}
+                                        </div>
                                     </div>
                                 </div>
                             `;
@@ -965,7 +1103,7 @@ function prepareMathMarkdown(rawText) {
     // 2. Clean decorative borders and leading headline hashes
     clean = clean
         .replace(/^[=\-~_#*]{4,}\s*$/gm, '')
-        .replace(/^#+\s+/gm, '')
+        .replace(/^#\s+/gm, '')
         .replace(/^[=\-]{3,}.*$/gm, '');
 
     // 3. Detect and wrap C/C++ or Python code snippets if not inside backticks
@@ -1323,7 +1461,9 @@ function renderNotesList(notes) {
 
 // Deep text searching inside notes via backend API
 async function filterNotesLocal() {
-    const val = document.getElementById("noteSearchInput").value.trim();
+    const inputEl = document.getElementById("noteSearchInput");
+    if (!inputEl) return;
+    const val = inputEl.value.trim();
     if (!val) {
         // Restore default notes list from initial query
         if (currentSearchData) renderNotesList(currentSearchData.notes);

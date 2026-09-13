@@ -131,7 +131,7 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=4.2.0">
+    <link rel="stylesheet" href="css/style.css?v=4.5.1">
     <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
     <script>
       (function() {
@@ -188,7 +188,7 @@
             </div>
         </div>
     </div>
-    <script src="js/preloader.js?v=4.2.0"></script>
+    <script src="js/preloader.js?v=4.5.0"></script>
 
     <!-- Interactive Background Educational Constellation Layer -->
     <div id="eduBackgroundLayer" aria-hidden="true">
@@ -407,14 +407,16 @@
                                     <div id="quickExampleBreakdown" class="text-xs md:text-sm leading-relaxed example-body-text prose prose-sm max-w-none"></div>
                                 </div>
                                 <!-- Everyday & Real-World Applications -->
-                                <div id="quickExampleUseCasesBlock" class="hidden space-y-2 pt-1">
+                                <div id="quickExampleUseCasesBlock" class="hidden space-y-2.5 pt-1">
                                     <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center justify-between">
                                         <span class="flex items-center gap-1.5">
                                             <i class="fa-solid fa-cubes text-blue-500"></i> Everyday & Real-World Applications
                                         </span>
-                                        <span class="text-[10px] text-slate-400 font-medium">Real-World Tech</span>
+                                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/40">
+                                            Where This Powers Modern Tech
+                                        </span>
                                     </div>
-                                    <div id="quickExampleUseCasesList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+                                    <div id="quickExampleUseCasesList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
                                 </div>
                                 <!-- Advantages vs. Limitations -->
                                 <div id="quickExampleTradeoffsBlock" class="hidden p-3.5 rounded-xl example-tradeoffs-box space-y-2">
@@ -494,36 +496,8 @@
             <!-- Main Panel Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <!-- LEFT PANEL: Handwritten Notes & Viewer (3 Cols) -->
-                <div class="lg:col-span-3 flex flex-col space-y-6 min-w-0">
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col h-full min-h-[400px] transition-colors duration-200 min-w-0">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                            <h3 class="font-bold text-slate-800 flex items-center">
-                                <i class="fa-solid fa-file-invoice text-indigo-500 mr-2"></i>Notes
-                            </h3>
-                            <button onclick="openUploadModal()" class="glass-btn glass-btn-primary text-xs py-1 px-2.5 rounded-lg font-semibold">
-                                <i class="fa-solid fa-plus mr-1"></i>Upload
-                            </button>
-                        </div>
-                        
-                        <!-- Search Inside Notes -->
-                        <div class="relative mb-4">
-                            <input type="text" id="noteSearchInput" oninput="filterNotesLocal()" placeholder="Search inside notes (OCR)..." 
-                                   class="w-full bg-slate-50 pl-9 pr-4 py-1.5 rounded-lg text-xs border border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
-                            <span class="absolute left-3 top-2.5 text-slate-400 text-xs">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                            </span>
-                        </div>
-
-                        <!-- Notes List -->
-                        <div id="notesList" class="flex-1 space-y-2 overflow-y-auto max-h-[300px] lg:max-h-[500px] custom-scrollbar pr-1">
-                            <p class="text-xs text-slate-400 italic">No notes found for this topic.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CENTER PANEL: YouTube Guides & Web Resource Links (5 Cols) -->
-                <div class="lg:col-span-5 flex flex-col space-y-6 min-w-0">
+                <!-- LEFT PANEL: YouTube Guides & Web Resource Links (6 Cols) -->
+                <div class="lg:col-span-6 flex flex-col space-y-6 min-w-0">
                     <!-- Career Relevance (roadmap.sh) -->
                     <div id="careersContainerCard" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 hidden transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-4 flex items-center">
@@ -555,8 +529,8 @@
                     </div>
                 </div>
 
-                <!-- RIGHT PANEL: PYQ Analytics, Graph & Roadmap (4 Cols) -->
-                <div class="lg:col-span-4 flex flex-col space-y-6 min-w-0">
+                <!-- RIGHT PANEL: PYQ Analytics, Graph & Roadmap (6 Cols) -->
+                <div class="lg:col-span-6 flex flex-col space-y-6 min-w-0">
                     
                     <!-- Topic Frequency Graph -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
@@ -793,8 +767,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=4.2.0"></script>
-    <script src="app.js?v=4.2.0"></script>
-    <script src="main.js?v=4.2.0"></script>
+    <script src="js/edu_canvas.js?v=4.5.1"></script>
+    <script src="app.js?v=4.5.1"></script>
+    <script src="main.js?v=4.5.1"></script>
 </body>
 </html>
