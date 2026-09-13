@@ -55,8 +55,83 @@
             background: #94a3b8;
         }
     </style>
+    <!-- Critical Inline Theme Guarantees (Prevents any cached dark background in Light Mode) -->
+    <style id="omniLightModeOverride">
+        html:not(.dark) #quickExampleSection,
+        html[data-theme="light"] #quickExampleSection,
+        html.light #quickExampleSection {
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+            color: #1E293B !important;
+        }
+        html:not(.dark) #quickExampleSection > div:first-child,
+        html[data-theme="light"] #quickExampleSection > div:first-child,
+        html.light #quickExampleSection > div:first-child {
+            background: #F8FAFC !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+        }
+        html:not(.dark) .example-scenario-box,
+        html[data-theme="light"] .example-scenario-box,
+        html.light .example-scenario-box {
+            background: #F8FAFC !important;
+            border: 1px solid #E2E8F0 !important;
+            border-left: 3.5px solid #6366F1 !important;
+            color: #1E293B !important;
+        }
+        html:not(.dark) .example-breakdown-box,
+        html[data-theme="light"] .example-breakdown-box,
+        html.light .example-breakdown-box {
+            background: #F8FAFC !important;
+            border: 1px solid #E2E8F0 !important;
+            border-left: 3.5px solid #10B981 !important;
+            color: #1E293B !important;
+        }
+        html:not(.dark) .example-body-text,
+        html[data-theme="light"] .example-body-text,
+        html.light .example-body-text {
+            color: #1E293B !important;
+        }
+        html:not(.dark) .example-breakdown-box strong,
+        html[data-theme="light"] .example-breakdown-box strong,
+        html.light .example-breakdown-box strong {
+            color: #0F172A !important;
+        }
+        html:not(.dark) .example-takeaway-box,
+        html[data-theme="light"] .example-takeaway-box,
+        html.light .example-takeaway-box {
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%) !important;
+            border: 1px solid #C7D2FE !important;
+        }
+        html:not(.dark) .example-takeaway-title,
+        html[data-theme="light"] .example-takeaway-title,
+        html.light .example-takeaway-title {
+            color: #3730A3 !important;
+        }
+        html:not(.dark) .example-takeaway-text,
+        html[data-theme="light"] .example-takeaway-text,
+        html.light .example-takeaway-text {
+            color: #1E1B4B !important;
+        }
+        html:not(.dark) .example-usecase-card,
+        html[data-theme="light"] .example-usecase-card,
+        html.light .example-usecase-card {
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+        }
+        html:not(.dark) .example-title,
+        html[data-theme="light"] .example-title,
+        html.light .example-title {
+            color: #475569 !important;
+        }
+        html:not(.dark) .example-label,
+        html[data-theme="light"] .example-label,
+        html.light .example-label {
+            color: #0F172A !important;
+        }
+    </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=3.2">
+    <link rel="stylesheet" href="css/style.css?v=4.2.0">
     <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
     <script>
       (function() {
@@ -113,7 +188,7 @@
             </div>
         </div>
     </div>
-    <script src="js/preloader.js?v=3.2"></script>
+    <script src="js/preloader.js?v=4.2.0"></script>
 
     <!-- Interactive Background Educational Constellation Layer -->
     <div id="eduBackgroundLayer" aria-hidden="true">
@@ -318,22 +393,52 @@
                             </div>
                             <div class="p-4 space-y-3 example-card-body">
                                 <!-- Real-World Scenario -->
-                                <div id="quickExampleScenarioBlock" class="example-scenario-box p-3 rounded-lg">
-                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead mb-1 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-compass text-indigo-400"></i> Real-World Scenario / Setup
+                                <div id="quickExampleScenarioBlock" class="example-scenario-box p-3.5 rounded-xl">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead mb-1.5 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-compass text-indigo-500"></i> Real-World Scenario & Analogy
                                     </div>
                                     <div id="quickExampleScenario" class="text-xs md:text-sm leading-relaxed example-body-text"></div>
                                 </div>
                                 <!-- Step-by-Step Breakdown -->
-                                <div id="quickExampleBreakdownBlock" class="space-y-1.5">
-                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center gap-1.5">
-                                        <i class="fa-solid fa-list-check text-emerald-400"></i> Step-by-Step Breakdown & Explanation
+                                <div id="quickExampleBreakdownBlock" class="example-breakdown-box p-3.5 rounded-xl space-y-2">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center gap-1.5 mb-1.5">
+                                        <i class="fa-solid fa-list-check text-emerald-500"></i> How It Works (Step-by-Step)
                                     </div>
                                     <div id="quickExampleBreakdown" class="text-xs md:text-sm leading-relaxed example-body-text prose prose-sm max-w-none"></div>
                                 </div>
+                                <!-- Everyday & Real-World Applications -->
+                                <div id="quickExampleUseCasesBlock" class="hidden space-y-2 pt-1">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center justify-between">
+                                        <span class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-cubes text-blue-500"></i> Everyday & Real-World Applications
+                                        </span>
+                                        <span class="text-[10px] text-slate-400 font-medium">Real-World Tech</span>
+                                    </div>
+                                    <div id="quickExampleUseCasesList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+                                </div>
+                                <!-- Advantages vs. Limitations -->
+                                <div id="quickExampleTradeoffsBlock" class="hidden p-3.5 rounded-xl example-tradeoffs-box space-y-2">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider example-tradeoffs-header flex items-center gap-1.5">
+                                        <i class="fa-solid fa-scale-balanced text-amber-500"></i> Advantages vs. Limitations
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+                                        <div id="quickExampleTradeoffsAdvBox" class="tradeoff-col-adv p-2.5 rounded-lg">
+                                            <div class="font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1 text-[11px]">
+                                                <i class="fa-solid fa-circle-check"></i> What Makes It Great
+                                            </div>
+                                            <div id="quickExampleTradeoffsAdvantages" class="leading-relaxed example-body-text"></div>
+                                        </div>
+                                        <div id="quickExampleTradeoffsDisadvBox" class="tradeoff-col-disadv p-2.5 rounded-lg">
+                                            <div class="font-semibold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1 text-[11px]">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> Limitations to Keep in Mind
+                                            </div>
+                                            <div id="quickExampleTradeoffsDisadvantages" class="leading-relaxed example-body-text"></div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <!-- Key Takeaway Callout -->
-                                <div id="quickExampleTakeawayBlock" class="p-3 rounded-lg example-takeaway-box flex items-start gap-2.5">
-                                    <i class="fa-solid fa-circle-check text-indigo-400 text-sm mt-0.5 shrink-0"></i>
+                                <div id="quickExampleTakeawayBlock" class="p-3.5 rounded-xl example-takeaway-box flex items-start gap-2.5">
+                                    <i class="fa-solid fa-circle-check text-indigo-500 text-base mt-0.5 shrink-0"></i>
                                     <div>
                                         <span class="text-[11px] font-bold uppercase tracking-wider block example-takeaway-title mb-0.5">Key Takeaway</span>
                                         <div id="quickExampleTakeaway" class="text-xs md:text-sm font-medium leading-relaxed example-takeaway-text"></div>
@@ -688,8 +793,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=3.2"></script>
-    <script src="app.js?v=3.2"></script>
-    <script src="main.js?v=3.2"></script>
+    <script src="js/edu_canvas.js?v=4.2.0"></script>
+    <script src="app.js?v=4.2.0"></script>
+    <script src="main.js?v=4.2.0"></script>
 </body>
 </html>

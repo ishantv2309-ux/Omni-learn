@@ -83,6 +83,7 @@ class SearchResponse(BaseModel):
     aiEvaluation: Optional[str] = None
     roadmap: Optional[List[Dict[str, Any]]] = None
     youtube_videos: List[YouTubeVideo]
+    curated_videos: Optional[List[YouTubeVideo]] = None
     web_resources: List[WebResource]
     pyqs: Optional[List[PYQResponse]] = None
     notes: List[NoteResponse]

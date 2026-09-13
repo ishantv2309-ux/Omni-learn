@@ -594,7 +594,7 @@ def _generate_fallback_unit_notes(code: str, name: str, unit: int, topics: List[
     )
 
 def _sync_fetch_gemini_topic_notes(prompt: str) -> Optional[str]:
-    candidate_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-flash-latest"]
     try:
         from google.genai import types
         client = GeminiService.get_client()
@@ -714,7 +714,7 @@ def _is_valid_aktu_notes(text: str, u: int, c: str, n: str) -> bool:
     return True
 
 def _sync_fetch_gemini_unit_notes(prompt: str, u: int, c: str, n: str) -> Optional[str]:
-    candidate_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview"]
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-flash-latest"]
     try:
         from google.genai import types
         client = GeminiService.get_client()

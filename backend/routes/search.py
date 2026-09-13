@@ -97,6 +97,10 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                 and cached_json.get("exam_frequency")
                 and (cached_json.get("did_you_know") or cached_json.get("fun_fact"))):
                 print(f"Serving cached search results for: '{clean_query}'")
+                if not cached_json.get("query"):
+                    cached_json["query"] = clean_query
+                if not cached_json.get("curated_videos") and cached_json.get("youtube_videos"):
+                    cached_json["curated_videos"] = cached_json["youtube_videos"]
                 if not cached_json.get("quick_example") and not cached_json.get("quickExample"):
                     cached_qe = GeminiService.build_quick_example(
                         cached_json.get("topic") or cached_json.get("title") or clean_query,
@@ -141,11 +145,14 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     )
     
     if isinstance(gemini_data, Exception) or not isinstance(gemini_data, dict):
-        print(f"Gemini aggregation error: {gemini_data}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"LLM API generation failed: {str(gemini_data)}"
-        )
+        print(f"Gemini aggregation notice: {gemini_data}. Falling back to authentic academic intelligence.")
+        try:
+            gemini_data = GeminiService.generate_topic_details(query)
+        except Exception as fb_err:
+            print(f"Secondary fallback triggered: {fb_err}")
+            clean_q = GeminiService.clean_search_query(query) or query.strip()
+            domain = GeminiService._detect_academic_domain(clean_q)
+            gemini_data = GeminiService._synthesize_academic_fallback(clean_q, domain)
         
     if isinstance(youtube_videos, Exception) or not isinstance(youtube_videos, list):
         print(f"YouTube aggregation error: {youtube_videos}")
@@ -300,7 +307,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     ai_eval = gemini_data.get("ai_evaluation") or gemini_data.get("aiEvaluation") or gemini_data.get("difficulty_reasons") or ""
     fact_text = gemini_data.get("didYouKnow") or gemini_data.get("did_you_know") or gemini_data.get("fun_fact") or ""
     career_relevance_str = gemini_data.get("careerRelevance") or ""
-    canonical_topic = gemini_data.get("title") or gemini_data.get("canonical_title") or query.title()
+    canonical_topic = GeminiService.clean_title_casing(gemini_data.get("title") or gemini_data.get("canonical_title") or query.title())
     category_name = gemini_data.get("category") or gemini_data.get("domain") or "Academic Curriculum"
     detailed_breakdown = gemini_data.get("detailedBreakdown") or gemini_data.get("detailed_breakdown") or overview_text
 
@@ -323,6 +330,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         "aiEvaluation": ai_eval,
         "roadmap": gemini_data.get("roadmap"),
         "youtube_videos": final_videos,
+        "curated_videos": final_videos,
         "web_resources": web_resources,
         "pyqs": pyq_responses,
         "notes": note_responses,
