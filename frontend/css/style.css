@@ -1418,6 +1418,29 @@ html.light .glass-nav-btn span {
     color: #0F172A !important;
 }
 
+/* ==========================================================================
+   Navbar Search Bar Lifecycle & Responsiveness
+   Rule: On landing screen, navbar search is strictly hidden.
+   When dashboard is active:
+   - >= 640px: #navSearchContainer displays inline in navbar.
+   - < 640px: #mobileNavSearchContainer displays below navbar header.
+   ========================================================================== */
+#navSearchContainer,
+#mobileNavSearchContainer,
+body:not(.dashboard-active) #navSearchContainer,
+body:not(.dashboard-active) #mobileNavSearchContainer {
+    display: none !important;
+}
+
+@media (min-width: 640px) {
+    body.dashboard-active #navSearchContainer:not(.hidden) {
+        display: block !important;
+    }
+    body.dashboard-active #mobileNavSearchContainer {
+        display: none !important;
+    }
+}
+
 html[data-theme="light"] #navSearchInput,
 html.light #navSearchInput,
 html[data-theme="light"] #mobileNavSearchInput,
@@ -1425,6 +1448,15 @@ html.light #mobileNavSearchInput {
     background: #F1F5F9 !important;
     border: 1px solid #CBD5E1 !important;
     color: #0F172A !important;
+}
+
+html[data-theme="light"] #navSearchInput:focus,
+html.light #navSearchInput:focus,
+html[data-theme="light"] #mobileNavSearchInput:focus,
+html.light #mobileNavSearchInput:focus {
+    border-color: #6366F1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+    background: #FFFFFF !important;
 }
 
 html[data-theme="light"] #navSearchInput::placeholder,
@@ -1437,8 +1469,19 @@ html.light #mobileNavSearchInput::placeholder {
 html[data-theme="light"] #navSearchContainer span,
 html.light #navSearchContainer span,
 html[data-theme="light"] #mobileNavSearchContainer span,
-html.light #mobileNavSearchContainer span {
+html.light #mobileNavSearchContainer span,
+html[data-theme="light"] #navSearchContainer button,
+html.light #navSearchContainer button,
+html[data-theme="light"] #mobileNavSearchContainer button,
+html.light #mobileNavSearchContainer button {
     color: #64748B !important;
+}
+
+html[data-theme="light"] #navSearchContainer button:hover,
+html.light #navSearchContainer button:hover,
+html[data-theme="light"] #mobileNavSearchContainer button:hover,
+html.light #mobileNavSearchContainer button:hover {
+    color: #4F46E5 !important;
 }
 
 /* High-Contrast Light Mode Badges (Fixes washed out pastels) */
@@ -1627,6 +1670,26 @@ html.light #detailedBreakdownContainer {
     padding: 0.2rem 0.45rem;
     border-radius: 9999px;
     margin-left: 0.15rem;
+}
+
+.lang-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.2rem 0.45rem;
+    border-radius: 9999px;
+    margin-left: 0.15rem;
+    background: #0284C7 !important;
+    color: #FFFFFF !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-badge.hinglish {
+    background: #EA580C !important;
+    color: #FFFFFF !important;
 }
 
 /* Dark Mode Nav Buttons */
@@ -2806,8 +2869,8 @@ table {
         display: none !important;
     }
 
-    #mobileNavSearchContainer {
-        display: block;
+    body.dashboard-active #mobileNavSearchContainer:not(.hidden) {
+        display: block !important;
         padding-left: 0.875rem !important;
         padding-right: 0.875rem !important;
         padding-bottom: 0.5rem !important;
@@ -3614,6 +3677,207 @@ html.light .diagram-legend-chip {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
     color: #334155 !important;
+}
+
+/* ==========================================================================
+   PROMINENT LANGUAGE TOGGLE BUTTON & LOCALIZED TRANSLATING STATE
+   ========================================================================== */
+.topic-lang-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1.5px solid transparent;
+    vertical-align: middle;
+}
+
+.topic-lang-toggle-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.topic-lang-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.topic-lang-toggle-btn:disabled {
+    opacity: 0.75;
+    cursor: wait;
+    transform: none !important;
+}
+
+/* Dark Mode Topic Lang Toggle */
+html[data-theme="dark"] .topic-lang-toggle-btn,
+html.dark .topic-lang-toggle-btn {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border-color: rgba(245, 158, 11, 0.45) !important;
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .topic-lang-toggle-btn:hover,
+html.dark .topic-lang-toggle-btn:hover {
+    background: rgba(45, 55, 72, 0.95) !important;
+    border-color: rgba(245, 158, 11, 0.85) !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="dark"] .topic-lang-toggle-btn.mode-hinglish,
+html.dark .topic-lang-toggle-btn.mode-hinglish {
+    border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+html[data-theme="dark"] .topic-lang-toggle-btn.mode-hinglish:hover,
+html.dark .topic-lang-toggle-btn.mode-hinglish:hover {
+    border-color: rgba(56, 189, 248, 0.85) !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Light Mode Topic Lang Toggle */
+html[data-theme="light"] .topic-lang-toggle-btn,
+html.light .topic-lang-toggle-btn {
+    background: #FFFFFF !important;
+    border-color: #F59E0B !important;
+    color: #0F172A !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="light"] .topic-lang-toggle-btn:hover,
+html.light .topic-lang-toggle-btn:hover {
+    background: #FFFBEB !important;
+    border-color: #D97706 !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="light"] .topic-lang-toggle-btn.mode-hinglish,
+html.light .topic-lang-toggle-btn.mode-hinglish {
+    border-color: #0284C7 !important;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15) !important;
+}
+
+html[data-theme="light"] .topic-lang-toggle-btn.mode-hinglish:hover,
+html.light .topic-lang-toggle-btn.mode-hinglish:hover {
+    background: #F0F9FF !important;
+    border-color: #0369A1 !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+}
+
+/* Localized Translating State Banner Inside Card */
+.lang-loading-banner {
+    background: rgba(245, 158, 11, 0.1) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: #D97706 !important;
+}
+
+html[data-theme="dark"] .lang-loading-banner,
+html.dark .lang-loading-banner {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #FBBF24 !important;
+}
+
+/* ==========================================================================
+   Exam-Ready In-Depth Detailed Breakdown & Trace Table Styling
+   ========================================================================== */
+#detailedBreakdownContainer table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.82rem !important;
+    margin: 1.25rem 0 !important;
+    border-radius: 0.6rem !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(203, 213, 225, 0.8) !important;
+    background: #ffffff !important;
+}
+
+#detailedBreakdownContainer th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    padding: 0.65rem 0.85rem !important;
+    border: 1px solid #e2e8f0 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+#detailedBreakdownContainer td {
+    padding: 0.55rem 0.85rem !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+    vertical-align: middle !important;
+}
+
+#detailedBreakdownContainer tr:nth-child(even) {
+    background: #f8fafc !important;
+}
+
+#detailedBreakdownContainer h3 {
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: #1e1b4b !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    border-bottom: 1px solid #e0e7ff !important;
+    padding-bottom: 0.35rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#detailedBreakdownContainer h4 {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #3730a3 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+/* Dark theme overrides for detailed breakdown */
+html[data-theme="dark"] #detailedBreakdownContainer,
+html.dark #detailedBreakdownContainer {
+    background: rgba(15, 23, 42, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer table,
+html.dark #detailedBreakdownContainer table {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(30, 41, 59, 0.6) !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer th,
+html.dark #detailedBreakdownContainer th {
+    background: rgba(15, 23, 42, 0.95) !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer td,
+html.dark #detailedBreakdownContainer td {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer tr:nth-child(even),
+html.dark #detailedBreakdownContainer tr:nth-child(even) {
+    background: rgba(30, 41, 59, 0.35) !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer h3,
+html.dark #detailedBreakdownContainer h3 {
+    color: #e0e7ff !important;
+    border-bottom-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+html[data-theme="dark"] #detailedBreakdownContainer h4,
+html.dark #detailedBreakdownContainer h4 {
+    color: #a5b4fc !important;
 }
 
 

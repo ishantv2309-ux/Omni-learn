@@ -384,13 +384,15 @@ class GeminiService:
 
 
     @staticmethod
-    def build_quick_example(topic: str, category: str, core_formulations: str = "", overview: str = "", llm_example: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def build_quick_example(topic: str, category: str, core_formulations: str = "", overview: str = "", llm_example: Optional[Dict[str, Any]] = None, lang: str = "english") -> Dict[str, Any]:
         """Generates a clean, friendly, and intuitive everyday real-life analogy or walkthrough.
         Strictly NOT formatted as code or dense jargon. Easy for any student to understand.
+        Supports both English and natural Hinglish.
         """
         clean_topic = GeminiService.clean_title_casing((topic or "Academic Topic").strip().title())
         t_lower = clean_topic.lower()
         cat_lower = (category or "").lower()
+        is_hinglish = (lang or "").strip().lower() == "hinglish"
 
         def _clean_str(val: Any) -> str:
             if not val or not isinstance(val, str):
@@ -455,7 +457,7 @@ class GeminiService:
 
             if scenario or breakdown:
                 if not use_cases:
-                    use_cases = GeminiService._synthesize_domain_use_cases(clean_topic, category)
+                    use_cases = GeminiService._synthesize_domain_use_cases(clean_topic, category, lang=lang)
                 return {
                     "title": title,
                     "badge": badge,
@@ -470,6 +472,33 @@ class GeminiService:
         # 2. Topic-specific crystal-clear, clean, and friendly real-world analogies
         # Array & Vector
         if any(w in t_lower for w in ["array", "arrays", "vector", "dynamic array", "contiguous"]):
+            if is_hinglish:
+                return {
+                    "title": "Apartment Building ke Numbered Mailboxes",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Imagine karo ek apartment building ka lobby jisme 100 mailboxes ek seedhi row me lage hain, numbered 1 se 100. Har mailbox ka size exactly same hai aur sab ek ke baad ek continuous sequence me physically chipke hue hain.",
+                    "breakdown": """1. **Instant Direct Access ($O(1)$)**: Agar postman ke pass Flat 42 ka letter hai, to use box 1, 2, 3 check karne ki zarurat nahi hai. Wo directly box 42 pe jaata hai aur letter daal deta hai. Kisi bhi mailbox ko access karna split-second leta hai.
+2. **Contiguous (Side-by-Side) Order**: Kyunki saare boxes continuous line me hain, aapko agle box ki exact location pehle se pata hoti hai.
+3. **The Limitation (Fixed Size & Shifting)**: Agar flat 10 aur 11 ke beech naya flat ban jaye, to beech me naya box nahi ghusa sakte. 11 se 100 tak ke saare boxes ko ek space aage shift karna padega!""",
+                    "use_cases": [
+                        {
+                            "title": "Smartphone Photo Gallery",
+                            "impact": "Direct Index Navigation",
+                            "description": "Jab aap photo album me thumbnail #20 pe tap karte hain, phone pehle 19 photos scan kiye bina directly photo #20 open kar deta hai."
+                        },
+                        {
+                            "title": "Cinema & Flight Seat Booking",
+                            "impact": "Row & Seat Direct Lookup",
+                            "description": "Booking engine 'Row 4, Seat 12' ko instant time me locate karta hai kyunki cinema seats 2D array grid me arranged hote hain."
+                        }
+                    ],
+                    "takeaway": "Array bilkul numbered lockers ya mailboxes ki tarah kaam karta hai: index pata ho to zero time me direct jump milta hai.",
+                    "tradeoffs": {
+                        "advantages": "Index number se instant O(1) random access; simple aur fast memory layout.",
+                        "disadvantages": "Middle me insertion/deletion pe O(n) element shifting karni padti hai."
+                    },
+                    "example_text": "Numbered Mailboxes: Index number se O(1) instant access milta hai, par middle insertion ke liye elements shift karne padte hain."
+                }
             return {
                 "title": "Numbered Apartment Mailboxes in a Lobby",
                 "badge": "Everyday Real-Life Analogy",
@@ -509,6 +538,43 @@ class GeminiService:
 
         # Linked List
         if any(w in t_lower for w in ["linked list", "inversion", "reverse linked list", "doubly linked"]):
+            if is_hinglish:
+                return {
+                    "title": "Treasure Hunt ke Chhupe Hue Clue Cards",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Imagine karo ek exciting campus treasure hunt. Aap Location A se start karte ho. Aapke paas saari locations ka pehle se koi map nahi hai. Jab aap Location A pahunchte ho, to wahan ek clue card milta hai: 'Agla clue library bench ke neeche chhupa hai (Location B).' Location B par note aapko cafeteria bhej deta hai.",
+                    "breakdown": """1. **Clues Kahin Bhi Ho Sakte Hain (Flexible Memory)**: Mailboxes ki tarah clues ko ek row me chipkaane ki zarurat nahi hoti. Har clue card ke paas apna message hota hai aur agle spot ka address (Pointer) hota hai.
+2. **Kahin Bhi Insert ya Delete Karna Super Easy**: Agar organizer library aur cafeteria ke beech ek naya clue add karna chahe, to poora campus dobara nahi banana padta. Bas library wale note ko naye spot par point kar do aur naye spot ko cafeteria par ($O(1)$ Pointer update).
+3. **The Limitation (Direct Jump Nahi Milta)**: Agar koi pooche ki 'Clue #4 kahan hai?', to aap directly jump nahi kar sakte. Aapko Clue 1 se start karke chain link-by-link follow karni padegi ($O(n)$ traversal).""",
+                    "use_cases": [
+                        {
+                            "title": "Music Playlist 'Play Next'",
+                            "impact": "Seamless Track Queuing",
+                            "description": "Har song agle song ko point karta hai. Jab aap 'Play Next' me song add karte ho, to Spotify music files move kiye bina bas Pointer arrows re-link kar deta hai."
+                        },
+                        {
+                            "title": "Web Browser History (Back / Forward)",
+                            "impact": "Page Link Navigation",
+                            "description": "Aap jo bhi web page visit karte ho wo pichhle page se link hota hai, jisse aap aage-peeche smoothly navigate kar sakte ho."
+                        },
+                        {
+                            "title": "Undo / Redo in Text Editors",
+                            "impact": "Chain of Actions",
+                            "description": "Word processors har sentence edit ko pichhle edit se link karte hain taaki Ctrl+Z dabane par ek-ek karke pichhli state wapas aa sake."
+                        },
+                        {
+                            "title": "Operating System Memory Allocation",
+                            "impact": "Reusing Scattered RAM",
+                            "description": "Computer RAM ke scattered free chunks ko aapas me link karke apps ko run karta hai jab memory fragmented hoti hai."
+                        }
+                    ],
+                    "takeaway": "Linked List ek treasure hunt chain ki tarah hai: kahin bhi naye links aasani se add ya remove kar sakte hain, lekin kisi element ko dhoondhne ke liye poori chain walk karni padti hai.",
+                    "tradeoffs": {
+                        "advantages": "Bina doosre elements ko shift kiye O(1) insertion aur deletion; size pehle se fix karne ki zarurat nahi hoti.",
+                        "disadvantages": "Index number se direct jump nahi kar sakte; search karne ke liye head se shuru karke O(n) walk karna padta hai."
+                    },
+                    "example_text": "Treasure Hunt Clues: Har clue agle location ko point karta hai, jisse flexible additions possible hain par link-by-link follow karna padta hai."
+                }
             return {
                 "title": "A Treasure Hunt with Hidden Clue Cards",
                 "badge": "Everyday Real-Life Analogy",
@@ -548,6 +614,43 @@ class GeminiService:
 
         # Stack
         if any(w in t_lower for w in ["stack", "lifo", "call stack"]):
+            if is_hinglish:
+                return {
+                    "title": "Cafeteria me Clean Plates Ka Stack",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Cafeteria me dinner plates ke dher ke baare me socho. Jab dishwasher se saaf plates aati hain, to staff unhe dher ke sabse upar (top) par rakh deta hai. Jab students khana lene aate hain, to wo sabse upar wali plate uthate hain.",
+                    "breakdown": """1. **Last-In, First-Out (LIFO)**: Jo plate sabse aakhir me top par rakhi gayi thi, wahi plate sabse pehle uthayi jaati hai. Sabse neeche wali plate tabhi use hogi jab upar ki saari plates khatam ho jayein.
+2. **Push aur Pop Ek Second Me ($O(1)$)**: Plate ko top par rakhna **Push** kehlata hai. Top se plate uthana **Pop** kehlata hai. Dono operations instant $O(1)$ time me hote hain.
+3. **Middle Se Pull Karna Allowed Nahi**: Aap stack ke beech ya neeche se plate nahi kheench sakte, warna poora stack girne ka risk hota hai!""",
+                    "use_cases": [
+                        {
+                            "title": "Web Browser 'Back' Button",
+                            "impact": "History Reversal",
+                            "description": "Har visited page history stack ke top par push hota hai. Back button dabane par current page pop ho jata hai aur pichhla page samne aata hai."
+                        },
+                        {
+                            "title": "Word Processor Undo (Ctrl + Z)",
+                            "impact": "Action Rollback",
+                            "description": "Har keystroke ya formatting change undo stack me push hoti hai. Ctrl+Z dabane par most recent action pop hokar revert ho jata hai."
+                        },
+                        {
+                            "title": "Math Parentheses Matching",
+                            "impact": "Syntax Validation",
+                            "description": "Compilers open brackets `(` ko stack me push karte hain aur closing bracket `)` aane par pop karke check karte hain ki pairing sahi hai ya nahi."
+                        },
+                        {
+                            "title": "Function Call Stack in Programming",
+                            "impact": "Call Stack Execution",
+                            "description": "Jab ek function doosre function ko call karta hai, to OS unhe stack par push karta hai aur innermost function khatam hone ke baad return karta hai."
+                        }
+                    ],
+                    "takeaway": "Stack 'jo aakhir me aaya, wo sabse pehle jayega' (LIFO) rule par kaam karta hai—hamesha top element hi access hota hai.",
+                    "tradeoffs": {
+                        "advantages": "Push aur Pop operations extremely fast O(1) hote hain; undo aur backtracking ke liye perfect structure hai.",
+                        "disadvantages": "Sirf top element dekh aur access kar sakte hain; neeche dabee puraani values par directly jump nahi kiya ja sakta."
+                    },
+                    "example_text": "Cafeteria Plate Stack: Last added plate sabse pehle nikali jaati hai (LIFO), jisse instant O(1) push aur pop milta hai."
+                }
             return {
                 "title": "A Stack of Clean Plates in a Cafeteria",
                 "badge": "Everyday Real-Life Analogy",
@@ -587,6 +690,43 @@ class GeminiService:
 
         # Queue
         if any(w in t_lower for w in ["queue", "fifo", "message broker"]):
+            if is_hinglish:
+                return {
+                    "title": "Ice Cream Counter par Khade Customers ki Line",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Ek ice cream parlor ki picture imagine karo. Customers counter ke aage ek seedhi line me khade hote hain. Jo customer pehle aata hai use pehle ice cream milti hai, aur naye log line ke end me lagte hain.",
+                    "breakdown": """1. **First-In, First-Out (FIFO)**: Jis customer ne sabse zyada wait kiya hai use pehle service milti hai. Line tod kar aage aana strictly allowed nahi hai!
+2. **Enqueue aur Dequeue ($O(1)$)**: Line ke end me judna **Enqueue** kehlata hai. Ice cream lekar counter se nikalna **Dequeue** kehlata hai.
+3. **Fairness aur System Protection**: Agar 50 log ek saath aa jayein, to line system me discipline banaye rakhti hai taaki server bina crash hue steady speed par order process kare.""",
+                    "use_cases": [
+                        {
+                            "title": "Office Shared Printer",
+                            "impact": "Fair Document Printing",
+                            "description": "Jab kayi log ek saath 'Print' dabate hain, to printer Document 1 pehle aur Document 2 baad me print karta hai, exact arrival order ke mutabiq."
+                        },
+                        {
+                            "title": "Customer Support Call Waiting",
+                            "impact": "Orderly Phone Routing",
+                            "description": "'Aap line me caller number 3 hain; kripya hold karein.' Call centers phone calls ko FIFO queue ke mutabiq answer karte hain."
+                        },
+                        {
+                            "title": "Food Delivery Apps (Swiggy / Zomato)",
+                            "impact": "Kitchen Order Queue",
+                            "description": "Restaurant kitchen me orders ek queue me aate hain taaki chef pehle aaye order ko pehle prepare kare."
+                        },
+                        {
+                            "title": "Concert Ticket Booking (BookMyShow)",
+                            "impact": "Traffic Surge Buffer",
+                            "description": "High-traffic ticket sales ke waqt website users ko virtual queue me daal deti hai taaki server overload se crash na ho."
+                        }
+                    ],
+                    "takeaway": "Queue ek fair waiting line hai jo ensure karti hai ki kaam usi order me handle hon jisme wo arrive hue the (First-In, First-Out).",
+                    "tradeoffs": {
+                        "advantages": "Completely fair FIFO order; traffic spike aane par system ko shock absorber ki tarah crash hone se bachata hai.",
+                        "disadvantages": "Line me aage khade tasks complete hone tak wait karna padta hai; pehla task slow ho to pichhle sabhi delay ho jaate hain."
+                    },
+                    "example_text": "Ice Cream Line: Customers line ke end me judte hain aur front se serve hote hain, ensuring strict FIFO order."
+                }
             return {
                 "title": "A Line of Customers at an Ice Cream Counter",
                 "badge": "Everyday Real-Life Analogy",
@@ -626,6 +766,43 @@ class GeminiService:
 
         # Tree & Binary Search Tree & B-Tree
         if any(w in t_lower for w in ["tree", "binary tree", "bst", "b-tree", "avl", "red-black"]):
+            if is_hinglish:
+                return {
+                    "title": "Cookbook ka Table of Contents aur File Folders",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Maan lo aap 1,000 pages ki recipe book me 'Chocolate Chip Cookies' dhoondh rahe ho. Aap saare 1,000 pages ek-ek karke nahi palatoge! Aap Table of Contents khologe: Desserts $\\to$ Baked Goods $\\to$ Cookies $\\to$ Chocolate Chip.",
+                    "breakdown": """1. **Hierarchical Branching**: Ek lambi flat list ke bajay information branches me failti hai: Root $\\to$ Categories $\\to$ Subcategories $\\to$ Specific Items.
+2. **Search Half Ho Jaata Hai (Logarithmic $O(\\log n)$)**: Binary Search Tree me har left ya right decision aadhe options ko eliminate kar deta hai. Sirf 10 steps me aap 1,000 me se 1 exact item dhoondh sakte ho!
+3. **Natural Organization**: Related items apne common parent ke under grouped rehte hain, jisse navigation fast aur structured ho jata hai.""",
+                    "use_cases": [
+                        {
+                            "title": "Computer File Explorer Folders",
+                            "impact": "Clean Directory Hierarchy",
+                            "description": "Operating system aapki files ko nested folders me organize karta hai: Documents -> University -> Semester 2 -> Chemistry.pdf."
+                        },
+                        {
+                            "title": "E-Commerce Shopping Categories (Amazon)",
+                            "impact": "Guided Product Navigation",
+                            "description": "Shoppers category branches browse karte hain: Electronics -> Audio -> Headphones, jisse lakho products seconds me filter ho jate hain."
+                        },
+                        {
+                            "title": "Search Engine Autocomplete (Google)",
+                            "impact": "Letter-by-Letter Trie Trees",
+                            "description": "Jaise hi aap search box me letter type karte ho, Google Trie tree ke branches follow karke suggestions predict karta hai."
+                        },
+                        {
+                            "title": "Database Fast Search Indexing",
+                            "impact": "Sub-Millisecond Record Lookup",
+                            "description": "Databases B-Trees use karte hain taaki 5 crore records me se 1 customer account sirf 3-4 disk checks me mil sake."
+                        }
+                    ],
+                    "takeaway": "Tree data ko branches me organize karta hai taaki poori list scan kiye bina kuch hi steps me targeted item tak pahuncha ja sake.",
+                    "tradeoffs": {
+                        "advantages": "Super fast O(log n) search speeds; data ko naturally structured hierarchy me maintain karta hai.",
+                        "disadvantages": "Tree ko balanced rakhne ke liye extra rotations karni padti hain; flat array se zyada memory overhead hota hai."
+                    },
+                    "example_text": "Cookbook Table of Contents: Desserts se Cookies tak branch follow karke 1,000 pages me se recipe 3 steps me mil jaati hai."
+                }
             return {
                 "title": "A Book's Table of Contents & File Folders",
                 "badge": "Everyday Real-Life Analogy",
@@ -665,6 +842,43 @@ class GeminiService:
 
         # Hash Table & Hash Map
         if any(w in t_lower for w in ["hash", "hash table", "hash map", "hashing"]):
+            if is_hinglish:
+                return {
+                    "title": "Theatre Coat Check Room aur Numbered Token",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Jab aap kisi theatre me jaate ho, to aap apna heavy coat attendant ko dete ho. Attendant use hook #47 par taang deta hai aur aapko #47 number ka claim token pakda deta hai.",
+                    "breakdown": """1. **The Hash Shortcut**: Attendant ko ye yaad rakhne ki zarurat nahi hoti ki aapka coat kaisa dikhta hai (color, size, brand). System coat ko ek direct number (#47) me convert kar deta hai (Hashing).
+2. **Instant 2-Second Pickup ($O(1)$)**: Show khatam hone par aap token #47 dikhate ho. Attendant saare 300 coats scan nahi karta! Wo seedhe hook #47 par jata hai aur 2 second me coat aapko de deta hai.
+3. **Collision Handling**: Agar do doston ko same slot mil jaye, to attendant dusra coat pehle ke peeche taang deta hai (Chaining/Collision Resolution).""",
+                    "use_cases": [
+                        {
+                            "title": "Phone Contacts Search",
+                            "impact": "Instant Name-to-Number Lookup",
+                            "description": "'Mom' type karte hi split-second me phone number nikal aata hai kyunki name directly memory slot se map hota hai."
+                        },
+                        {
+                            "title": "Website Login & Username Check",
+                            "impact": "Instant Account Verification",
+                            "description": "Sign in karte waqt website 10 crore accounts me se check kar leti hai ki username exists karta hai ya nahi, 1 millisecond se bhi kam me."
+                        },
+                        {
+                            "title": "Online Shopping Cart",
+                            "impact": "Cart Items Retrieval",
+                            "description": "E-commerce sites aapke unique Session ID ko hash key ki tarah use karke instantly aapka cart load karti hain."
+                        },
+                        {
+                            "title": "Dictionary Word Definitions",
+                            "impact": "Direct Word Meaning Search",
+                            "description": "Online dictionary me koi word type karte hi bina baaki words scan kiye exact definition open hoti hai."
+                        }
+                    ],
+                    "takeaway": "Hash table kisi bhi item ka name ya key ek exact locker number me convert karke instant O(1) shortcut deta hai.",
+                    "tradeoffs": {
+                        "advantages": "Data collection chahe kitna bhi bada ho, search, insert, aur delete hamesha instant O(1) time me hote hain.",
+                        "disadvantages": "Collisions avoid karne ke liye extra empty space chahiye hoti hai; elements sorted order me nahi rehte."
+                    },
+                    "example_text": "Coat Check Token: Coat ko token #47 me map karke instant O(1) retrieval milta hai bina doosre coats scan kiye."
+                }
             return {
                 "title": "A Theatre Coat Check Room with Claim Tickets",
                 "badge": "Everyday Real-Life Analogy",
@@ -704,6 +918,43 @@ class GeminiService:
 
         # Graph & Dijkstra
         if any(w in t_lower for w in ["dijkstra", "shortest path", "graph"]):
+            if is_hinglish:
+                return {
+                    "title": "Metro Subway Map Par Sabse Fast Route Dhoondhna",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Aap ek busy metro station par khade ho jahan 40 interconnected lines hain. Aapko minimum time aur sabse kam interchange ke sath airport pahunchna hai.",
+                    "breakdown": """1. **Stations aur Tracks (Nodes & Edges)**: Stations checkpoints hain (Nodes), aur unke beech railway tracks ka known travel time hota hai (jaise Station A se B tak 3 minutes).
+2. **Step-by-Step Smart Exploration**: Blindly guess karne ke bajay route finder sabse pehle padosi stations inspect karta hai aur har station tak ka fastest time continuously record karta hai.
+3. **Guaranteed Fastest Path**: Hamesha sabse shortest known segment ko extend karke Dijkstra algorithm mathematically guarantee karta hai ki aap least possible time me airport pahuncho.""",
+                    "use_cases": [
+                        {
+                            "title": "Google Maps Live Traffic Navigation",
+                            "impact": "Real-Time Driving Route",
+                            "description": "GPS apps live traffic aur accidents ke mutabiq real-time me fastest route calculate karte hain."
+                        },
+                        {
+                            "title": "Social Media 'People You May Know'",
+                            "impact": "Friendship Network Connections",
+                            "description": "Instagram aur LinkedIn mutual friends ke connections ko trace karke new network suggestions dete hain."
+                        },
+                        {
+                            "title": "Delivery Package Routing (Amazon / Flipkart)",
+                            "impact": "Optimal Delivery Path",
+                            "description": "Delivery vans 100 packages drop karne ke liye smartest street-by-street path calculate karti hain taaki backtracking na ho."
+                        },
+                        {
+                            "title": "Airline Flight Connections",
+                            "impact": "Fastest Multi-City Layovers",
+                            "description": "Flight booking engines connected flights ko analyse karke lowest travel time wala connecting flight schedule nikaalte hain."
+                        }
+                    ],
+                    "takeaway": "Graph real world ke interconnected networks ko model karta hai, aur shortest path algorithm zero time waste kiye best route nikaalta hai.",
+                    "tradeoffs": {
+                        "advantages": "Complex networks me mathematically guaranteed fastest route dhoondhta hai; live traffic changes ko adapt karta hai.",
+                        "disadvantages": "Saare connections map karne padte hain; millions of roads wale massive map par zyada CPU computation lagti hai."
+                    },
+                    "example_text": "Metro Route: Padosi stations ko step-by-step explore karke Dijkstra airport ka fastest path guarantee karta hai."
+                }
             return {
                 "title": "Finding the Quickest Route on a Metro Subway Map",
                 "badge": "Everyday Real-Life Analogy",
@@ -743,6 +994,43 @@ class GeminiService:
 
         # Sorting Algorithms
         if any(w in t_lower for w in ["sorting", "quicksort", "merge sort", "bubble sort", "heap sort"]):
+            if is_hinglish:
+                return {
+                    "title": "Exam Papers ko Alphabetically Arrange Karna",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Ek teacher 150 students ke exam papers collect karta hai jo mixed order me hain. Report card me marks enter karne ke liye teacher ko papers A-se-Z alphabetical order me arrange karne hain.",
+                    "breakdown": """1. **Order Hone Se Ghanton Ka Time Bachta Hai**: Agar papers mixed hon, to 150 grades enter karne ke liye poore pile ko 150 baar palatna padega ($150 \\times 150 = 22{,}500$ paper flips!).
+2. **Divide and Conquer (Merge/Quick Sort)**: Teacher papers ko do chhote bundles me baant deta hai (A–M aur N–Z), dono ko alag sort karke aapas me smoothly merge kar deta hai.
+3. **One-Pass Grading**: Ek baar alphabetically sort hone ke baad, teacher shuru se aakhir tak single smooth pass me saare marks enter kar deta hai.""",
+                    "use_cases": [
+                        {
+                            "title": "E-Commerce 'Sort by Price: Low to High'",
+                            "impact": "Instant Budget Filtering",
+                            "description": "Amazon aur Flipkart hazaron products ko price ke mutabiq sort karke sabse affordable items pehle display karte hain."
+                        },
+                        {
+                            "title": "Spotify Playlist Organization",
+                            "impact": "Custom Music Browsing",
+                            "description": "Users ek tap me apni music library ko song title, artist, ya date added ke hisaab se sort kar sakte hain."
+                        },
+                        {
+                            "title": "Cricket Tournament Points Table",
+                            "impact": "Leaderboard Rankings",
+                            "description": "IPL aur World Cup me teams ko points aur net run rate ke according sort karke standings show ki jaati hain."
+                        },
+                        {
+                            "title": "Smartphone Contact List",
+                            "impact": "A-to-Z Fast Scrolling",
+                            "description": "Phone contacts alphabetically sort hote hain taaki aap direct scroll karke required name par jump kar sako."
+                        }
+                    ],
+                    "takeaway": "Sorting unorganized data ko order me laakar search aur retrieval time ko drastically reduce kar deti hai.",
+                    "tradeoffs": {
+                        "advantages": "Searching aur filtering ko effortless banata hai; top items aur price comparison fast karta hai.",
+                        "disadvantages": "Initial sorting me processing time lagta hai; massive datasets me temporary extra memory chahiye hoti hai."
+                    },
+                    "example_text": "Exam Papers Sorting: Papers ko A-Z sort karke 150 grades single pass me enter ho jaate hain bina baar baar dhoondhe."
+                }
             return {
                 "title": "Arranging Exam Papers Alphabetically by Student Name",
                 "badge": "Everyday Real-Life Analogy",
@@ -782,6 +1070,43 @@ class GeminiService:
 
         # Law: Damnum Sine Injuria
         if any(w in t_lower for w in ["damnum", "damnun", "injuria", "tort", "sine"]):
+            if is_hinglish:
+                return {
+                    "title": "Ek Hi Sadak Par Do Competing Coffee Shops",
+                    "badge": "Everyday Real-Life Legal Dispute (Hinglish)",
+                    "scenario": "Rohan Main Street par ek coffee shop chalata hai jahan $5 me coffee milti hai. Priya uske bilkul bagal me ek naya coffee shop kholti hai jahan wahi coffee $3 me milti hai. Do mahine me Rohan ke kayi customers Priya ke shop par chale jaate hain jisse Rohan ko $4,000 ka monthly loss hota hai. Rohan gusse me Priya par court me lawsuit file karta hai aur compensation mangta hai.",
+                    "breakdown": """1. **Financial Loss Hua (*Damnum*)**: Rohan ko financial nuksaan hua aur uska business kam ho gaya.
+2. **Koi Legal Right Violate Nahi Hua (*Sine Injuria*)**: Priya ne koi illegal kaam nahi kiya. Na trespassing ki, na jhooth bola, na recipe chori ki. Usne lawful business khola aur fair price offer ki. Customers ke paas choice hai ki wo apna paisa kahan spend karein.
+3. **Court Ka Faisla**: Judge Rohan ka case dismiss kar deta hai. Law me, sirf financial loss (*Damnum*) bina legal right violation (*Sine Injuria*) ke compensation ka claim nahi banata.""",
+                    "use_cases": [
+                        {
+                            "title": "Supermarket Price Rivalry",
+                            "impact": "Fair Market Competition",
+                            "description": "Ek discount grocery store purane store ke bagal me khulkar budget-conscious customers ko lawfully attract karta hai."
+                        },
+                        {
+                            "title": "Smartphone Market Rivalry",
+                            "impact": "Consumer Innovation",
+                            "description": "Ek company behtar aur sasta phone launch karti hai jisse rival brands ka market share kam ho jata hai."
+                        },
+                        {
+                            "title": "Honest Restaurant Food Reviews",
+                            "impact": "Freedom of Fair Review",
+                            "description": "Food critic honest negative review likhta hai jisse restaurant ke customers kam hote hain, par ye defamation nahi hai."
+                        },
+                        {
+                            "title": "New Metro Line Launch",
+                            "impact": "Civic Infrastructure",
+                            "description": "Nayi metro line shuru hone se local auto-rickshaws ki daily earnings kam ho jaati hain, par ye actionable wrong nahi hai."
+                        }
+                    ],
+                    "takeaway": "Sirf paison ka nuksaan hone par aap court nahi ja sakte; lawsuit tabhi banta hai jab aapka koi legal right violate hua ho.",
+                    "tradeoffs": {
+                        "advantages": "Fair competition aur innovation ko protect karta hai; consumers ko affordable prices milti hain.",
+                        "disadvantages": "Honest market competition se nuksaan uthane wale business owners ko koi legal remedy nahi milti."
+                    },
+                    "example_text": "Two Coffee Shops: Lawful price competition se hua financial loss bina legal right violation ke actionable nahi hai."
+                }
             return {
                 "title": "Two Competing Coffee Shops on the Same Street",
                 "badge": "Everyday Real-Life Legal Dispute",
@@ -821,6 +1146,43 @@ class GeminiService:
 
         # Physics: Newton's Laws
         if any(w in t_lower for w in ["newton", "law of motion", "force", "inertia", "dynamics"]):
+            if is_hinglish:
+                return {
+                    "title": "Halki Bicycle vs Bhaari Khadi Hui Car ko Push Karna",
+                    "badge": "Everyday Physical Experience (Hinglish)",
+                    "scenario": "Imagine karo aap ek 10 kg ki halki bicycle ko sadak par dhakka de rahe ho, aur doosri taraf ek 2,000 kg ki bhaari car ko jo band pad gayi hai.",
+                    "breakdown": """1. **Bhaari Cheezein Move Hone Se Rokti Hain (Inertia & $F = ma$)**: Ek halka sa dhakka bicycle ko turant aage badha deta hai. Lekin heavy car ko hilane ke liye teen logon ko apni poori Force lagani padti hai tab jaakar wo thoda sa crawl karti hai.
+2. **Rokne Ke Liye Force Chahiye**: Halki cycle ko rokne ke liye handbrake ka halka press kaafi hai. Lekin aage badhti bhaari car ko rokne ke liye powerful brakes chahiye; agar haath se rokne ki koshish karoge to Inertia ki wajah se car aapko kheench legi!
+3. **Equal & Opposite Push (Third Law)**: Jab aap car ko aage dhakelte ho, to sadak aapke joote ke neeche backwards direction me exact same Friction aur reaction Force lagati hai.""",
+                    "use_cases": [
+                        {
+                            "title": "Car Seatbelts & Airbags",
+                            "impact": "Passenger Crash Safety",
+                            "description": "Sudden braking ke waqt seatbelts aur airbags aapki body ko smoothly slow karte hain taaki Inertia ki wajah se aap windshield se na takrayein."
+                        },
+                        {
+                            "title": "Space Rocket Launches",
+                            "impact": "Action & Reaction Propulsion",
+                            "description": "Rocket engines hot exhaust gas ko tezi se downward shoot karte hain, jo reaction Force se heavy rocket ko outer space me push karta hai."
+                        },
+                        {
+                            "title": "Bicycle & Motorcycle Brakes",
+                            "impact": "Controlled Stopping Power",
+                            "description": "Brake pads ghoomte wheels par Friction force lagate hain taaki moving vehicle safe distance par ruk sake."
+                        },
+                        {
+                            "title": "Elevators & Counterweights",
+                            "impact": "Mechanical Balance",
+                            "description": "Bhaari counterweights elevator cab ke weight ko balance karte hain taaki electric motor ko kam Force lagani pade."
+                        }
+                    ],
+                    "takeaway": "Bhaari objects (greater Mass) ko move ya stop karne ke liye zyada Force chahiye, aur nature me har action Force ka ek equal aur opposite reaction Force hota hai.",
+                    "tradeoffs": {
+                        "advantages": "Vehicles, machines, aur structures me motion aur safety calculate karne ke liye 100% reliable aur accurate rules deta hai.",
+                        "disadvantages": "Ye everyday speeds aur objects par perfect apply hota hai, lekin speed of light ya atomic scale par Quantum Mechanics chahiye hoti hai."
+                    },
+                    "example_text": "Pushing a Bike vs Car: Heavy mass changes in motion ko resist karta hai (Inertia), jisse acceleration ke liye zyada Force lagti hai ($F = ma$)."
+                }
             return {
                 "title": "Pushing a Light Bicycle vs. a Heavy Stalled Car",
                 "badge": "Everyday Physical Experience",
@@ -860,6 +1222,43 @@ class GeminiService:
 
         # Mathematics: Calculus & Integration
         if any(w in t_lower for w in ["calculus", "integral", "integration", "derivative"]):
+            if is_hinglish:
+                return {
+                    "title": "Tapakhte Hue Nall Ke Neeche Bucket Ka Paani Napna",
+                    "badge": "Everyday Real-Life Analogy (Hinglish)",
+                    "scenario": "Aap ek leak hote tap ke neeche khali bucket rakhte ho. Pehle paani dheere tapakta hai (3 second me 1 drop). Fir upstairs koi flush karta hai to paani tez dhaar ban jata hai, fir dobara slow ho jata hai.",
+                    "breakdown": """1. **Normal Multiplication Kyun Fail Hota Hai**: Agar paani constant speed se girta, to aap direct multiply karte: Speed $\\times$ Time = Total Water. Lekin yahan tapakne ki speed har second badal rahi hai!
+2. **Chhote Chhote Drops Ka Total Sum (Integration)**: Integration poore ghante ko hazaron tiny 1-second snapshots me divide karta hai, har second ka paani calculate karta hai, aur sabko jod kar bucket ka exact total volume de deta hai.
+3. **Speedometer vs Odometer**: Derivative aapki car ke speedometer jaisa hai (is exact second speed kya hai). Integral aapke odometer jaisa hai (poori trip me total kitna distance travel hua).""",
+                    "use_cases": [
+                        {
+                            "title": "Phone Battery Life Percentage",
+                            "impact": "Accumulated Power Usage",
+                            "description": "Phone dynamic app consumption ko second-by-second integrate karke remaining battery life calculate karta hai."
+                        },
+                        {
+                            "title": "Car Trip Distance Tracking",
+                            "impact": "Variable Speed Distance",
+                            "description": "Car computers variable driving speeds ko continuously integrate karke exact trip distance measure karte hain."
+                        },
+                        {
+                            "title": "Medicine Bloodstream Absorption",
+                            "impact": "Patient Dosing Tracking",
+                            "description": "Doctors track karte hain ki 24 ghante me patient ki body me medicine kis rate par absorb ho rahi hai."
+                        },
+                        {
+                            "title": "Dam Water Inflow in Monsoons",
+                            "impact": "Rainfall Inflow Calculation",
+                            "description": "Engineers changing rainfall speed ko integrate karke dam me gather hone wale total water volume ko predict karte hain."
+                        }
+                    ],
+                    "takeaway": "Calculus continuously badalti hui speed aur rates ke dauraan bhi exact total calculation karne ki power deta hai.",
+                    "tradeoffs": {
+                        "advantages": "Conditions badal rahi hon tab bhi exact total amount aur instantaneous rate accurately calculate karta hai.",
+                        "disadvantages": "Sudden jumps wale real-world scenarios me computer approximations ya complex mathematical formulas lagte hain."
+                    },
+                    "example_text": "Leaking Tap & Bucket: Variable drip speed ko second-by-second integrate karke bucket ka total water accurately calculate hota hai."
+                }
             return {
                 "title": "Measuring Water in a Bucket under a Leaking Tap",
                 "badge": "Everyday Real-Life Analogy",
@@ -898,7 +1297,21 @@ class GeminiService:
             }
 
         # 3. Clean, friendly domain-specific synthesized fallback for other topics
-        domain_use_cases = GeminiService._synthesize_domain_use_cases(clean_topic, category)
+        domain_use_cases = GeminiService._synthesize_domain_use_cases(clean_topic, category, lang=lang)
+        if is_hinglish:
+            return {
+                "title": f"Asli Duniya Ka Example: {clean_topic}",
+                "badge": "Everyday Practical Example (Hinglish)",
+                "scenario": f"{clean_topic} se judi ek practical situation ke baare me socho, jahan organized rules follow karne se mushkil task simple, predictable, aur error-free ho jata hai.",
+                "breakdown": f"1. **Starting Problem**: Samajhna ki {clean_topic} me kya problem solve karni hai aur kaunse resources available hain.\n2. **How It Works (Step-by-Step)**: Core principle ko step-by-step follow karna taaki bina kisi confusion ke desired result mil sake.\n3. **Practical Result**: Verify karna ki outcome reliable hai aur har situation me consistently kaam karta hai.",
+                "use_cases": domain_use_cases,
+                "takeaway": f"{clean_topic} real-world problems ko efficiently aur systematically solve karne ka structured approach provide karta hai.",
+                "tradeoffs": {
+                    "advantages": f"{clean_topic} complex concepts ko structured, repeatable, aur reliable solution provide karta hai.",
+                    "disadvantages": f"Best results paane ke liye core principles aur foundational details ka proper dhyan rakhna padta hai."
+                },
+                "example_text": f"Everyday practical walkthrough explaining how {clean_topic} works simply and reliably."
+            }
         return {
             "title": f"Everyday Real-Life Analogy: {clean_topic}",
             "badge": "Everyday Practical Example",
@@ -914,12 +1327,31 @@ class GeminiService:
         }
 
     @staticmethod
-    def _synthesize_domain_use_cases(topic: str, category: str = "") -> List[Dict[str, str]]:
-        """Synthesizes three clean, realistic, everyday real-world use cases for any academic topic."""
+    def _synthesize_domain_use_cases(topic: str, category: str = "", lang: str = "english") -> List[Dict[str, str]]:
+        """Synthesizes three clean, realistic, everyday real-world use cases for any academic topic in English or Hinglish."""
         low_t = (topic or "").lower()
         low_c = (category or "").lower()
+        is_h = (lang or "").strip().lower() == "hinglish"
         
         if any(k in low_t or k in low_c for k in ["os", "operating system", "process", "memory", "thread", "kernel", "scheduling", "deadlock"]):
+            if is_h:
+                return [
+                    {
+                        "title": "Smartphone Multitasking & App Switching",
+                        "impact": "Smooth User Experience",
+                        "description": "Phone me background music, chat notifications, aur live navigation ek saath bina crash ya freeze hue chalane me madad karta hai."
+                    },
+                    {
+                        "title": "Cloud Server Virtualization",
+                        "impact": "Maximum Resource Utilization",
+                        "description": "Shared data center hardware pe thousands of isolated user workloads ko strict memory aur CPU isolation ke sath safely run karta hai."
+                    },
+                    {
+                        "title": "Mission-Critical Aviation & Medical Devices",
+                        "impact": "Deterministic Fault Tolerance",
+                        "description": "Life-support controls aur flight sensor inputs ko microsecond deadlines me bina deadlock ke deterministic execute karta hai."
+                    }
+                ]
             return [
                 {
                     "title": "Smartphone Multitasking & App Switching",
@@ -938,6 +1370,24 @@ class GeminiService:
                 }
             ]
         elif any(k in low_t or k in low_c for k in ["network", "tcp", "ip", "udp", "routing", "http", "socket"]):
+            if is_h:
+                return [
+                    {
+                        "title": "High-Definition Video Streaming",
+                        "impact": "Buffer-Free Entertainment",
+                        "description": "Live video stream ko lightweight data packets me segment karke global routers ke zariye smart TVs par bina buffer assemble karta hai."
+                    },
+                    {
+                        "title": "Global Online Banking & Payments",
+                        "impact": "Encrypted Transaction Delivery",
+                        "description": "Jab users money transfer karte hain to transactions end-to-end encrypted packets ke roop me securely banks ke beech pahunchte hain."
+                    },
+                    {
+                        "title": "Online Multiplayer Gaming",
+                        "impact": "Ultra-Low Latency Sync",
+                        "description": "Players ke live coordinates aur game actions sub-15ms bursts me distributed game servers globally par sync karta hai."
+                    }
+                ]
             return [
                 {
                     "title": "High-Definition Video Streaming",
@@ -956,6 +1406,24 @@ class GeminiService:
                 }
             ]
         elif any(k in low_t or k in low_c for k in ["database", "sql", "acid", "transaction", "storage", "index"]):
+            if is_h:
+                return [
+                    {
+                        "title": "E-Commerce Checkout & Inventory",
+                        "impact": "Zero Overselling",
+                        "description": "Jab flash sale me hazaron shoppers ek saath order karte hain, tab inventory counts 100% accurate aur consistent rehte hain."
+                    },
+                    {
+                        "title": "Hospital Patient Records System",
+                        "impact": "Instant & Reliable Medical Data",
+                        "description": "Emergency rooms me doctors aur nurses ko real-time medical history instantly aur bina data corruption ke milti hai."
+                    },
+                    {
+                        "title": "Airline Seat Reservation",
+                        "impact": "Atomicity Under Concurrency",
+                        "description": "Booking ke dauraan seats ko temporarily lock karta hai taaki do passengers ko same flight ticket issue na ho sake."
+                    }
+                ]
             return [
                 {
                     "title": "E-Commerce Checkout & Inventory",
@@ -974,6 +1442,24 @@ class GeminiService:
                 }
             ]
         elif any(k in low_t or k in low_c for k in ["physics", "force", "motion", "gravity", "thermodynamics", "optics"]):
+            if is_h:
+                return [
+                    {
+                        "title": "Automobile Crash Safety Systems",
+                        "impact": "Passenger Life Protection",
+                        "description": f"Engineers {topic} ke principles apply karke crumple zones design karte hain aur exact millisecond me airbags deploy karte hain."
+                    },
+                    {
+                        "title": "Commercial Aircraft Aerodynamics",
+                        "impact": "Fuel Efficiency & Flight Stability",
+                        "description": f"Badalte weather me wing lift, drag reduction, aur safe flight dynamics ko govern karta hai."
+                    },
+                    {
+                        "title": "Renewable Wind & Solar Energy Grids",
+                        "impact": "Clean Power Generation",
+                        "description": f"Natural energy flows ko city power lines ke liye stable alternating electricity me convert karta hai."
+                    }
+                ]
             return [
                 {
                     "title": "Automobile Crash Safety Systems",
@@ -992,6 +1478,24 @@ class GeminiService:
                 }
             ]
         elif any(k in low_t or k in low_c for k in ["math", "calculus", "algebra", "geometry", "statistics", "probability"]):
+            if is_h:
+                return [
+                    {
+                        "title": "Financial Portfolio Risk Analysis",
+                        "impact": "Capital Protection & Wealth Growth",
+                        "description": f"Probability distributions aur market volatility calculate karke retirement funds me risk aur return balance karta hai."
+                    },
+                    {
+                        "title": "Architectural Structural Engineering",
+                        "impact": "Skyscraper Earthquake Resistance",
+                        "description": f"Skyscrapers banate waqt exact load stresses, wind shear, aur bending moments calculate karta hai."
+                    },
+                    {
+                        "title": "Computer Graphics & 3D Video Game Engines",
+                        "impact": "Photorealistic Rendering",
+                        "description": f"Modern GPU par 120 FPS par vector coordinates, lighting vectors, aur camera perspectives calculate karta hai."
+                    }
+                ]
             return [
                 {
                     "title": "Financial Portfolio Risk Analysis",
@@ -1010,6 +1514,24 @@ class GeminiService:
                 }
             ]
         elif any(k in low_t or k in low_c for k in ["law", "tort", "contract", "jurisprudence", "constitution"]):
+            if is_h:
+                return [
+                    {
+                        "title": "Commercial Business Contracts",
+                        "impact": "Enforceable Agreements & Fair Trade",
+                        "description": f"Clear obligations aur breach liabilities define karke business partners ke interests protect karta hai."
+                    },
+                    {
+                        "title": "Consumer Product Safety Liability",
+                        "impact": "Public Protection & Accountability",
+                        "description": f"Manufacturers ko product defects ke liye accountable banata hai aur consumers ko legal remedies ensure karta hai."
+                    },
+                    {
+                        "title": "Intellectual Property & Software Licensing",
+                        "impact": "Innovation & Creator Safeguards",
+                        "description": f"Creators aur software developers ke intellectual property rights protect karte hue clear usage guidelines deta hai."
+                    }
+                ]
             return [
                 {
                     "title": "Commercial Business Contracts",
@@ -1028,6 +1550,24 @@ class GeminiService:
                 }
             ]
         else:
+            if is_h:
+                return [
+                    {
+                        "title": f"Real-World Industry Deployment of {topic}",
+                        "impact": "Operational Efficiency & Standardization",
+                        "description": f"{topic} complex operations ko bina costly mistakes ya confusion ke execute karne ka reliable approach deta hai."
+                    },
+                    {
+                        "title": "Quality Assurance & Error Prevention",
+                        "impact": "System Reliability & Safety",
+                        "description": f"Proven guidelines follow karke deployment se pehle system me defects aur flaws identify karta hai."
+                    },
+                    {
+                        "title": "Scalable Resource Optimization",
+                        "impact": "Cost Reduction & Performance",
+                        "description": f"Wasted time aur computing resources minimize karke maximum throughput aur stable output ensure karta hai."
+                    }
+                ]
             return [
                 {
                     "title": f"Real-World Industry Deployment of {topic}",
@@ -1047,19 +1587,234 @@ class GeminiService:
             ]
 
     @staticmethod
-    def generate_topic_details(query: str) -> Dict[str, Any]:
+    def build_topic_roadmap(topic: str, clean_q: str, category: str, lang: str = "english", llm_roadmap: Any = None) -> List[Dict[str, Any]]:
+        """Constructs an authentic, topic-specific 5-step curriculum roadmap aligned with university exams & GATE.
+        Supports both English and natural Hinglish. Eliminates generic template boilerplate and broken formatting.
+        """
+        clean_topic = GeminiService.clean_title_casing((topic or "Academic Topic").strip().title())
+        q = (clean_q or topic or "").lower().strip()
+        is_hinglish = (lang or "").strip().lower() == "hinglish"
+
+        # 1. If LLM provided a valid 5-step roadmap without generic boilerplate, validate and return it
+        if isinstance(llm_roadmap, list) and len(llm_roadmap) >= 4:
+            valid = True
+            cleaned_steps = []
+            for i, step in enumerate(llm_roadmap[:5]):
+                if not isinstance(step, dict):
+                    valid = False
+                    break
+                c = (step.get("concept") or step.get("title") or "").strip()
+                d = (step.get("description") or step.get("summary") or "").strip()
+                t = (step.get("type") or "core").strip()
+                est = (step.get("estimated_time") or step.get("time") or f"{i+1}-{i+2} hours").strip()
+                if not c or not d or "coordinate framework" in d.lower() or d.endswith(":") or len(d) < 15:
+                    valid = False
+                    break
+                cleaned_steps.append({
+                    "step": i + 1,
+                    "concept": c,
+                    "description": d,
+                    "type": t,
+                    "estimated_time": est
+                })
+            if valid and len(cleaned_steps) >= 4:
+                return cleaned_steps
+
+        # 2. Topic-specific tailored curriculum roadmaps
+        # Linked List
+        if any(k in q for k in ["linked list", "singly linked", "doubly linked", "circular linked"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Pointers & Node Memory Layout (Basics)", "description": "Dynamic heap memory allocation, node struct jisme data payload aur next pointer address hota hai, aur head/null initialization samajhna.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Operations: Insertion, Deletion & Traversal", "description": "Constant-time O(1) head insertion/deletion, O(n) sequential traversal, aur pointer link reassignment ke invariants master karna.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Algorithmic Patterns: Two-Pointers & In-Place Reversal", "description": "Floyd's cycle detection (Tortoise & Hare), single-pass middle node dhoondna, aur iterative in-place list reversal techniques.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Practice Problems", "description": "High-frequency exam questions: cycle detect aur remove karna, do sorted lists ko O(1) auxiliary space me merge karna, aur palindrome check.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: LRU Cache & Kernel Free Lists", "description": "Doubly Linked List aur Hash Map se O(1) LRU Cache banana, OS kernel process scheduling tables, aur dynamic memory free lists.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Pointers & Node Memory Layout", "description": "Understanding dynamic heap allocation, struct/class node definitions (data payload + pointer address), and head/null pointer initialization.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Operations: Insertion, Deletion & Traversal", "description": "Mastering constant-time O(1) head insertion/deletion, O(n) middle updates, and pointer link reassignment invariants.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Algorithmic Patterns: Two-Pointers & In-Place Reversal", "description": "Floyd's cycle-finding (Tortoise & Hare), single-pass middle node discovery, and iterative vs recursive in-place reversal.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Problem Solving", "description": "Solving high-frequency exam problems: cycle detection and removal, merging two sorted lists in O(1) space, and palindrome verification.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: LRU Cache & Kernel Free Lists", "description": "Implementing O(1) LRU Caches with Doubly Linked Lists and Hash Maps, OS kernel process tables, and memory allocator free lists.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Array & Vector
+        if any(k in q for k in ["array", "vector", "dynamic array"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Contiguous Memory & Index Offset Arithmetic (Basics)", "description": "Physical contiguous RAM allocation, Base + i * Size address calculation, aur CPU spatial cache locality ke fayde.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Array Invariants: O(1) Indexing vs O(n) Shifting", "description": "Constant-time O(1) direct index lookup aur insertion/deletion ke dauran element shifting ka O(n) time trade-off samajhna.", "type": "core", "estimated_time": "2-3 hours"},
+                    {"step": 3, "concept": "Dynamic Arrays & Amortized Growth", "description": "Buffer capacity doubling strategy, memory re-allocation, aur amortized O(1) append time complexity ka mathematical proof.", "type": "deep_dive", "estimated_time": "3-4 hours"},
+                    {"step": 4, "concept": "University & GATE Algorithmic Patterns", "description": "Two-pointer partitioning (Dutch National Flag), sliding window algorithms, binary search variants, aur prefix sum arrays solve karna.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems & Vectorized Buffers", "description": "Row-major vs column-major storage, SIMD parallel vector instructions, GPU tensors, aur low-latency audio/video buffers.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Contiguous Memory & Index Offset Arithmetic", "description": "Physical sequential memory layout, Base + i * Size address offset arithmetic, and CPU spatial cache locality.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Array Invariants: O(1) Indexing vs O(n) Insertion", "description": "Evaluating constant-time random memory addressing against linear-time element shifting required during insertions and deletions.", "type": "core", "estimated_time": "2-3 hours"},
+                    {"step": 3, "concept": "Dynamic Arrays & Geometric Amortization", "description": "Buffer doubling growth strategy, memory reallocation overhead, and aggregate proof of amortized O(1) append operations.", "type": "deep_dive", "estimated_time": "3-4 hours"},
+                    {"step": 4, "concept": "University & GATE Algorithmic Patterns", "description": "Two-pointer partitioning (Dutch National Flag), sliding window optimizations, binary search variants, and prefix sum arrays.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: SIMD Vectorization & Tensor Buffers", "description": "Row-major vs column-major layouts, SIMD vectorized instructions, GPU memory coalescing, and tensor buffers.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Stack & Queue
+        if any(k in q for k in ["stack", "queue", "lifo", "fifo", "deque"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "LIFO vs FIFO Invariants & Buffer Allocation (Basics)", "description": "Stack (LIFO) aur Queue (FIFO) ke boundary conditions, array vs linked-list backing buffers, aur Top/Front pointers initialization.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Operations & Boundary Handling", "description": "Push, Pop, Peek, Enqueue, aur Dequeue operations me Overflow aur Underflow conditions ko deterministic O(1) time me handle karna.", "type": "core", "estimated_time": "2-3 hours"},
+                    {"step": 3, "concept": "Circular Queues & Monotonic Stack Patterns", "description": "Modulo arithmetic (i + 1) % N se circular ring buffers banana aur Next Greater Element problems me monotonic stacks ka use.", "type": "deep_dive", "estimated_time": "3-4 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Practice Problems", "description": "Infix-to-Postfix conversion, expression evaluation, balanced parentheses parsing, aur queues using two stacks.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Operating Systems & Production Applications", "description": "CPU function call execution frames (Activation Records), browser history back-forward stacks, aur network packet queues.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "LIFO vs FIFO Invariants & Buffer Allocation", "description": "Understanding LIFO and FIFO invariants, backing store allocation (array vs linked list), and pointer boundary initialization.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Operations & Boundary Handling", "description": "Mastering Push/Pop and Enqueue/Dequeue mechanics with deterministic O(1) time and robust Underflow/Overflow validation.", "type": "core", "estimated_time": "2-3 hours"},
+                    {"step": 3, "concept": "Circular Ring Buffers & Monotonic Stacks", "description": "Circular buffer index arithmetic via modulo indexing, and monotonic stack patterns for Next Greater Element problems.", "type": "deep_dive", "estimated_time": "3-4 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Problem Solving", "description": "Infix-to-postfix operator parsing, recursion stack depth bounds, balanced parentheses, and queue simulation using two stacks.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Operating Systems & Production Architectures", "description": "Call stack frames (Activation Records), browser history undo/redo stacks, and OS inter-process message queues.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Tree & BST
+        if any(k in q for k in ["tree", "bst", "binary search tree", "avl", "red black", "b tree"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Hierarchical Nodes & Pointer Tree Topology (Basics)", "description": "Parent-child directed edges, root aur leaf node invariants, aur recursive binary subtrees ka mathematical structure samajhna.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "BST Ordering Property & Tree Traversals", "description": "BST key ordering invariant (Left < Node < Right) aur Pre-order, In-order, Post-order, Level-order (BFS) traversals execute karna.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Self-Balancing Trees & Rotations (AVL / Red-Black)", "description": "Tree skewing O(n) ko rokne ke liye AVL balance factor (-1, 0, +1) aur LL, RR, LR, RL tree rotations ka execution.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Tree Problems", "description": "Lowest Common Ancestor (LCA), tree diameter, binary tree reconstruction from Inorder+Preorder, aur balance height proofs.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: Database Indexes & ASTs", "description": "Database engines (PostgreSQL, MySQL) me B/B+ Tree indexes, compiler Abstract Syntax Trees, aur browser DOM hierarchies.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Hierarchical Nodes & Pointer Tree Topology", "description": "Understanding directed acyclic hierarchies, parent-child edges, root invariants, and structural recursion across subtrees.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "BST Ordering Property & Traversals", "description": "Enforcing BST key invariants (Left < Root < Right) and implementing recursive traversals (In-order, Pre-order, Post-order, Level-order).", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Self-Balancing Trees & Rotations (AVL / Red-Black)", "description": "Preventing O(n) degenerate skewing using AVL balance factors, height tracking, and LL, RR, LR, RL balancing rotations.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Problem Solving", "description": "Solving Lowest Common Ancestor (LCA), diameter calculation, unique tree construction from traversal pairs, and height bounds.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: Database Indexes & Compiler ASTs", "description": "Database B/B+ tree indexing engines (Postgres/MySQL), compiler Abstract Syntax Trees, and browser DOM node graphs.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Booth's Multiplication Algorithm
+        if any(k in q for k in ["booth", "booths", "booth's"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Two's Complement Arithmetic & Register Setup (Basics)", "description": "Signed 2's complement binary representation, sign bit extension, aur hardware registers (AC, QR, BR, Qn+1, SC) ka initial setup.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Bit-Pair Decision Rules & Sequential Shifting", "description": "Bit pairs (01 -> Add & ASR, 10 -> Sub & ASR, 00/11 -> ASR) par operations aur Sequence Counter decrement karne ka process.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Hardware Datapath & Arithmetic Sign Extension", "description": "ALU parallel adder/subtractor logic, alternating bit patterns (01010101) ka worst-case analysis, aur ASR sign bit preservation.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "Numerical Trace Tables & Past GATE Problems", "description": "Signed numbers (jaise -5 * +7) ka cycle-by-cycle trace table banana, addition/subtraction counts calculate karna, aur GATE questions.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Modern High-Speed Multipliers: Radix-4 & Wallace Trees", "description": "Radix-4 Modified Booth Algorithm, bit-pair recoding, Wallace Tree reduction, aur modern 64-bit CPU multiplier hardware.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Two's Complement & Register Setup", "description": "Understanding signed 2's complement representation, sign extension, and hardware registers (AC, QR, BR, Qn+1, SC).", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Bit-Pair Decision Rules & Sequential Shifting", "description": "Executing conditional bit-pair transitions (01 -> Add & ASR, 10 -> Sub & ASR, 00/11 -> ASR) and sequence counter decrements.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Hardware Datapath & Arithmetic Sign Extension", "description": "Analyzing ALU parallel adder/subtractor control logic, worst-case alternating bit patterns (01010101), and ASR sign bit replication.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "Numerical Trace Tables & Past GATE Problems", "description": "Practicing full cycle-by-cycle numerical trace tables multiplying positive and negative integers (e.g. -5 * +7), and calculating transition counts.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Modern High-Speed Multipliers: Radix-4 & Wallace Trees", "description": "Exploring Radix-4 Modified Booth Algorithm, bit-pair recoding, Wallace Tree reduction, and modern 64-bit ALU multiplier hardware.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # LRU Page Replacement
+        if any(k in q for k in ["lru", "page replacement", "paging", "virtual memory"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Virtual Memory & Frame Allocation (Basics)", "description": "MMU address translation, page tables, page faults ki mechanics, aur physical RAM frame allocation samajhna.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Page Eviction Logic & Recency Tracking", "description": "Cache hit/miss states pehchanna, sabse purane (LRU) page ko evict karna, aur dirty pages ka disk write-back.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Stack Algorithm Property & Belady's Immunity", "description": "Stack algorithm inclusion property M(m,t) ⊆ M(m+1,t) ka formal proof aur Belady's Anomaly se mathematical immunity.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "Reference String Tracing & Hit Ratio Calculations", "description": "Concrete reference strings par 3 aur 4 frames trace karna, Page Fault Frequency (PFF), Hit Ratio, aur EMAT calculate karna.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Kernel Page Management: Clock (Second-Chance) Algorithm", "description": "Real-world Linux kernel page reclamation, Clock (Second-Chance) algorithm with reference bits, aur kswapd daemon architecture.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Virtual Memory & Frame Allocation", "description": "Understanding MMU address translation, page tables, page faults, and physical RAM frame allocation.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Page Eviction Logic & Recency Tracking", "description": "Identifying hit/miss states, evicting the least recently referenced page, and handling dirty bit write-backs.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Stack Algorithm Property & Belady's Immunity", "description": "Formal proof of inclusion property M(m,t) ⊆ M(m+1,t), proving mathematical immunity to Belady's Anomaly unlike FIFO.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "Reference String Tracing & Hit Ratio Calculations", "description": "Tracing concrete reference strings across 3 and 4 frames, calculating Page Fault Frequency (PFF), Hit Ratio, and Effective Memory Access Time (EMAT).", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Kernel Page Management: Clock (Second-Chance) Algorithm", "description": "Analyzing practical Linux kernel page reclamation, Clock (Second-Chance) algorithm with reference bits, and page frame reclaim daemons (kswapd).", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Graph & Dijkstra
+        if any(k in q for k in ["graph", "dijkstra", "bfs", "dfs", "shortest path"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Graph Representations & Priority Queues (Basics)", "description": "Adjacency List vs Adjacency Matrix, directed/undirected graphs, aur Min-Heap priority queue initialization.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Exploration: Edge Relaxation & Greedy Choice", "description": "Distance array initialization, edge relaxation invariant (dist[v] > dist[u] + w), aur greedy vertex selection.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Complexity Proofs & Negative Edge Limitations", "description": "O((V + E) log V) time complexity proof, Fibonacci heap bounds, aur negative edge cycles me failure reasons.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Graph Problems", "description": "Shortest path trace tables, Bellman-Ford vs Dijkstra comparison, Topological sorting, aur DAG shortest paths.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: Network Routing & GPS Navigation", "description": "OSPF internet gateway routing protocols, Google Maps road network routing, aur packet switching topologies.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Graph Representations & Priority Queues", "description": "Understanding Adjacency List vs Matrix storage, weighted directed graphs, and Min-Heap priority queue initialization.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Exploration: Edge Relaxation & Greedy Choice", "description": "Mastering edge relaxation invariants (dist[v] > dist[u] + w), distance array updates, and greedy vertex expansion.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Complexity Proofs & Negative Edge Limitations", "description": "Rigorous proof of O((V + E) log V) running time, Fibonacci heap optimizations, and failure cases on negative weight edges.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Graph Problems", "description": "Shortest path state tables, Bellman-Ford comparisons, cycle detection, and topological sorting problem sets.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: OSPF Routing & GPS Navigation", "description": "Internet routing protocols (OSPF, IS-IS), large-scale road network navigation (A* search), and network packet switching.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Sorting Algorithms
+        if any(k in q for k in ["sorting", "quicksort", "merge sort", "heap sort", "bubble sort"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Comparison Models & Inversions (Basics)", "description": "Element comparisons, array inversion pairs, aur stability (stable vs unstable sorting) ke core definitions.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Sorting Mechanics: Partitioning & Merging", "description": "Pivot selection (Lomuto/Hoare partitioning) ya recursive divide-and-conquer two-way merge procedure master karna.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Asymptotic Lower Bounds & Complexity Proofs", "description": "Comparison sorting ka theoretical lower bound Omega(n log n) proof, recurrence relations T(n) = 2T(n/2) + O(n), aur worst-case bounds.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Sorting Problems", "description": "Tracing pass-by-pass iterations, recursion tree depth, in-place auxiliary space comparisons, aur past GATE questions.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: TimSort & Distributed Sort", "description": "Python aur Java me use hone wala hybrid TimSort algorithm, external disk sorting, aur distributed MapReduce pipelines.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Comparison Models & Inversions", "description": "Understanding decision tree bounds, array inversion pairs, and sorting stability guarantees.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Core Sorting Mechanics: Partitioning & Merging", "description": "Mastering pivot partitioning (Lomuto/Hoare) or recursive divide-and-conquer two-way merge procedures.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Asymptotic Lower Bounds & Complexity Proofs", "description": "Information-theoretic lower bound Omega(n log n) proof, recurrence tree analysis, and worst-case degeneracy proofs.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Problem Solving", "description": "Solving pass-by-pass tracing, recursion stack memory calculations, in-place stability trade-offs, and GATE MCQs.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Systems: TimSort & External Sorting", "description": "Modern hybrid algorithms (TimSort, IntroSort), multi-way external merge sorting for disk buffers, and distributed pipelines.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Database & Normalization
+        if any(k in q for k in ["database", "normalization", "bcnf", "3nf", "sql", "dbms"]):
+            if is_hinglish:
+                return [
+                    {"step": 1, "concept": "Relational Schema & Functional Dependencies (Basics)", "description": "Relational tables, functional dependencies (X -> Y), candidate keys, aur prime attributes ka identification.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Normal Forms Progression (1NF to BCNF)", "description": "Redundancy aur anomalies (Insertion, Deletion, Update) ko khatam karne ke liye 1NF, 2NF, 3NF, aur BCNF ke rules.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Decomposition: Lossless Join & Dependency Preservation", "description": "Lossless join decomposition test (R1 ∩ R2 -> R1 ya R2) aur dependency preservation guarantees ka formal verification.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Normalization Problems", "description": "Candidate keys dhoondna, canonical cover / minimal cover nikaalna, aur highest normal form identify karna.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Database Architecture & Indexing", "description": "PostgreSQL aur MySQL me normalized vs denormalized read-heavy architectures, B+ tree indexes, aur ACID transactions.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+            else:
+                return [
+                    {"step": 1, "concept": "Relational Schema & Functional Dependencies", "description": "Understanding relational schema definitions, functional dependency closures (X -> Y), and candidate key identification.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                    {"step": 2, "concept": "Normal Forms Progression (1NF to BCNF)", "description": "Systematic elimination of insertion, deletion, and update anomalies across 1NF, 2NF, 3NF, and Boyce-Codd Normal Form.", "type": "core", "estimated_time": "3-4 hours"},
+                    {"step": 3, "concept": "Decomposition: Lossless Join & Preservation", "description": "Formal testing for lossless-join decomposition (R1 ∩ R2 -> R1 or R2) and functional dependency preservation.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                    {"step": 4, "concept": "University & GATE Exam Problem Solving", "description": "Computing attribute closures, finding minimal/canonical covers, and classifying relation schemas into highest normal forms.", "type": "practice", "estimated_time": "4 hours"},
+                    {"step": 5, "concept": "Production Database Architecture & Indexing", "description": "Evaluating OLTP normalized designs vs OLAP denormalized read models, B+ tree index optimization, and ACID transactions.", "type": "advanced", "estimated_time": "3 hours"}
+                ]
+
+        # Generic Domain Fallback (Clean, authentic, topic-tailored, zero weird words)
+        if is_hinglish:
+            return [
+                {"step": 1, "concept": f"Prerequisites & Foundations of {clean_topic}", "description": f"{clean_topic} ke basic definitions, prerequisite mathematical aur structural concepts ko samajhna.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                {"step": 2, "concept": f"Core Governing Principles of {clean_topic}", "description": f"{clean_topic} ke fundamental rules, state transitions, aur core governing mechanics ko master karna.", "type": "core", "estimated_time": "3-4 hours"},
+                {"step": 3, "concept": f"Theoretical Deep Dive & Edge Cases", "description": f"Detailed mathematical analysis, boundary conditions, aur analytical edge cases ka rigorous study.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                {"step": 4, "concept": f"University & Exam Problem Solving", "description": f"Standard numerical derivations, theoretical proofs, aur past semester exam problems solve karna.", "type": "practice", "estimated_time": "4 hours"},
+                {"step": 5, "concept": f"Modern Practical Applications & Scalability", "description": f"Real-world systems, industrial implementations, aur modern scalable engineering architectures.", "type": "advanced", "estimated_time": "3 hours"}
+            ]
+        else:
+            return [
+                {"step": 1, "concept": f"Prerequisites & Foundations of {clean_topic}", "description": f"Foundational definitions, prerequisite mathematics, and conceptual framing essential for {clean_topic}.", "type": "prerequisite", "estimated_time": "1-2 hours"},
+                {"step": 2, "concept": f"Core Governing Principles of {clean_topic}", "description": f"Mastering fundamental mechanisms, operational invariants, and primary governing equations of {clean_topic}.", "type": "core", "estimated_time": "3-4 hours"},
+                {"step": 3, "concept": f"Theoretical Deep Dive & Edge Cases", "description": f"Rigorous analytical derivation, boundary condition analysis, and systemic constraints of {clean_topic}.", "type": "deep_dive", "estimated_time": "3-5 hours"},
+                {"step": 4, "concept": f"University & Competitive Exam Problem Solving", "description": f"Solving standard numerical derivations, state transition exercises, and past university examination problem sets.", "type": "practice", "estimated_time": "4 hours"},
+                {"step": 5, "concept": f"Modern Practical Applications & Scalability", "description": f"Real-world production engineering, industrial implementations, and scalable system architectures.", "type": "advanced", "estimated_time": "3 hours"}
+            ]
+
+    @staticmethod
+    def generate_topic_details(query: str, lang: str = "english") -> Dict[str, Any]:
         """Generates real-time, dynamic academic topic details using Google Gemini LLM SDK.
-        Strictly enforces clean structured JSON with exact required keys:
-        - topic: Searched Topic Name
-        - category: Academic curriculum category
-        - difficulty_score: float (1.0 to 10.0)
-        - difficulty_level: 'Beginner', 'Intermediate', or 'Advanced'
-        - ai_evaluation: 3-sentence technical complexity evaluation
-        - overview: Real academic overview of the topic
-        - theoretical_foundations: Accurate theoretical background
-        - core_formulations: ONLY genuine formulas, algorithms, or code snippets for this topic
-        
-        Zero mock templates. Raises RuntimeError on failure to trigger HTTP 500 error.
+        Strictly enforces clean structured JSON with exact required keys.
+        Supports both 'english' and 'hinglish' language modes.
         """
         clean_q = GeminiService.clean_search_query(query)
         if not clean_q:
@@ -1073,66 +1828,98 @@ class GeminiService:
             raise RuntimeError("Gemini API key is not configured. Real LLM generation requires GEMINI_API_KEY.")
 
         detected_domain = GeminiService._detect_academic_domain(clean_q)
+        is_hinglish = (lang or "").strip().lower() == "hinglish"
 
-        # STRICT LLM Prompt mandating genuine domain formulas and zero fake math/templates
+        if is_hinglish:
+            language_mandate = (
+                "7. LANGUAGE MANDATE - FULL NATURAL HINGLISH EXPLANATION MODE:\n"
+                "   - You MUST write ALL explanations, analysis, and walkthrough fields in NATURAL, CONVERSATIONAL HINGLISH (Hindi written in Roman/English script mixed with standard English Computer Science & Engineering terms):\n"
+                "     * 'overview': Natural conversational Hinglish summary explaining the core concept, formal definitions, and invariants.\n"
+                "     * 'ai_evaluation': Technical complexity evaluation, semester exam significance, and GATE focus in Hinglish.\n"
+                "     * 'theoretical_foundations': Hardware / memory model, register architecture, and theoretical foundations in Hinglish.\n"
+                "     * 'core_formulations': Step-by-step algorithm, state transitions, and complexity bounds in Hinglish.\n"
+                "     * 'detailed_breakdown': Complete exam-ready breakdown with all 6 structured sections (Core Concept & Invariants, Hardware Registers & Architecture, Step-by-Step Procedure, Worked Numerical Trace Table with real numbers, Advantages/Comparisons, and University/GATE Exam Questions) written in natural conversational Hinglish!\n"
+                "     * In 'quick_example':\n"
+                "       - 'title': Relatable, catchy Hinglish title.\n"
+                "       - 'badge': 'Worked Numerical Trace (Hinglish)'.\n"
+                "       - 'scenario': Concrete problem statement or systems scenario written in conversational Hinglish.\n"
+                "       - 'breakdown': Step-by-step trace walkthrough written in Hinglish (e.g., '1. **Pehla Step**: ...\\n2. **Dusra Step**: ...\\n3. **Result / Kaam Kaise Hua**: ...').\n"
+                "       - 'use_cases': Every application's 'title', 'impact', and 'description' MUST be written in natural Hinglish.\n"
+                "       - 'tradeoffs': BOTH 'advantages' (faayde) and 'disadvantages' (nuksaan / limitations) MUST be written in natural Hinglish.\n"
+                "       - 'takeaway': The key takeaway ('Sabse Main Baat') MUST be written in natural Hinglish.\n"
+                "     * 'did_you_know': Academic or historical trivia written in Hinglish.\n"
+                "   - KEEP ALL CORE TECHNICAL TERMS, REGISTER NAMES, AND SYMBOLS STRICTLY IN ENGLISH: e.g., 'AC', 'QR', 'BR', 'Qn+1', 'SC', 'ALU', 'Multiplicand', 'Multiplier', 'Arithmetic Shift Right (ASR)', 'Two\\'s Complement', 'Array', 'Pointer', 'Memory Address', 'Time Complexity', 'Space Complexity', 'Big-O', 'Cache', 'Paging', 'Page Fault', 'LRU', 'Hit Ratio', 'Binary Tree', 'Stack', 'Queue', 'Linked List', 'Hash Table', 'Graph', 'CPU', 'Operating System', 'Thread', 'Algorithm', 'Base Address', 'Sizeof', 'Force', 'Inertia', 'Friction', 'Acceleration'. Do NOT translate technical terms into obscure pure Hindi (e.g. use 'Inertia', NOT 'Jadatva'; use 'Friction', NOT 'Gharshan'; use 'Array', NOT 'Krambaddh Suchi').\n"
+                "   - Output format MUST be 100% valid JSON matching the exact schema below.\n\n"
+            )
+        else:
+            language_mandate = (
+                "7. LANGUAGE MANDATE: Provide all explanations, overviews, specifications, trace tables, trade-offs, and exam questions in standard, clear, authoritative academic English tailored for B.Tech CSE and GATE examinations.\n\n"
+            )
+
+        # STRICT LLM Prompt mandating university exam depth, genuine formulas, register models, trace tables
         prompt = (
-            f"You are a distinguished University Professor and Senior Academic Evaluator.\n"
-            f"Analyze the academic topic: \"{clean_q}\" (Academic Discipline: \"{detected_domain}\").\n\n"
-            f"CRITICAL MANDATES:\n"
-            f"1. Return ONLY a valid JSON object matching the exact structure below.\n"
-            f"2. ABSOLUTE ZERO MOCK/TEMPLATE RULE: Do not use generic filler sentences, boilerplate templates, or placeholders.\n"
-            f"3. NO BOILERPLATE INTROS: NEVER start the overview, explanation, or any sentence with phrases such as 'In the context of...', 'In the domain of...', 'In [field] and university curriculum...', or 'From an academic perspective...'. Directly define and explain {clean_q} with natural clarity, depth, and precision.\n"
-            f"4. NO FAKE/GENERIC MATH: In 'core_formulations', include ONLY real equations, algorithmic logic, or rules that directly and specifically belong to \"{clean_q}\". NEVER output generic unrelated equations.\n"
-            f"5. MANDATORY MATHEMATICAL CONSTRAINTS & FORMATTING:\n"
+            f"You are a distinguished University Professor and Senior Academic Evaluator for B.Tech Computer Science & Engineering and GATE examinations.\n"
+            f"Evaluate and synthesize the syllabus topic: \"{clean_q}\" (Academic Discipline: \"{detected_domain}\").\n\n"
+            f"GOAL: Deliver a complete, exhaustive, and exam-ready technical breakdown tailored for university semester finals and competitive exams (B.Tech CSE / GATE) instead of a generic summary.\n\n"
+            f"CRITICAL SYSTEM DIRECTIVES:\n"
+            f"1. TOPIC DEPTH & RIGOR (B.TECH CSE / GATE EXAM STANDARD):\n"
+            f"   - Provide full technical specifications, exact formulas, recurrence relations, and asymptotic bounds (Big-O, Big-Omega, Big-Theta) in LaTeX math delimiters ($...$ for inline, $$...$$ for standalone block equations).\n"
+            f"   - For Computer Organization & Architecture, Operating Systems, and Hardware topics (e.g., Booth's Algorithm, Cache Mapping, Paging, Virtual Memory, Pipeline Hazards, Interrupt Handling), explicitly document the HARDWARE / MEMORY MODEL: register setup (e.g., AC, QR, BR, Qn+1, SC), bit-width constraints, bus/datapath architecture, and exact step-by-step state transitions.\n"
+            f"   - For Algorithms & Data Structures, specify structural invariants, pointer layouts, recurrence trees, and exact computational complexity bounds.\n"
+            f"2. MANDATORY STRUCTURED SECTIONS:\n"
+            f"   - 'overview': CORE CONCEPT & INVARIANTS — Formal definitions, mathematical/architectural foundations, fundamental invariants, and syllabus role. NO boilerplate intros like 'In the context of...'. Directly define {clean_q} with academic precision.\n"
+            f"   - 'theoretical_foundations': HARDWARE / MEMORY MODEL & ARCHITECTURAL FOUNDATION — Register setup (e.g., AC, QR, BR, Qn+1, SC), bit-width constraints, memory layout, cache hierarchy, or mathematical invariant proofs with LaTeX formatting.\n"
+            f"   - 'core_formulations': STEP-BY-STEP ALGORITHM / PROCEDURE & COMPLEXITY BOUNDS — Sequential execution steps with exact conditional transitions (e.g., bit pairs: 01 -> Add BR to AC & Arithmetic Shift Right, 10 -> Subtract BR from AC & Arithmetic Shift Right, 00/11 -> Arithmetic Shift Right only), recurrence relations, and exact Time and Space complexities ($O(n)$, $O(\\log n)$, etc.).\n"
+            f"   - 'detailed_breakdown': COMPLETE EXAM-READY BREAKDOWN in GFM Markdown with clear sections:\n"
+            f"     ### 1. Core Concept & Invariants\n"
+            f"     ### 2. Hardware / Memory Model (Registers & Architecture)\n"
+            f"     ### 3. Step-by-Step Algorithm & State Transitions\n"
+            f"     ### 4. Worked Numerical Example & Complete Trace Table (MANDATORY: Must include a complete Markdown trace table with concrete numbers, e.g. multiplying -5 x +7 showing Step/Cycle, Operation, AC, QR, Qn+1, SC, and Explanation; or tracing page references for LRU; or tracing BST insertions step-by-step with state transitions)\n"
+            f"     ### 5. Advantages, Trade-offs & Comparisons (What makes it fast/efficient vs traditional alternatives, e.g. Booth's vs standard shift-add multiplication)\n"
+            f"     ### 6. Common University Exam / GATE / Interview Questions (Top 2-3 frequently asked exam/GATE questions with concise model answers and traps)\n"
+            f"   - 'quick_example':\n"
+            f"     * 'title': Concrete Numerical Problem or Real-Life Systems Application Title\n"
+            f"     * 'badge': 'Worked Numerical Trace | B.Tech & GATE Exam Walkthrough'\n"
+            f"     * 'scenario': Concrete problem statement (e.g., 'Multiply Multiplicand M = -5 (1011) and Multiplier Q = +7 (0111) using 4-bit Booth Multiplier') or practical operational setup\n"
+            f"     * 'breakdown': 3-step sequential execution breakdown of the numerical trace or algorithm\n"
+            f"     * 'use_cases': 3 realistic production/hardware/systems applications\n"
+            f"     * 'tradeoffs': 'advantages' (performance gains) and 'disadvantages' (hardware overhead or corner cases)\n"
+            f"     * 'takeaway': Golden rule or exam formula to remember\n"
+            f"   - 'ai_evaluation': 2-3 sentence technical complexity evaluation, GATE exam weightage, and critical edge cases\n"
+            f"   - 'did_you_know': Authentic historical discovery or architectural milestone\n"
+            f"3. STRICT JSON OUTPUT MANDATE:\n"
+            f"   - Return ONLY a raw valid JSON object. Do NOT wrap the JSON in markdown code fences (like ```json ... ```). Zero text before or after the JSON.\n"
             f"   - In JSON strings, ensure any LaTeX backslashes are double-escaped (e.g. \\\\alpha, \\\\frac, \\\\Theta, \\\\mathcal{{O}}).\n"
-            f"   - ALL mathematical expressions, formulas, and asymptotic bounds MUST be wrapped in standard LaTeX math delimiters:\n"
-            f"     * Inline variables, symbols, and bounds MUST use `$ ... $` (e.g., `$A[i]$`, `$\\\\mathcal{{O}}(1)$`, `$\\\\mathcal{{O}}(n)$`).\n"
-            f"     * Standalone formulas and equations MUST use `$$ ... $$` on their own line.\n"
-            f"   - NEVER write raw LaTeX commands without enclosing them in `$` or `$$`!\n"
-            f"6. CLEAN & EXPLAINABLE REAL-LIFE EXAMPLE (NO CODE, NO OVERWHELMING JARGON):\n"
-            f"   - In 'quick_example', explain the core concept using a simple, intuitive, everyday real-life story or analogy that ANY student can immediately understand (e.g. numbered mailboxes in a lobby for Array, a treasure hunt with clue cards for Linked List, a stack of dinner plates for Stack, a line at a cinema for Queue, a coat-check room for Hash Table, table of contents for Trees, metro subway map for Graphs, competing coffee shops for Damnum Sine Injuria, pushing a bicycle vs car for Newton's laws).\n"
-            f"   - CRITICAL SIMPLICITY MANDATE: AVOID dense hardware/engineering jargon, overwhelming PCIe/MMU memory registers, or complex math equations in the scenario. Keep it clean, relatable, friendly, and easy to grasp.\n"
-            f"   - The breakdown MUST explain what happens in 3 simple, numbered, intuitive steps in plain English.\n"
-            f"   - The use cases MUST feature everyday applications people recognize (e.g. smartphone photo gallery, Spotify playlists, browser back button, cinema seat booking, Google Docs undo, food delivery queue).\n\n"
+            f"   - All quotes inside string values must be escaped.\n\n"
+            f"{language_mandate}"
             f"REQUIRED JSON SCHEMA:\n"
             f"{{\n"
             f"  \"topic\": \"{GeminiService.clean_title_casing(clean_q.title())}\",\n"
             f"  \"category\": \"{detected_domain}\",\n"
-            f"  \"difficulty_score\": 7.3,\n"
+            f"  \"difficulty_score\": 7.5,\n"
             f"  \"difficulty_level\": \"Advanced\",\n"
-            f"  \"ai_evaluation\": \"A short, concise 2-3 sentence technical complexity evaluation of {clean_q}...\",\n"
-            f"  \"overview\": \"Direct, lucid academic explanation and definition of {clean_q}. State what it is, its core mechanism, and why it matters directly without any 'In the context of...' filler.\",\n"
-            f"  \"theoretical_foundations\": \"Accurate theoretical background and key principles with LaTeX $...$ delimiters where applicable...\",\n"
-            f"  \"core_formulations\": \"Key formulations, governing principles, or rules actually belonging to {clean_q}.\",\n"
+            f"  \"ai_evaluation\": \"2-3 sentence technical evaluation, GATE weightage, and complexity traps...\",\n"
+            f"  \"overview\": \"Formal academic definition, core concept, invariants, and syllabus importance without boilerplate...\",\n"
+            f"  \"theoretical_foundations\": \"Hardware/memory model, register architecture (e.g. AC, QR, BR, Qn+1, SC), bit-widths, and architectural foundations...\",\n"
+            f"  \"core_formulations\": \"Step-by-step sequential algorithm, state transitions (e.g. 01 -> Add & Shift, 10 -> Subtract & Shift), explicit formulas, and time/space complexity...\",\n"
+            f"  \"detailed_breakdown\": \"Exhaustive Markdown lecture breakdown containing: ### 1. Core Concept & Invariants\\n\\n### 2. Hardware / Memory Model (Registers & Architecture)\\n\\n### 3. Step-by-Step Algorithm & State Transitions\\n\\n### 4. Worked Numerical Example & Complete Trace Table\\n| Step | Operation | AC | QR | Qn+1 | SC | Description |\\n|---|---|---|---|---|---|---|\\n...\\n\\n### 5. Advantages, Trade-offs & Comparisons\\n\\n### 6. Common University Exam / GATE / Interview Questions\\n...\",\n"
             f"  \"quick_example\": {{\n"
-            f"    \"title\": \"Catchy, clean title of the everyday real-life analogy or scenario\",\n"
-            f"    \"badge\": \"Everyday Real-Life Example | Relatable Analogy | Practical Walkthrough\",\n"
-            f"    \"scenario\": \"A simple, vivid everyday real-life story or analogy explaining the concept without confusing jargon.\",\n"
-            f"    \"breakdown\": \"1. **First Simple Step**: ...\\n2. **Second Simple Step**: ...\\n3. **Why It Works / Limitation**: ...\",\n"
+            f"    \"title\": \"Concrete Numerical Walkthrough or Real-Life Problem Title\",\n"
+            f"    \"badge\": \"Worked Numerical Trace | B.Tech & GATE Exam Walkthrough\",\n"
+            f"    \"scenario\": \"Concrete problem statement with specific numbers or real-life engineering setup...\",\n"
+            f"    \"breakdown\": \"1. **Step 1**: ...\\n2. **Step 2**: ...\\n3. **Step 3**: ...\",\n"
             f"    \"use_cases\": [\n"
-            f"      {{\n"
-            f"        \"title\": \"Recognizable Everyday App or System (e.g. Smartphone Photo Gallery)\",\n"
-            f"        \"impact\": \"Everyday Use Case\",\n"
-            f"        \"description\": \"2 clear, simple sentences explaining how everyday software or devices use this concept.\"\n"
-            f"      }},\n"
-            f"      {{\n"
-            f"        \"title\": \"Second Recognizable Everyday App (e.g. Cinema Seat Booking)\",\n"
-            f"        \"impact\": \"Everyday Use Case\",\n"
-            f"        \"description\": \"2 clear, simple sentences explaining how everyday software or devices use this concept.\"\n"
-            f"      }},\n"
-            f"      {{\n"
-            f"        \"title\": \"Third Recognizable Everyday App (e.g. Video Game High Scores)\",\n"
-            f"        \"impact\": \"Everyday Use Case\",\n"
-            f"        \"description\": \"2 clear, simple sentences explaining how everyday software or devices use this concept.\"\n"
-            f"      }}\n"
+            f"      {{\"title\": \"System/App 1\", \"impact\": \"Hardware/System Role\", \"description\": \"2 clear sentences on usage...\"}},\n"
+            f"      {{\"title\": \"System/App 2\", \"impact\": \"Hardware/System Role\", \"description\": \"2 clear sentences on usage...\"}},\n"
+            f"      {{\"title\": \"System/App 3\", \"impact\": \"Hardware/System Role\", \"description\": \"2 clear sentences on usage...\"}}\n"
             f"    ],\n"
-            f"    \"takeaway\": \"The fundamental lesson, principle, or conclusion to remember in simple words.\",\n"
+            f"    \"takeaway\": \"Golden rule or formula to remember for university and GATE exams.\",\n"
             f"    \"tradeoffs\": {{\n"
-            f"      \"advantages\": \"Core practical advantages in simple terms.\",\n"
-            f"      \"disadvantages\": \"Key limitations or trade-offs in simple terms.\"\n"
+            f"      \"advantages\": \"Key performance advantages (e.g. skips shifts over sequences of 1s)...\",\n"
+            f"      \"disadvantages\": \"Key limitations or hardware trade-offs...\"\n"
             f"    }}\n"
             f"  }},\n"
-            f"  \"did_you_know\": \"A unique, authentic historical or academic trivia fact specifically about {clean_q}.\"\n"
+            f"  \"did_you_know\": \"Authentic historical or architectural trivia specifically about {clean_q}.\"\n"
             f"}}"
         )
 
@@ -1153,7 +1940,7 @@ class GeminiService:
                             config=types.GenerateContentConfig(
                                 temperature=0.1,
                                 response_mime_type="application/json",
-                                max_output_tokens=1800
+                                max_output_tokens=5000
                             )
                         )
                         if response and response.text and response.text.strip():
@@ -1179,7 +1966,7 @@ class GeminiService:
                             config=types.GenerateContentConfig(
                                 temperature=0.1,
                                 response_mime_type="application/json",
-                                max_output_tokens=1800
+                                max_output_tokens=5000
                             )
                         )
                         if response and response.text and response.text.strip():
@@ -1202,8 +1989,8 @@ class GeminiService:
         # If LLM was unavailable, quota-restricted, or returned incomplete data,
         # seamlessly synthesize authentic textbook-grade academic data so the platform runs anywhere.
         if not parsed_data or not (parsed_data.get("overview") and parsed_data.get("theoretical_foundations") and parsed_data.get("core_formulations")):
-            print(f"[GeminiService] Live Gemini response unavailable or incomplete. Synthesizing authentic academic intelligence for: '{clean_q}'")
-            parsed_data = GeminiService._synthesize_academic_fallback(clean_q, detected_domain)
+            print(f"[GeminiService] Live Gemini response unavailable or incomplete. Synthesizing authentic academic intelligence for: '{clean_q}' (lang={lang})")
+            parsed_data = GeminiService._synthesize_academic_fallback(clean_q, detected_domain, lang=lang)
 
         # Enforce required fields
         topic = GeminiService.clean_title_casing(parsed_data.get("topic") or clean_q.title())
@@ -1229,89 +2016,47 @@ class GeminiService:
             diff_level = "Advanced" if diff_score > 7.0 else ("Intermediate" if diff_score > 4.5 else "Beginner")
 
         did_you_know = GeminiService.ensure_math_delimiters((parsed_data.get("did_you_know") or f"Historical and theoretical foundations of {topic}.").strip())
+        raw_db = parsed_data.get("detailed_breakdown") or parsed_data.get("detailedBreakdown")
+        if raw_db and len(raw_db.strip()) > 80:
+            detailed_breakdown = GeminiService.ensure_math_delimiters(raw_db.strip())
+        else:
+            detailed_breakdown = f"### 1. Theoretical Foundations & Architecture\n\n{tf}\n\n### 2. Step-by-Step Algorithm & Formulations\n\n{cf}"
+
         raw_notes = parsed_data.get("study_notes")
         if not raw_notes or len(raw_notes.strip()) < 50:
-            try:
-                from backend.routes.topic_notes_engine import build_realistic_topic_notes
-                raw_notes = build_realistic_topic_notes(topic, category)
-            except Exception:
+            if detailed_breakdown and len(detailed_breakdown.strip()) > 200:
                 raw_notes = (
-                    f"# Executive Overview: {topic}\n\n"
+                    f"# Complete University & GATE Study Notes: {topic}\n\n"
                     f"{overview}\n\n"
-                    f"## 1. Key Concepts & Theoretical Foundations\n\n"
-                    f"{tf}\n\n"
-                    f"## 2. Syntax & Implementation / Core Formulations\n\n"
-                    f"{cf}\n\n"
-                    f"## 3. Complexity Breakdown: Key Rules & Analysis\n\n"
-                    f"{ai_eval}\n\n"
-                    f"## 4. Common Pitfalls & Exam Edge Cases\n\n"
-                    f"Ensure precise boundary checks, type matching, and valid initial conditions.\n\n"
-                    f"## 5. University Exam: Practice Problems & Focus\n\n"
-                    f"> **Academic Takeaway & Historical Insight:** {did_you_know}"
+                    f"{detailed_breakdown}\n\n"
+                    f"## Key Takeaway & Exam Insight\n\n"
+                    f"> {did_you_know}"
                 )
+            else:
+                try:
+                    from backend.routes.topic_notes_engine import build_realistic_topic_notes
+                    raw_notes = build_realistic_topic_notes(topic, category)
+                except Exception:
+                    raw_notes = (
+                        f"# Executive Overview: {topic}\n\n"
+                        f"{overview}\n\n"
+                        f"## 1. Key Concepts & Theoretical Foundations\n\n"
+                        f"{tf}\n\n"
+                        f"## 2. Syntax & Implementation / Core Formulations\n\n"
+                        f"{cf}\n\n"
+                        f"## 3. Complexity Breakdown: Key Rules & Analysis\n\n"
+                        f"{ai_eval}\n\n"
+                        f"## 4. Common Pitfalls & Exam Edge Cases\n\n"
+                        f"Ensure precise boundary checks, type matching, and valid initial conditions.\n\n"
+                        f"## 5. University Exam: Practice Problems & Focus\n\n"
+                        f"> **Academic Takeaway & Historical Insight:** {did_you_know}"
+                    )
         study_notes = GeminiService.sanitize_study_notes(GeminiService.ensure_math_delimiters(raw_notes))
-        detailed_breakdown = f"### 1. Theoretical Foundations\n\n{tf}\n\n### 2. Core Formulations & Algorithms\n\n{cf}"
-
-        # Dynamic topic-specific curriculum roadmap with clean text summaries
-        def _clean_roadmap_summary(text: str, fallback: str) -> str:
-            if not text:
-                return fallback
-            cleaned = re.sub(r'```[\s\S]*?```', '', text)
-            cleaned = re.sub(r'\$\$[\s\S]*?\$\$', '', cleaned)
-            cleaned = re.sub(r'^[#*\-]+\s*', '', cleaned, flags=re.MULTILINE)
-            cleaned = ' '.join(cleaned.split()).strip()
-            if not cleaned:
-                return fallback
-            if len(cleaned) > 150:
-                cut = cleaned[:150]
-                last_p = max(cut.rfind('.'), cut.rfind(';'))
-                if last_p > 70:
-                    cleaned = cut[:last_p + 1]
-                else:
-                    last_space = cut.rfind(' ')
-                    cleaned = (cut[:last_space] if last_space > 70 else cut) + "..."
-            return cleaned
-
-        roadmap = [
-            {
-                "step": 1,
-                "concept": f"Prerequisites & Foundations of {topic}",
-                "description": f"Core definitions, coordinate frameworks, and prerequisite mathematics essential for {topic}.",
-                "type": "prerequisite",
-                "estimated_time": "1-2 hours"
-            },
-            {
-                "step": 2,
-                "concept": "Fundamental Invariants & Governing Principles",
-                "description": _clean_roadmap_summary(cf, f"Core equations, memory models, and fundamental governing principles of {topic}."),
-                "type": "core",
-                "estimated_time": "3-4 hours"
-            },
-            {
-                "step": 3,
-                "concept": "Theoretical Deep Dive & Asymptotics",
-                "description": _clean_roadmap_summary(ai_eval, f"Rigorous computational complexity analysis, edge cases, and algorithmic bounds for {topic}."),
-                "type": "deep_dive",
-                "estimated_time": "3-5 hours"
-            },
-            {
-                "step": 4,
-                "concept": "University & GATE Exam Applications",
-                "description": f"Standard numerical derivations and past university examination problem sets for {topic}.",
-                "type": "practice",
-                "estimated_time": "4 hours"
-            },
-            {
-                "step": 5,
-                "concept": "Modern Industrial Applications & Scalability",
-                "description": f"Real-world production engineering, distributed systems, and scalable design architectures.",
-                "type": "advanced",
-                "estimated_time": "3 hours"
-            }
-        ]
+        # Topic-specific curriculum roadmap
+        roadmap = GeminiService.build_topic_roadmap(topic, clean_q, category, lang=lang, llm_roadmap=parsed_data.get("roadmap"))
 
         raw_qe = parsed_data.get("quick_example") or parsed_data.get("quickExample")
-        quick_example = GeminiService.build_quick_example(topic, category, cf, overview, llm_example=raw_qe)
+        quick_example = GeminiService.build_quick_example(topic, category, cf, overview, llm_example=raw_qe, lang=lang)
 
         return {
             # Required exact schema fields
@@ -1357,23 +2102,31 @@ class GeminiService:
         return DiagramEngine.build_diagram(clean_q, topic_title, detected_domain)
 
     @staticmethod
-    def build_topic_context(clean_q: str, detected_domain: str) -> dict:
+    def build_topic_context(clean_q: str, detected_domain: str, lang: str = "english") -> dict:
         """Delegates to TopicContextEngine to generate rich, textbook-grade academic context."""
         from backend.services.topic_context_engine import TopicContextEngine
-        return TopicContextEngine.build_topic_context(clean_q, detected_domain)
+        return TopicContextEngine.build_topic_context(clean_q, detected_domain, lang=lang)
 
     @staticmethod
-    def _synthesize_academic_fallback(clean_q: str, detected_domain: str) -> dict:
+    def _synthesize_academic_fallback(clean_q: str, detected_domain: str, lang: str = "english") -> dict:
         """Synthesizes rich, textbook-grade academic intelligence for any topic across disciplines.
         Guarantees that OmniLearn runs anywhere reliably with rich context, use cases, and zero generic placeholders.
         """
         topic = GeminiService.clean_title_casing(clean_q.title())
 
         # 1. Generate clean, intuitive real-life analogies and everyday use cases
-        quick_example = GeminiService.build_quick_example(topic, detected_domain)
+        quick_example = GeminiService.build_quick_example(topic, detected_domain, lang=lang)
 
         # 2. Generate comprehensive, multi-section academic context
-        ctx = GeminiService.build_topic_context(clean_q, detected_domain)
+        ctx = GeminiService.build_topic_context(clean_q, detected_domain, lang=lang)
+
+        db_fallback = ctx.get("detailed_breakdown")
+        if not db_fallback:
+            tf_part = ctx.get("theoretical_foundations", "")
+            cf_part = ctx.get("core_formulations", "")
+            db_fallback = f"### 1. Theoretical Foundations & Architecture\n\n{tf_part}\n\n### 2. Step-by-Step Algorithm & Formulations\n\n{cf_part}"
+
+        roadmap = GeminiService.build_topic_roadmap(topic, clean_q, detected_domain, lang=lang)
 
         return {
             "topic": ctx["topic"],
@@ -1384,17 +2137,20 @@ class GeminiService:
             "overview": ctx["overview"],
             "theoretical_foundations": ctx["theoretical_foundations"],
             "core_formulations": ctx["core_formulations"],
+            "detailed_breakdown": db_fallback,
+            "detailedBreakdown": db_fallback,
             "quick_example": quick_example,
             "quickExample": quick_example,
+            "roadmap": roadmap,
             "did_you_know": ctx["did_you_know"],
             "diagram": ctx.get("diagram") or GeminiService.build_topic_diagram(topic, clean_q, detected_domain)
         }
 
     @staticmethod
-    def generate_fallback_topic_details(query: str) -> dict:
+    def generate_fallback_topic_details(query: str, lang: str = "english") -> dict:
         """Public method to safely produce complete topic details without throwing HTTP 500 errors."""
         clean_q = GeminiService.clean_search_query(query) or query.strip()
-        return GeminiService.generate_topic_details(clean_q)
+        return GeminiService.generate_topic_details(clean_q, lang=lang)
 
     @staticmethod
     def generate_detailed_notes(subject_title: str, chapters: str) -> str:

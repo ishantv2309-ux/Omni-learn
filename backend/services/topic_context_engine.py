@@ -23,19 +23,188 @@ class TopicContextEngine:
         return DiagramEngine.build_diagram(clean_q, topic, detected_domain)
 
     @staticmethod
-    def build_topic_context(clean_q: str, detected_domain: str) -> dict:
-        data = TopicContextEngine._build_topic_context_raw(clean_q, detected_domain)
+    def build_topic_context(clean_q: str, detected_domain: str, lang: str = "english") -> dict:
+        data = TopicContextEngine._build_topic_context_raw(clean_q, detected_domain, lang=lang)
         # Normalize newlines for markdown rendering
-        for k in ["overview", "theoretical_foundations", "core_formulations"]:
+        for k in ["overview", "theoretical_foundations", "core_formulations", "detailed_breakdown"]:
             if k in data and isinstance(data[k], str):
                 data[k] = data[k].replace(chr(92) + "n", chr(10))
         data["diagram"] = TopicContextEngine.build_topic_diagram(clean_q, data.get("topic", clean_q), detected_domain)
         return data
 
     @staticmethod
-    def _build_topic_context_raw(clean_q: str, detected_domain: str) -> dict:
+    def _build_topic_context_raw(clean_q: str, detected_domain: str, lang: str = "english") -> dict:
+        if (lang or "").strip().lower() == "hinglish":
+            return TopicContextEngine._build_topic_context_hinglish(clean_q, detected_domain)
         topic = clean_title_casing(clean_q.strip())
         t_low = clean_q.lower().strip()
+
+        # 0. Booth's Multiplication Algorithm (Computer Architecture / COA Exam Standard)
+        if any(k in t_low for k in ["booth", "booths", "booth's"]):
+            return {
+                "topic": "Booth's Multiplication Algorithm",
+                "category": detected_domain,
+                "difficulty_score": 8.2,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": "Booth's Algorithm is a high-frequency B.Tech CSE and GATE Computer Organization (COA) topic. It tests 2's complement signed arithmetic, hardware datapath register manipulation (AC, QR, BR, Qn+1, SC), Arithmetic Shift Right (ASR) sign preservation, and cycle-by-cycle state transition tracing.",
+                "overview": (
+                    "**Booth's Multiplication Algorithm** is a hardware-oriented multiplication algorithm that multiplies two signed binary integers in **Two's Complement** notation. "
+                    "Invented by Andrew Donald Booth in 1950, it treats contiguous sequences of 1s in the multiplier as a difference of two powers of two: "
+                    "$2^{k+m} - 2^k$. Instead of executing an addition for every individual 1 bit, it executes only **one addition at the start of a string of 1s and one subtraction at the end**, "
+                    "skipping all intermediate additions via simple arithmetic shifts.\n\n"
+                    "### Core Structural Invariants\n"
+                    "- **Two's Complement Sign Preservation**: Operates directly on signed negative and positive numbers without requiring sign-magnitude conversion or correction cycles.\n"
+                    "- **String Property Reduction**: Replaces a block of $m$ consecutive 1s ($2^{k+m} - 2^k$) with exactly one subtraction ($10$) and one addition ($01$), achieving sub-linear operations for grouped bits.\n"
+                    "- **Constant Shift Guarantee**: Exactly $n$ Arithmetic Shift Right (`ASR`) operations are executed for $n$-bit operands, matching the sequence counter ($SC = n \\to 0$).\n"
+                    "- **Arithmetic Sign Extension**: In every shift, the Most Significant Bit (MSB) of Accumulator `AC` ($AC[n-1]$) is preserved and copied into itself, guaranteeing mathematically sound arithmetic division by 2."
+                ),
+                "theoretical_foundations": (
+                    "### Hardware Datapath & Register Architecture\n"
+                    "The hardware implementation requires a dedicated arithmetic datapath consisting of:\n"
+                    "- **AC (Accumulator Register)**: $n$-bit register initialized to $0000_2$. Holds intermediate partial sums and upper half of the final product.\n"
+                    "- **QR (Multiplier Register)**: $n$-bit register holding the multiplier $Q$. Holds lower half of the final product upon completion.\n"
+                    "- **BR (Multiplicand Register)**: $n$-bit register holding the multiplicand $M$. Remains constant throughout multiplication.\n"
+                    "- **Qn+1 (Sign Bit Flip-Flop)**: 1-bit flip-flop appended to the right of $QR[0]$ ($Q_0$). Initialized to $0$.\n"
+                    "- **SC (Sequence Counter)**: Initialized to word size $n$. Decremented by 1 after each arithmetic shift until $SC = 0$.\n"
+                    "- **n-bit Parallel Adder/Subtractor ALU**: Executes $AC \\leftarrow AC + BR$ or $AC \\leftarrow AC - BR$ ($AC + \\overline{BR} + 1$) based on control logic."
+                ),
+                "core_formulations": (
+                    "- **Bit-Pair Inspection Logic ($Q_0 Q_{n+1}$)**:\n"
+                    "  * `00`: No arithmetic operation. Perform **Arithmetic Shift Right (ASR)** on $[AC, QR, Q_{n+1}]$, decrement $SC \\leftarrow SC - 1$.\n"
+                    "  * `01`: $AC \\leftarrow AC + BR$, then perform **Arithmetic Shift Right (ASR)** on $[AC, QR, Q_{n+1}]$, decrement $SC \\leftarrow SC - 1$.\n"
+                    "  * `10`: $AC \\leftarrow AC - BR$ ($AC + \\overline{BR} + 1$), then perform **Arithmetic Shift Right (ASR)** on $[AC, QR, Q_{n+1}]$, decrement $SC \\leftarrow SC - 1$.\n"
+                    "  * `11`: No arithmetic operation. Perform **Arithmetic Shift Right (ASR)** on $[AC, QR, Q_{n+1}]$, decrement $SC \\leftarrow SC - 1$.\n"
+                    "- **Arithmetic Shift Right Invariant**: $$ASR([AC, QR, Q_{n+1}]) \\implies Q_{n+1} \\leftarrow QR[0], \\; QR \\leftarrow [AC[0], QR[n-1..1]], \\; AC \\leftarrow [AC[n-1], AC[n-1..1]]$$\n"
+                    "- **Computational Complexity**: Cycle count is strictly $\\Theta(n)$ where $n$ is word bit-width. Add/Sub operations: Best case $0$ (for $Q=0$ or $Q=-1$), Average case $\\sim n/2$, Worst case $n$ (alternating $01010101_2$ pattern)."
+                ),
+                "detailed_breakdown": (
+                    "### 1. Core Concept & Invariants\n"
+                    "Booth's Multiplication Algorithm multiplies two signed binary integers in 2's complement representation. "
+                    "It exploits the identity that a block of $m$ consecutive 1s has numerical value $\\sum_{i=k}^{k+m-1} 2^i = 2^{k+m} - 2^k$. "
+                    "Consequently, $m$ individual additions are compressed into a single subtraction ($10$) at the start of the sequence and a single addition ($01$) at the end.\n\n"
+                    "### 2. Hardware / Memory Model (Registers & Architecture)\n"
+                    "- **Accumulator (AC)**: $n$-bit register, initialized to all zeros ($0000_2$).\n"
+                    "- **Multiplier Register (QR)**: $n$-bit register holding the multiplier $Q$.\n"
+                    "- **Multiplicand Register (BR)**: $n$-bit register holding the multiplicand $M$.\n"
+                    "- **Extra Bit ($Q_{n+1}$)**: 1-bit flip-flop initialized to $0$ immediately to the right of $QR[0]$.\n"
+                    "- **Sequence Counter (SC)**: Initialized to $n$ ($4$ for 4-bit numbers).\n"
+                    "- **ALU Datapath**: $n$-bit adder with 2's complement inverter enabling $AC + \\overline{BR} + 1$.\n\n"
+                    "### 3. Step-by-Step Algorithm & State Transitions\n"
+                    "1. Initialize $AC = 0$, $Q_{n+1} = 0$, $SC = n$, $BR = M$, $QR = Q$.\n"
+                    "2. Examine bit pair $(Q_0, Q_{n+1})$:\n"
+                    "   - If `01`: $AC \\leftarrow AC + BR$. Then Arithmetic Shift Right $[AC, QR, Q_{n+1}]$.\n"
+                    "   - If `10`: $AC \\leftarrow AC - BR$. Then Arithmetic Shift Right $[AC, QR, Q_{n+1}]$.\n"
+                    "   - If `00` or `11`: Arithmetic Shift Right $[AC, QR, Q_{n+1}]$ directly (no addition/subtraction).\n"
+                    "3. Decrement $SC \\leftarrow SC - 1$.\n"
+                    "4. If $SC > 0$, repeat from Step 2. When $SC = 0$, stop. Product is stored in $[AC, QR]$.\n\n"
+                    "### 4. Worked Numerical Example & Complete Trace Table\n"
+                    "**Problem**: Multiply Multiplicand $M = -5$ ($1011_2$ in 4-bit 2's complement) by Multiplier $Q = +7$ ($0111_2$).\n"
+                    "- $BR = 1011_2$ ($-5$), $-BR = 0101_2$ ($+5$). $n = 4$, so $SC = 4$.\n\n"
+                    "| Cycle / Step | $Q_0 Q_{n+1}$ | Operation | AC | QR | $Q_{n+1}$ | SC | Explanation |\n"
+                    "|---|---|---|---|---|---|---|---|\n"
+                    "| **Init** | - | Initial Values | 0000 | 0111 | 0 | 4 | $AC=0, QR=0111, Q_{n+1}=0, SC=4$ |\n"
+                    "| **Cycle 1** | **10** | $AC \\leftarrow AC - BR$ ($0000 + 0101$) | 0101 | 0111 | 0 | 4 | Bit pair $10 \\implies$ Subtract $BR$ (Add $-BR$) |\n"
+                    "| | | Arithmetic Shift Right (ASR) | **0010** | **1011** | **1** | **3** | Shift $[AC, QR, Q_{n+1}]$; MSB $0$ retained in $AC$ |\n"
+                    "| **Cycle 2** | **11** | Shift only | **0001** | **0101** | **1** | **2** | Bit pair $11 \\implies$ Shift only, decrement SC |\n"
+                    "| **Cycle 3** | **11** | Shift only | **0000** | **1010** | **1** | **1** | Bit pair $11 \\implies$ Shift only, decrement SC |\n"
+                    "| **Cycle 4** | **01** | $AC \\leftarrow AC + BR$ ($0000 + 1011$) | 1011 | 1010 | 1 | 1 | Bit pair $01 \\implies$ Add $BR$ ($1011$) |\n"
+                    "| | | Arithmetic Shift Right (ASR) | **1101** | **1101** | **0** | **0** | Shift $[AC, QR, Q_{n+1}]$; MSB $1$ retained in $AC$ |\n\n"
+                    "**Result Verification**:\n"
+                    "- Final register content in $[AC, QR] = 11011101_2$ (8-bit signed integer).\n"
+                    "- Evaluating 2's complement: $-2^7 + 2^6 + 2^4 + 2^3 + 2^2 + 2^0 = -128 + 64 + 16 + 8 + 4 + 1 = -35_{10}$.\n"
+                    "- Expected result: $(-5) \\times (+7) = -35_{10}$. **Computation is 100% verified and correct!**\n\n"
+                    "### 5. Advantages, Trade-offs & Comparisons\n"
+                    "- **Uniform Signed Handling**: Multiplies positive and negative numbers identically without sign pre-processing or post-complementing.\n"
+                    "- **Speedup on Clustered 1s**: Strings of consecutive 1s require only 2 operations ($1$ add, $1$ sub), halving clock cycles for dense 1s.\n"
+                    "- **Worst-Case Trade-off**: If the multiplier contains alternating bits (`01010101...`), Booth's algorithm requires $n$ additions/subtractions, offering no speed advantage over standard shift-and-add.\n\n"
+                    "### 6. Common University Exam / GATE Questions\n"
+                    "- **Q1 (GATE CSE)**: How many additions and subtractions are performed by Booth's algorithm when multiplying a multiplicand by $Q = 00111100_2$?\n"
+                    "  *Answer*: Inspecting transitions from right to left ($Q_0 Q_{n+1}$): $00 \\to 0$ ops, $10 \\to 1$ subtract, $11 \\to 0$ ops, $01 \\to 1$ add. Total: **1 subtraction and 1 addition** (only 2 arithmetic operations instead of 4).\n"
+                    "- **Q2 (University Semester Exam)**: Why is Arithmetic Shift Right (ASR) essential in Booth's algorithm instead of Logical Shift Right?\n"
+                    "  *Answer*: ASR replicates the sign bit ($AC[n-1] \\to AC[n-1]$), which is mandatory to preserve the sign and magnitude of negative numbers in 2's complement division by 2.\n"
+                    "- **Q3 (GATE CSE)**: What is the worst-case multiplier pattern for an $n$-bit Booth multiplier?\n"
+                    "  *Answer*: Alternating bit patterns such as $01010101_2$ or $10101010_2$, which force an addition or subtraction on every single cycle ($n$ operations)."
+                ),
+                "did_you_know": "Andrew Donald Booth invented Booth's algorithm in 1950 while doing research on crystallographic structure calculations at Birkbeck College, London, because mechanical shifters were substantially faster than adders."
+            }
+
+        # 0B. LRU Page Replacement Algorithm (Operating Systems Exam Standard)
+        if any(k in t_low for k in ["lru", "page replacement", "least recently used"]):
+            return {
+                "topic": "LRU Page Replacement Algorithm",
+                "category": detected_domain,
+                "difficulty_score": 7.8,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": "LRU is an essential OS virtual memory topic in university exams and GATE. It requires understanding temporal locality, stack algorithms, Belady's Anomaly immunity, and reference string trace tables.",
+                "overview": (
+                    "**LRU (Least Recently Used) Page Replacement Algorithm** is a memory management algorithm used by operating systems to handle **page faults** in virtual memory. "
+                    "When a page fault occurs and all physical page frames in RAM are occupied, LRU identifies and evicts the page that has **not been referenced for the longest period of time**. "
+                    "It is grounded in the **Principle of Temporal Locality**—the empirical observation that memory locations accessed recently are likely to be accessed again in the near future.\n\n"
+                    "### Core Structural Invariants\n"
+                    "- **Stack Algorithm Property**: The set of pages in memory for $m$ frames is always a strict subset of the pages in memory for $m+1$ frames: $M(m, t) \\subseteq M(m+1, t)$.\n"
+                    "- **Immunity to Belady's Anomaly**: Because LRU is a formal stack algorithm, increasing the number of allocated page frames **never increases the number of page faults** (unlike FIFO).\n"
+                    "- **Optimal Proximity Approximation**: LRU approximates the theoretically optimal algorithm (Belady's MIN/OPT) by using past history as a proxy for future memory access patterns."
+                ),
+                "theoretical_foundations": (
+                    "### Architectural & Data Structure Models\n"
+                    "LRU requires tracking recency of access for every active page frame:\n"
+                    "- **Doubly Linked List + Hash Map (Software Cache)**: A doubly linked list stores pages ordered by access recency (Head = MRU, Tail = LRU). A hash map provides $\\mathcal{O}(1)$ pointer lookups. Node eviction and promotion take $\\mathcal{O}(1)$ time.\n"
+                    "- **Hardware Counter / Clock Registers**: CPU maintains an internal clock/counter register incremented on every memory reference. Each page table entry stores the timestamp of its last access.\n"
+                    "- **Hardware Matrix (n x n Flip-Flop Array)**: When page $k$ is referenced, row $k$ is set to 1s and column $k$ is set to 0s. The row with the lowest binary value corresponds to the LRU page."
+                ),
+                "core_formulations": (
+                    "- **Page Fault Rate**: $$P = \\frac{\\text{Total Page Faults}}{\\text{Total Memory References}}$$\n"
+                    "- **Hit Ratio**: $$H = 1 - P = \\frac{\\text{Cache Hits}}{\\text{Total Memory References}}$$\n"
+                    "- **Stack Property Formal Definition**: $$\\forall t, \\; S_t(n) \\subseteq S_t(n+1) \\implies \\text{Belady\\'s Anomaly is impossible}$$\n"
+                    "- **Effective Memory Access Time (EMAT)**: $$EMAT = (1 - P) \\times t_m + P \\times t_s \\quad \\text{where } t_m \\text{ is RAM latency and } t_s \\text{ is page fault service time}$$"
+                ),
+                "detailed_breakdown": (
+                    "### 1. Core Concept & Invariants\n"
+                    "LRU replaces the page that has stayed unused for the longest interval. By temporal locality, pages accessed recently will be needed again shortly. "
+                    "LRU belongs to the class of **stack algorithms**, mathematically guaranteeing that more memory frames never cause more page faults.\n\n"
+                    "### 2. Hardware / Memory Model (Registers & Architecture)\n"
+                    "- **Page Table Entry (PTE)**: Contains Valid/Invalid bit, Dirty/Modified bit, and Reference timestamp.\n"
+                    "- **Physical Frames**: Allocation of $k$ frames in physical RAM.\n"
+                    "- **LRU Stack**: Doubly linked list where the most recently used page is moved to the top and the least recently used page sits at the bottom.\n\n"
+                    "### 3. Step-by-Step Algorithm & State Transitions\n"
+                    "1. When CPU references page $p$, check if $p$ exists in physical frame buffer (Cache Hit).\n"
+                    "2. If Hit: update $p$'s recency to Most Recently Used (MRU). Zero page fault.\n"
+                    "3. If Miss (Page Fault):\n"
+                    "   - If an empty frame exists: load $p$ into the empty slot and mark as MRU.\n"
+                    "   - If all frames are full: evict the page at the LRU position. Write back to disk if Dirty bit is set. Load page $p$ into the freed frame and mark as MRU.\n\n"
+                    "### 4. Worked Numerical Example & Complete Trace Table\n"
+                    "**Problem**: Reference String: `7, 0, 1, 2, 0, 3, 0, 4, 2, 3` with **3 Page Frames** (initially empty).\n\n"
+                    "| Ref Step | Page | Frame 1 | Frame 2 | Frame 3 | Hit / Miss | Evicted Page | Explanation |\n"
+                    "|---|---|---|---|---|---|---|---|\n"
+                    "| 1 | **7** | 7 | - | - | **Miss (Fault 1)** | None | Frame 1 loaded with 7 |\n"
+                    "| 2 | **0** | 7 | 0 | - | **Miss (Fault 2)** | None | Frame 2 loaded with 0 |\n"
+                    "| 3 | **1** | 7 | 0 | 1 | **Miss (Fault 3)** | None | Frame 3 loaded with 1 |\n"
+                    "| 4 | **2** | 2 | 0 | 1 | **Miss (Fault 4)** | **7** | 7 was LRU (oldest referenced); replaced by 2 |\n"
+                    "| 5 | **0** | 2 | 0 | 1 | **Hit** | None | 0 is in memory; recency updated to MRU |\n"
+                    "| 6 | **3** | 2 | 0 | 3 | **Miss (Fault 5)** | **1** | 1 was LRU (since 0 was just referenced); replaced by 3 |\n"
+                    "| 7 | **0** | 2 | 0 | 3 | **Hit** | None | 0 is in memory; recency updated to MRU |\n"
+                    "| 8 | **4** | 4 | 0 | 3 | **Miss (Fault 6)** | **2** | 2 was LRU (0 & 3 referenced recently); replaced by 4 |\n"
+                    "| 9 | **2** | 4 | 0 | 2 | **Miss (Fault 7)** | **3** | 3 was LRU; replaced by 2 |\n"
+                    "| 10 | **3** | 3 | 0 | 2 | **Miss (Fault 8)** | **4** | 4 was LRU; replaced by 3 |\n\n"
+                    "**Performance Summary**:\n"
+                    "- Total Memory References = $10$\n"
+                    "- Total Page Faults = **8**\n"
+                    "- Total Hits = **2**\n"
+                    "- Hit Ratio = $2 / 10 = 20\\%$, Page Fault Frequency = $8 / 10 = 80\\%$.\n\n"
+                    "### 5. Advantages, Trade-offs & Comparisons\n"
+                    "- **Immunity to Belady's Anomaly**: Stack algorithm property guarantees adding frames will never increase faults.\n"
+                    "- **Superior to FIFO**: Exploits empirical access locality, outperforming First-In-First-Out on realistic workloads.\n"
+                    "- **Hardware Overhead**: Pure LRU requires expensive hardware counters or pointer updating on *every* memory read/write. Consequently, modern OSes (Linux, Windows) use LRU approximations like **Clock (Second Chance) Algorithm**.\n\n"
+                    "### 6. Common University Exam / GATE Questions\n"
+                    "- **Q1 (GATE CSE)**: Which of the following page replacement algorithms suffers from Belady's Anomaly? (A) LRU (B) Optimal (C) FIFO (D) MRU\n"
+                    "  *Answer*: **(C) FIFO**. LRU and Optimal are stack algorithms and are mathematically immune to Belady's Anomaly.\n"
+                    "- **Q2 (University Semester Exam)**: Why do modern operating systems avoid implementing pure LRU in hardware?\n"
+                    "  *Answer*: Updating recency timestamps or moving list nodes on every single memory reference causes intolerable bus contention and CPU cycle overhead. Systems use the Clock (Second Chance) algorithm with reference bits instead.\n"
+                    "- **Q3 (GATE CSE)**: Given the reference string `1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5`, compare FIFO and LRU on 3 vs 4 frames to demonstrate Belady's anomaly.\n"
+                    "  *Answer*: FIFO faults increase from 9 to 10 when frames increase from 3 to 4 (Belady's anomaly). Under LRU, faults strictly decrease (10 to 8), confirming the stack algorithm invariant."
+                ),
+                "did_you_know": "Laszlo Belady proved in 1969 that FIFO can cause more page faults when allocated more memory (Belady's Anomaly), which led to the mathematical formalization of 'stack algorithms' that prove LRU is strictly immune."
+            }
 
         # 1. Binary Tree & Specialized Tree Variants
         if any(k in t_low for k in ["binary tree", "bst", "binary search tree", "avl", "red black", "tree traversal", "b tree", "b+ tree"]):
@@ -540,3 +709,410 @@ class TopicContextEngine:
             "core_formulations": r"- **State Transformation**: $$S_{t+1} = \mathcal{F}(S_t, U_t)$$\n- **Asymptotic Bound**: $$\mathcal{O}(n \log n) \quad \text{or domain-standard analytical limit}$$",
             "did_you_know": f"Foundational concepts in {topic} continue to anchor core questions across university examinations and professional technical interviews."
         }
+
+    @staticmethod
+    def _build_topic_context_hinglish(clean_q: str, detected_domain: str) -> dict:
+        topic = clean_title_casing(clean_q.strip())
+        t_low = clean_q.lower().strip()
+
+        # 0. Booth's Multiplication Algorithm (Hinglish COA Exam Standard)
+        if any(k in t_low for k in ["booth", "booths", "booth's"]):
+            return {
+                "topic": "Booth's Multiplication Algorithm",
+                "category": detected_domain,
+                "difficulty_score": 8.2,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": "Booth's Algorithm B.Tech CSE aur GATE Computer Organization (COA) ka ek high-frequency topic hai. Ye 2's complement signed arithmetic, hardware registers (AC, QR, BR, Qn+1, SC), Arithmetic Shift Right (ASR) sign preservation, aur cycle-by-cycle trace tables test karta hai.",
+                "overview": (
+                    "**Booth's Multiplication Algorithm** ek powerful hardware-level multiplication algorithm hai jo do signed binary numbers ko unke **Two's Complement** format me directly multiply karta hai. "
+                    "Andrew Donald Booth ne ise 1950 me invent kiya tha. Iska main idea ye hai ki jab multiplier me lagataar $1$s ka block aata hai ($2^{k+m} - 2^k$), to har $1$ ke liye baar-baar addition karne ke bajay "
+                    "ye algorithm **block ke start me ek subtraction aur block ke end me ek addition** perform karta hai, aur baaki steps ko simple shift operation se skip kar deta hai.\n\n"
+                    "### Core Structural Invariants\n"
+                    "- **Two's Complement Sign Preservation**: Chahe number positive ho ya negative, ye algorithm directly 2's complement me kaam karta hai bina kisi sign conversion ke.\n"
+                    "- **String Property Optimization**: Consecutive 1s ke sequence ko ye single subtraction ($10$) aur single addition ($01$) se solve kar leta hai.\n"
+                    "- **Constant Shift Guarantee**: $n$-bit multiplier ke liye exactly $n$ cycles me Arithmetic Shift Right (ASR) execute hota hai jab tak Sequence Counter ($SC = 0$) na ho jaye.\n"
+                    "- **Arithmetic Sign Extension**: Har shift step me Accumulator `AC` ka Most Significant Bit (sign bit) preserve rehta hai taaki negative sign barkaraar rahe."
+                ),
+                "theoretical_foundations": (
+                    "### Hardware Datapath & Register Architecture\n"
+                    "Booth's Algorithm ke liye hardware architecture me niche diye gaye registers use hote hain:\n"
+                    "- **AC (Accumulator Register)**: $n$-bit register, starting me $0000$ par initialize hota hai. Partial product aur final answer ka upper half hold karta hai.\n"
+                    "- **QR (Multiplier Register)**: $n$-bit register, isme multiplier $Q$ store hota hai. Final answer ka lower half isme aata hai.\n"
+                    "- **BR (Multiplicand Register)**: $n$-bit register, isme multiplicand $M$ store rehta hai (ye pure process me change nahi hota).\n"
+                    "- **Qn+1 (Extra Flip-Flop)**: 1-bit flip-flop jo $QR$ ke right me judta hai ($Q_0$ ke aage), starting me $0$ par set hota hai.\n"
+                    "- **SC (Sequence Counter)**: Word size $n$ par set hota hai ($4$ for 4-bit) aur har cycle ke baad $1$ se decrement hota hai.\n"
+                    "- **ALU Adder/Subtractor**: Control logic ke hisab se $AC + BR$ ya $AC - BR$ ($AC + \\overline{BR} + 1$) perform karta hai."
+                ),
+                "core_formulations": (
+                    "- **Bit-Pair Inspection Rules ($Q_0 Q_{n+1}$)**:\n"
+                    "  * `00`: Koi arithmetic operation nahi. Bas **Arithmetic Shift Right (ASR)** karo $[AC, QR, Q_{n+1}]$ par aur $SC \\leftarrow SC - 1$.\n"
+                    "  * `01`: $AC \\leftarrow AC + BR$ karo, fir **Arithmetic Shift Right (ASR)** aur $SC \\leftarrow SC - 1$.\n"
+                    "  * `10`: $AC \\leftarrow AC - BR$ (yaani $AC + \\overline{BR} + 1$) karo, fir **Arithmetic Shift Right (ASR)** aur $SC \\leftarrow SC - 1$.\n"
+                    "  * `11`: Koi arithmetic operation nahi. Bas **Arithmetic Shift Right (ASR)** karo aur $SC \\leftarrow SC - 1$.\n"
+                    "- **ASR Rule**: $$ASR([AC, QR, Q_{n+1}]) \\implies Q_{n+1} \\leftarrow QR[0], \\; QR \\leftarrow [AC[0], QR[n-1..1]], \\; AC \\leftarrow [AC[n-1], AC[n-1..1]]$$\n"
+                    "- **Time Complexity**: $n$ bit word ke liye total $\\Theta(n)$ cycles. Best case: 0 add/sub (jab saare bits 0 ya 1 hon). Worst case: $n$ add/sub (jab alternating $01010101$ ho)."
+                ),
+                "detailed_breakdown": (
+                    "### 1. Core Concept & Invariants\n"
+                    "Booth's Algorithm signed 2's complement numbers ko efficiently multiply karta hai. Iska basic principle consecutive 1s ko identity $\\sum_{i=k}^{k+m-1} 2^i = 2^{k+m} - 2^k$ ke through compress karna hai. "
+                    "Isse multiple additions ki jagah bas ek subtraction ($10$) aur ek addition ($01$) lagta hai.\n\n"
+                    "### 2. Hardware / Memory Model (Registers & Architecture)\n"
+                    "- **AC (Accumulator)**: $n$-bit register, initial value $0000$.\n"
+                    "- **QR (Multiplier)**: $n$-bit register, multiplier $Q$ hold karta hai.\n"
+                    "- **BR (Multiplicand)**: $n$-bit register, multiplicand $M$ hold karta hai.\n"
+                    "- **$Q_{n+1}$ (Extra Flip-Flop)**: 1-bit flip-flop, initial value $0$.\n"
+                    "- **SC (Sequence Counter)**: $n$ se shuru hota hai aur $0$ hone par stop karta hai.\n\n"
+                    "### 3. Step-by-Step Algorithm & State Transitions\n"
+                    "1. Registers initialize karo: $AC = 0$, $Q_{n+1} = 0$, $SC = n$, $BR = M$, $QR = Q$.\n"
+                    "2. $Q_0$ aur $Q_{n+1}$ bit pair ko check karo:\n"
+                    "   - Agar `01`: $AC = AC + BR$ karo, fir ASR karo.\n"
+                    "   - Agar `10`: $AC = AC - BR$ karo, fir ASR karo.\n"
+                    "   - Agar `00` ya `11`: Direct ASR karo (koi add/sub nahi).\n"
+                    "3. Sequence Counter ko decrement karo: $SC = SC - 1$.\n"
+                    "4. Agar $SC > 0$, to Step 2 repeat karo. Jab $SC = 0$ ho jaye, tab final product $[AC, QR]$ me ready hai.\n\n"
+                    "### 4. Worked Numerical Example & Complete Trace Table\n"
+                    "**Question**: Multiplicand $M = -5$ ($1011_2$ in 4-bit 2's complement) aur Multiplier $Q = +7$ ($0111_2$) ko Booth's Algorithm se multiply karo.\n"
+                    "- Yahan $BR = 1011_2$ ($-5$), $-BR = 0101_2$ ($+5$), $SC = 4$.\n\n"
+                    "| Cycle / Step | $Q_0 Q_{n+1}$ | Operation | AC | QR | $Q_{n+1}$ | SC | Explanation |\n"
+                    "|---|---|---|---|---|---|---|---|\n"
+                    "| **Init** | - | Initial State | 0000 | 0111 | 0 | 4 | $AC=0, QR=0111, Q_{n+1}=0, SC=4$ |\n"
+                    "| **Cycle 1** | **10** | $AC \\leftarrow AC - BR$ ($0000 + 0101$) | 0101 | 0111 | 0 | 4 | Bit pair $10 \\implies$ Subtract $BR$ (Add $-BR$) |\n"
+                    "| | | Arithmetic Shift Right (ASR) | **0010** | **1011** | **1** | **3** | Shift $[AC, QR, Q_{n+1}]$; MSB $0$ AC me preserve |\n"
+                    "| **Cycle 2** | **11** | Shift only | **0001** | **0101** | **1** | **2** | Bit pair $11 \\implies$ Shift only, SC ghat kar 2 |\n"
+                    "| **Cycle 3** | **11** | Shift only | **0000** | **1010** | **1** | **1** | Bit pair $11 \\implies$ Shift only, SC ghat kar 1 |\n"
+                    "| **Cycle 4** | **01** | $AC \\leftarrow AC + BR$ ($0000 + 1011$) | 1011 | 1010 | 1 | 1 | Bit pair $01 \\implies$ Add $BR$ ($1011$) |\n"
+                    "| | | Arithmetic Shift Right (ASR) | **1101** | **1101** | **0** | **0** | Shift $[AC, QR, Q_{n+1}]$; MSB $1$ AC me preserve |\n\n"
+                    "**Result Verification**:\n"
+                    "- Final answer in $[AC, QR] = 11011101_2$.\n"
+                    "- 2's complement calculation: $-2^7 + 2^6 + 2^4 + 2^3 + 2^2 + 2^0 = -128 + 64 + 16 + 8 + 4 + 1 = -35_{10}$.\n"
+                    "- Expected: $(-5) \\times (+7) = -35_{10}$. **Pura answer perfectly match karta hai!**\n\n"
+                    "### 5. Advantages, Trade-offs & Comparisons\n"
+                    "- **Direct Signed Multiplication**: Negative numbers ke liye alag se conversion ki zarurat nahi padti.\n"
+                    "- **Continuous 1s Optimization**: Consecutive 1s ko bas 2 operations me handle karta hai, jisse clock cycles bachte hain.\n"
+                    "- **Worst-Case Trade-off**: Agar bits alternate kar rahe hon (`01010101...`), to har cycle me operation hota hai aur standard method se koi speedup nahi milta.\n\n"
+                    "### 6. Common University Exam / GATE Questions\n"
+                    "- **Q1 (GATE CSE)**: $Q = 00111100_2$ ke liye Booth's algorithm kitne additions aur subtractions karega?\n"
+                    "  *Answer*: Right to left check karo: $00 \\to 0$, $10 \\to 1$ subtract, $11 \\to 0$, $01 \\to 1$ add. Total: **1 subtraction aur 1 addition** (bas 2 operations).\n"
+                    "- **Q2 (University Exam)**: Logical Shift Right ke bajay Arithmetic Shift Right (ASR) kyu zaroori hai?\n"
+                    "  *Answer*: ASR sign bit ($AC[n-1]$) ko copy karta hai, jo 2's complement negative numbers ka sign maintain rakhne ke liye zaroori hai.\n"
+                    "- **Q3 (GATE CSE)**: Booth's algorithm ka worst-case multiplier pattern kya hai?\n"
+                    "  *Answer*: Alternating bit pattern jaise `01010101` ya `10101010`, jisme har cycle me add/sub hota hai."
+                ),
+                "did_you_know": "Andrew Donald Booth ne ye algorithm 1950 me invent kiya tha jab wo London University me crystallographic calculations karte the, kyunki us time mechanical shifters adders se kaafi fast the."
+            }
+
+        # 0B. LRU Page Replacement Algorithm (Hinglish OS Exam Standard)
+        if any(k in t_low for k in ["lru", "page replacement", "least recently used"]):
+            return {
+                "topic": "LRU Page Replacement Algorithm",
+                "category": detected_domain,
+                "difficulty_score": 7.8,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": "LRU Operating Systems virtual memory ka core topic hai jo university exams aur GATE dono me frequently pucha jaata hai. Isme temporal locality, stack property, Belady's anomaly immunity, aur trace table calculation test hoti hai.",
+                "overview": (
+                    "**LRU (Least Recently Used) Page Replacement Algorithm** operating system ka ek memory management algorithm hai jo virtual memory me **page faults** ko resolve karta hai. "
+                    "Jab page fault hota hai aur RAM ke saare page frames bhare hote hain, to LRU us page ko select karke baahar nikaalta hai (evict karta hai) jo **sabse lambe time se use nahi hua ho**. "
+                    "Ye **Principle of Temporal Locality** par based hai—yaani jo pages abhi recently access hue hain, unke aage bhi access hone ke chances sabse zyada hote hain.\n\n"
+                    "### Core Structural Invariants\n"
+                    "- **Stack Algorithm Property**: LRU ek mathematically proven stack algorithm hai, yaani $m$ frames me store hue pages hamesha $m+1$ frames ke subset hote hain ($M(m, t) \\subseteq M(m+1, t)$).\n"
+                    "- **Belady's Anomaly se Azaad**: Stack property ki wajah se LRU me frames badhane par kabhi bhi page faults nahi badhte (FIFO ke opposite).\n"
+                    "- **Near-Optimal Performance**: LRU past reference history ko use karke theoretical optimal algorithm (MIN/OPT) ko practical environment me approximate karta hai."
+                ),
+                "theoretical_foundations": (
+                    "### Architecture & Data Structures\n"
+                    "LRU ko implement karne ke liye ye models use hote hain:\n"
+                    "- **Doubly Linked List + Hash Map (Standard O(1) Cache)**: Recency order ko track karne ke liye doubly linked list (Head = MRU, Tail = LRU) aur fast lookup ke liye hash map use hota hai. Eviction aur node movement dono $\\mathcal{O}(1)$ time me hote hain.\n"
+                    "- **Hardware Counter / Timestamp**: Har memory reference par CPU ek hardware clock counter ko increment karta hai aur page table entry me timestamp save karta hai.\n"
+                    "- **Hardware Matrix (n x n Matrix)**: Jab page $k$ access hota hai, to row $k$ ko $1$s aur column $k$ ko $0$s set kar diya jaata hai. Lowest row value wala page LRU page hota hai."
+                ),
+                "core_formulations": (
+                    "- **Page Fault Rate**: $$P = \\frac{\\text{Total Page Faults}}{\\text{Total References}}$$\n"
+                    "- **Hit Ratio**: $$H = 1 - P = \\frac{\\text{Cache Hits}}{\\text{Total References}}$$\n"
+                    "- **Stack Property Invariant**: $$\\forall t, \\; S_t(n) \\subseteq S_t(n+1) \\implies \\text{Belady\\'s Anomaly impossible hai}$$\n"
+                    "- **Effective Memory Access Time (EMAT)**: $$EMAT = (1 - P) \\times t_m + P \\times t_s$$"
+                ),
+                "detailed_breakdown": (
+                    "### 1. Core Concept & Invariants\n"
+                    "LRU us page ko evict karta hai jo sabse zyada time se unreferenced raha ho. Temporal locality principle ke mutabiq recently used pages ki dobara zarurat padti hai. "
+                    "Ye ek **stack algorithm** hai, jisme memory frames badhane par kabhi bhi page faults nahi badhte.\n\n"
+                    "### 2. Hardware / Memory Model (Registers & Architecture)\n"
+                    "- **Page Table Entry (PTE)**: Valid/Invalid bit, Modified/Dirty bit, aur Access Timestamp hold karta hai.\n"
+                    "- **Physical Frames**: RAM ke slots jisme active pages load hote hain.\n"
+                    "- **Recency Tracker**: Doubly Linked List ya hardware counter jo least recently used page ko identify karta hai.\n\n"
+                    "### 3. Step-by-Step Algorithm & State Transitions\n"
+                    "1. Jab CPU kisi page $p$ ko request karta hai, check karo ki wo frame buffer me hai ya nahi.\n"
+                    "2. Agar present hai (Hit): page $p$ ki recency update karke MRU position par le aao. Zero page fault.\n"
+                    "3. Agar absent hai (Page Fault / Miss):\n"
+                    "   - Agar frame empty hai: page $p$ ko empty frame me load karo aur MRU mark karo.\n"
+                    "   - Agar frames full hain: LRU position wale page ko evict karo, disk me write-back karo (agar dirty bit set ho), aur page $p$ ko frame me load karke MRU mark karo.\n\n"
+                    "### 4. Worked Numerical Example & Complete Trace Table\n"
+                    "**Question**: Reference String: `7, 0, 1, 2, 0, 3, 0, 4, 2, 3` ko **3 Page Frames** me LRU Page Replacement se trace karo.\n\n"
+                    "| Ref Step | Page | Frame 1 | Frame 2 | Frame 3 | Hit / Miss | Evicted Page | Explanation |\n"
+                    "|---|---|---|---|---|---|---|---|\n"
+                    "| 1 | **7** | 7 | - | - | **Miss (Fault 1)** | None | Frame 1 me 7 load hua |\n"
+                    "| 2 | **0** | 7 | 0 | - | **Miss (Fault 2)** | None | Frame 2 me 0 load hua |\n"
+                    "| 3 | **1** | 7 | 0 | 1 | **Miss (Fault 3)** | None | Frame 3 me 1 load hua |\n"
+                    "| 4 | **2** | 2 | 0 | 1 | **Miss (Fault 4)** | **7** | 7 sabse purana tha (LRU); 2 se replace hua |\n"
+                    "| 5 | **0** | 2 | 0 | 1 | **Hit** | None | 0 already memory me tha; recency MRU hui |\n"
+                    "| 6 | **3** | 2 | 0 | 3 | **Miss (Fault 5)** | **1** | 1 LRU tha (kyunki 0 abhi use hua); 3 se replace |\n"
+                    "| 7 | **0** | 2 | 0 | 3 | **Hit** | None | 0 already memory me tha; recency MRU hui |\n"
+                    "| 8 | **4** | 4 | 0 | 3 | **Miss (Fault 6)** | **2** | 2 LRU tha (0 aur 3 recent the); 4 se replace |\n"
+                    "| 9 | **2** | 4 | 0 | 2 | **Miss (Fault 7)** | **3** | 3 LRU tha; 2 se replace hua |\n"
+                    "| 10 | **3** | 3 | 0 | 2 | **Miss (Fault 8)** | **4** | 4 LRU tha; 3 se replace hua |\n\n"
+                    "**Performance Results**:\n"
+                    "- Total Page References = $10$\n"
+                    "- Total Page Faults = **8**\n"
+                    "- Total Hits = **2**\n"
+                    "- Hit Ratio = $2 / 10 = 20\\%$, Page Fault Rate = $8 / 10 = 80\\%$.\n\n"
+                    "### 5. Advantages, Trade-offs & Comparisons\n"
+                    "- **Belady's Anomaly se Safe**: Stack property ensure karti hai ki frames badhane par faults kabhi nahi badhenge.\n"
+                    "- **FIFO se Behtar**: Temporal locality use karne se realistic programs me FIFO se kam page faults aate hain.\n"
+                    "- **Hardware Overhead**: Har memory access par recency update karne me hardware cost high hota hai, isliye practical OSes **Clock (Second Chance)** algorithm use karte hain.\n\n"
+                    "### 6. Common University Exam / GATE Questions\n"
+                    "- **Q1 (GATE CSE)**: Inme se kaunsa algorithm Belady's Anomaly show karta hai? (A) LRU (B) Optimal (C) FIFO (D) MRU\n"
+                    "  *Answer*: **(C) FIFO**. LRU aur Optimal stack algorithms hain aur inme Belady's Anomaly kabhi nahi hota.\n"
+                    "- **Q2 (University Exam)**: Modern OS pure LRU implement kyu nahi karte?\n"
+                    "  *Answer*: Har memory access par counter update karna ya list nodes move karna bahut slow hota hai. Isliye OS Clock algorithm use karte hain jisme bas ek Reference Bit lagta hai.\n"
+                    "- **Q3 (GATE CSE)**: Belady's anomaly prove karne ke liye reference string `1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5` par FIFO vs LRU compare karo.\n"
+                    "  *Answer*: FIFO me 3 frames par 9 faults aate hain aur 4 frames par 10 faults aate hain (faults badh gaye = anomaly). LRU me 3 frames par 10 faults aur 4 frames par 8 faults aate hain (faults kam hue = safe)."
+                ),
+                "did_you_know": "Laszlo Belady ne 1969 me prove kiya tha ki FIFO me zyada RAM dene par bhi zyada page faults ho sakte hain (Belady's Anomaly), jiske baad stack algorithms ki mathematical discovery hui jo LRU ki reliability prove karti hai."
+            }
+
+        # 1. Binary Tree
+        if any(k in t_low for k in ["binary tree", "bst", "binary search tree", "avl", "red black", "tree traversal", "b tree"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 7.4,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": f"{topic} hierarchical pointer recursion, balance factor preservation (AVL/Red-Black), aur log(n) height bounds ko evaluate karta hai.",
+                "overview": (
+                    f"Ek **{topic}** ek hierarchical aur non-linear data structure hota hai jisme nodes directed edges se jude hote hain, "
+                    f"aur iska starting point ek single **root node** hota hai. Har node ke pass apna data aur maximum do child subtrees ke references hote hain, "
+                    f"jinhe conventionally **left child** aur **right child** kaha jata hai. Jin nodes ka koi child nahi hota unhe **leaf nodes** kehte hain.\n\n"
+                    f"### Core Structural Invariants\n"
+                    fr"- **Branching Degree Constraint**: Har node $u$ ka degree $\le 2$ hota hai, jo ek recursive binary decision tree banata hai.\n"
+                    fr"- **Recursive Subtree Topology**: Har child node khud ek independent binary subtree ka root hota hai. Is symmetry ki wajah se divide-and-conquer traversals (Pre-order, In-order, Post-order, Level-order/BFS) naturally execute hote hain.\n"
+                    fr"- **Logarithmic Height Scaling**: Ek balanced binary tree me height $h = \lfloor\log_2 n\rfloor$ hoti hai, jisse search, insert, aur delete operation linear $O(n)$ ke bajay fast $O(\log n)$ time me ho jaate hain.\n"
+                    fr"- **Nodes aur Edges Rule**: $n$ nodes wale kisi bhi binary tree me exactly $n - 1$ edges hote hain, jisme koi cycle nahi hoti.\n\n"
+                    f"### Key Architectural Varieties\n"
+                    fr"- **Full Binary Tree**: Har node ke ya to 0 children honge ya exactly 2.\n"
+                    fr"- **Complete Binary Tree**: Last level ko chhodkar sabhi levels fully packed hote hain aur last level ke leaf nodes left-aligned hote hain (yehi structure **Binary Heaps** aur Priority Queues me use hota hai).\n"
+                    fr"- **Binary Search Tree (BST)**: Rule ye hota hai ki left subtree ke saare keys node se chhote aur right subtree ke saare keys node se bade honge, jisse ordered lookup milta hai.\n"
+                    fr"- **Self-Balancing Trees (AVL & Red-Black)**: Jab data insert hota hai to ye trees dynamic rotations perform karke height ko balance rakhte hain taaki $O(n)$ worst-case skewing na ho."
+                ),
+                "theoretical_foundations": (
+                    f"Graph theory ke according binary tree ek directed acyclic connected graph $G = (V, E)$ hai jisme root ka in-degree 0 hota hai aur $|E| = |V| - 1$. "
+                    f"Balanced tree me root se leaf tak ka average distance hamesha $\\Theta(\\log n)$ rehta hai."
+                ),
+                "core_formulations": (
+                    r"- **Max Node Capacity at Height $h$**: $$\sum_{i=0}^h 2^i = 2^{h+1} - 1$$\n"
+                    r"- **BST Ordering Invariant**: $$\forall x \in \text{Left}(u), \, \text{key}(x) < \text{key}(u) \quad \land \quad \forall y \in \text{Right}(u), \, \text{key}(y) > \text{key}(u)$$\n"
+                    r"- **Balanced Search Complexity**: $$h = \lfloor \log_2 n \rfloor \implies \text{Search, Insert, Delete } \in \mathcal{O}(\log n)$$\n"
+                    r"- **AVL Balance Factor**: $$\text{BF}(u) = \text{height}(\text{Left}(u)) - \text{height}(\text{Right}(u)) \in \{-1, 0, +1\}$$"
+                ),
+                "did_you_know": f"1960 me BST ko discover kiya gaya tha, aur 1962 me Soviet mathematicians Adelson-Velsky aur Landis ne AVL tree invent kiya jo duniya ka pehla self-balancing binary search tree tha."
+            }
+
+        # 2. Array & Vector
+        if any(k in t_low for k in ["array", "vector", "dynamic array", "matrix"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 4.5,
+                "difficulty_level": "Beginner",
+                "ai_evaluation": f"{topic} memory address calculation arithmetic, spatial cache locality, aur O(1) random indexing vs O(n) element shifting ke trade-off ko test karta hai.",
+                "overview": (
+                    f"Ek **{topic}** computer science ka sabse basic aur powerful linear data structure hai jo identical data type ke elements ko physical memory me ek continuous (contiguous) block me store karta hai. "
+                    f"Kyunki memory slots bilkul adjacent hote hain, isliye kisi bhi element ko index number aur simple pointer arithmetic ke zariye instantly access kiya ja sakta hai.\n\n"
+                    f"### Core Structural Invariants\n"
+                    fr"- **Contiguous Memory Allocation**: Saare elements RAM me lagatar memory slots occupy karte hain, do elements ke beech zero gap hota hai.\n"
+                    fr"- **Instant Random Access ($O(1)$)**: Kisi bhi element ka address calculate karne ke liye sirf ek multiplication aur addition chahiye, isliye read/write hamesha deterministic $O(1)$ constant time me hota hai.\n"
+                    fr"- **Spatial Cache Locality**: Sequential layout ki wajah se CPU memory controller puri 64-byte cache line ko prefetch kar leta hai, jisse iteration process pointer-based structures se kayi guna tez ho jata hai.\n\n"
+                    f"### Key Varieties & Practical Realities\n"
+                    fr"- **Static Array**: Compile time pe fixed size allocate hota hai; size badhane ke liye naya memory block lena padta hai.\n"
+                    fr"- **Dynamic Array (Vector/ArrayList)**: Jab capacity full ho jaati hai to automatically double capacity ka naya buffer allocate karke data copy karta hai (amortized $O(1)$ append).\n"
+                    fr"- **Multi-Dimensional Array / Matrix**: Data row-major ya column-major layout me store hota hai, jo 3D graphics, gaming engines, aur deep learning tensors ka core foundation hai."
+                ),
+                "theoretical_foundations": f"Von Neumann computer architecture aur random-access machine (RAM) model par based hai, jahan memory indexed sequence of words hoti hai.",
+                "core_formulations": (
+                    r"- **1D Array Address Formula**: $$\text{Address}(A[i]) = \text{Base} + i \times S$$\n"
+                    r"- **2D Row-Major Offset**: $$\text{Address}(A[i][j]) = \text{Base} + (i \times N + j) \times S$$\n"
+                    r"- **Time Complexities**: Direct Index Access: $O(1)$; Dynamic Array Append: Amortized $O(1)$; Middle Insertion/Deletion: $O(n)$."
+                ),
+                "did_you_know": f"John von Neumann aur Alan Turing ne 1940s me contiguous memory arrays ko formalize kiya tha. 1957 me FORTRAN team ne multi-dimensional arrays ko programming languages ka permanent hissa bana diya."
+            }
+
+        # 3. Linked List
+        if any(k in t_low for k in ["linked list", "singly linked", "doubly linked", "circular linked"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 5.8,
+                "difficulty_level": "Intermediate",
+                "ai_evaluation": f"{topic} me pointer integrity manage karna, edge cases (head, tail, null) handle karna, aur O(1) splicing vs O(n) traversal ka balance samajhna hota hai.",
+                "overview": (
+                    f"Ek **{topic}** ek dynamic linear data structure hai jisme elements (jinhe **nodes** kaha jata hai) heap memory me alag-alag jagah (discontiguous) store hote hain. "
+                    f"Har node ke pass apna data payload hota hai aur agle node ka memory address direct karne ke liye ek explicit pointer reference hota hai.\n\n"
+                    f"### Core Invariants & Mechanics\n"
+                    fr"- **Pointer-Chained Topology**: Nodes ko contiguous block ki zarurat nahi hoti. Insertion ke waqt dynamic memory dynamically allocate hoti hai.\n"
+                    fr"- **Constant-Time Splicing ($O(1)$)**: Agar pointer position pata ho, to node insert ya delete karna sirf pointers swap karke $O(1)$ me ho jata hai, data shifting ki zarurat nahi padti.\n"
+                    fr"- **Sequential Access ($O(n)$)**: Kisi specific $k$-th element tak pahunchne ke liye head node se ek-ek karke pointers traverse karne padte hain.\n\n"
+                    f"### Key Variations\n"
+                    fr"- **Singly Linked List**: Har node me single `next` pointer hota hai.\n"
+                    fr"- **Doubly Linked List**: Har node me `prev` aur `next` dono pointers hote hain, jisse bidirectional traversal aur fast deletion possible hota hai.\n"
+                    fr"- **Circular Linked List**: Tail node ka `next` pointer wapas head node pe point karta hai (round-robin CPU scheduling ke liye ideal)."
+                ),
+                "theoretical_foundations": f"1955-1956 me Allen Newell, Cliff Shaw, aur Herbert Simon ne RAND Corporation me IPL language ke liye linked lists develop kiye the.",
+                "core_formulations": (
+                    r"- **Node Memory Structure**: $$\text{Node} = \{\text{Data: } T, \, \text{Next: } *\text{Node}\}$$\n"
+                    r"- **Traversal Bound**: $$T(n) = \sum_{i=1}^k c \implies \mathcal{O}(k) \le \mathcal{O}(n)$$\n"
+                    r"- **Head Insertion / Deletion**: $$\mathcal{O}(1) \text{ time, } \mathcal{O}(1) \text{ auxiliary space}$$"
+                ),
+                "did_you_know": f"Linked lists ko pehli baar AI reasoning aur symbolic processing ke liye invent kiya gaya tha taaki dynamic memory bina pre-allocation ke manage ho sake."
+            }
+
+        # 4. Stack
+        if any(k in t_low for k in ["stack", "lifo"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 4.8,
+                "difficulty_level": "Beginner",
+                "ai_evaluation": f"{topic} Last-In First-Out execution logic, function call stack frames, syntax bracket parsing, aur O(1) push/pop operations ko test karta hai.",
+                "overview": (
+                    f"Ek **{topic}** ek linear abstract data type hai jo strict **LIFO (Last-In, First-Out)** principle follow karta hai. "
+                    f"Iska matlab ye hai ki jo element sabse aakhir me insert hota hai, wahi sabse pehle bahar nikalta hai. Saare operations sirf ek single end (**Top**) se perform hote hain.\n\n"
+                    f"### Core Invariants & Operations\n"
+                    fr"- **Push Operation**: Naye element ko stack ke Top frame par place karta hai ($O(1)$ time).\n"
+                    fr"- **Pop Operation**: Current Top element ko remove karke return karta hai ($O(1)$ time).\n"
+                    fr"- **Peek/Top**: Top element ko bina delete kiye inspect karta hai ($O(1)$ time).\n"
+                    fr"- **LIFO Invariant**: Insertion aur deletion ka sequence strictly reverse chronological order me bound hota hai."
+                ),
+                "theoretical_foundations": f"Computer architecture me Stack Pointer (SP) register hardware level par active function call frames aur local variables ko track karta hai.",
+                "core_formulations": (
+                    r"- **Push Operation**: $$\text{Top} \leftarrow \text{Top} + 1, \quad S[\text{Top}] \leftarrow x \implies \mathcal{O}(1)$$\n"
+                    r"- **Pop Operation**: $$x \leftarrow S[\text{Top}], \quad \text{Top} \leftarrow \text{Top} - 1 \implies \mathcal{O}(1)$$"
+                ),
+                "did_you_know": f"Friedrich L. Bauer aur Klaus Samelson ne 1957 me stack data structure ka patent file kiya tha expression evaluation aur compiler parsing ke liye."
+            }
+
+        # 5. Queue
+        if any(k in t_low for k in ["queue", "fifo"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 4.9,
+                "difficulty_level": "Beginner",
+                "ai_evaluation": f"{topic} First-In First-Out streaming fairness, circular buffer wraparound arithmetic, aur producer-consumer thread synchronization ko evaluate karta hai.",
+                "overview": (
+                    f"Ek **{topic}** ek linear abstract data type hai jo **FIFO (First-In, First-Out)** principle par kaam karta hai. "
+                    f"Iska matlab jo element sabse pehle aata hai, wahi sabse pehle process hota hai. Isme do distinct ends hote hain: Rear (jahan se enqueue hota hai) aur Front (jahan se dequeue hota hai).\n\n"
+                    f"### Core Invariants & Operations\n"
+                    fr"- **Enqueue**: Naye element ko queue ke Rear end par add karta hai ($O(1)$ time).\n"
+                    fr"- **Dequeue**: Queue ke Front se sabse purane element ko remove karta hai ($O(1)$ time).\n"
+                    fr"- **Circular Buffer Mechanics**: Modulo arithmetic use karke array me space reuse kiya jata hai."
+                ),
+                "theoretical_foundations": f"Queuing theory aur asynchronous event-driven architectures ka bedrock hai, jo OS print spoolers aur network packet buffers me use hota hai.",
+                "core_formulations": (
+                    r"- **Circular Enqueue**: $$\text{Rear} \leftarrow (\text{Rear} + 1) \pmod N, \quad Q[\text{Rear}] \leftarrow x$$\n"
+                    r"- **Circular Dequeue**: $$x \leftarrow Q[\text{Front}], \quad \text{Front} \leftarrow (\text{Front} + 1) \pmod N$$"
+                ),
+                "did_you_know": f"Agner Krarup Erlang ne 1909 me queuing theory develop ki thi Copenhagen telephone exchanges me traffic congestion calculate karne ke liye."
+            }
+
+        # 6. Hash Table
+        if any(k in t_low for k in ["hash", "hash table", "hash map", "hashing"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 6.8,
+                "difficulty_level": "Intermediate",
+                "ai_evaluation": f"{topic} hash function uniformity, collision resolution strategies (chaining vs open addressing), load factor threshold, aur amortized O(1) bounds ko test karta hai.",
+                "overview": (
+                    f"Ek **{topic}** ek high-efficiency associative data structure hai jo keys ko values ke saath map karta hai. "
+                    f"Ye ek mathematical **hash function** use karta hai jo arbitrary string ya object key ko numeric index me convert kar deta hai, jisse average case me instant $O(1)$ lookup milta hai.\n\n"
+                    f"### Core Invariants & Mechanics\n"
+                    fr"- **Deterministic Hash Mapping**: Same key hamesha same integer hash code produce karti hai.\n"
+                    fr"- **Collision Resolution**: Jab do alag keys same index produce karti hain, to Chaining (linked list buckets) ya Open Addressing (Linear/Quadratic Probing) se solve kiya jata hai.\n"
+                    fr"- **Load Factor Threshold**: Load factor $\alpha = n/m$ jab typically 0.75 cross karta hai, to table automatically resize ho jaati hai."
+                ),
+                "theoretical_foundations": f"Universal hashing aur probability distribution theory par based hai jahan uniform hashing assumption deterministic collision bounds prove karti hai.",
+                "core_formulations": (
+                    r"- **Hash Index Calculation**: $$\text{index} = h(\text{key}) \pmod M$$\n"
+                    r"- **Load Factor**: $$\alpha = \frac{n}{M} \quad (\text{Threshold: } \alpha \le 0.75)$$\n"
+                    r"- **Average Operational Time**: $$\text{Search, Insert, Delete} \in \mathcal{O}(1) \text{ Average, } \mathcal{O}(n) \text{ Worst-Case}$$"
+                ),
+                "did_you_know": f"Hans Peter Luhn ne IBM me 1953 me hash table ka concept invent kiya tha chemical information search karne ke liye."
+            }
+
+        # 7. Graph & Dijkstra
+        if any(k in t_low for k in ["graph", "dijkstra", "bfs", "dfs", "shortest path"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 7.8,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": f"{topic} adjacency representations, priority queue greedy edge relaxation, non-negative weight invariant, aur O((V + E) log V) complexity ko evaluate karta hai.",
+                "overview": (
+                    f"Ek **{topic}** ek versatile non-linear data structure hai jo entities ke beech pairwise connections ko model karta hai. "
+                    f"Isme vertices ya nodes ka set $V$ aur unhe jodne wale edges ka set $E$ hota hai. Google Maps routing, social networks, aur Internet routing protocols graphs par hi chalte hain.\n\n"
+                    f"### Core Invariants & Mechanics\n"
+                    fr"- **Graph Representation**: Sparse graphs ke liye Adjacency List ($O(V + E)$ space) aur dense graphs ke liye Adjacency Matrix ($O(V^2)$ space) standard formats hain.\n"
+                    fr"- **Dijkstra Greedy Invariant**: Non-negative edge weights hone par, min-priority queue se extract kiya gaya vertex hamesha globally optimal shortest distance secure kar chuka hota hai.\n"
+                    fr"- **Edge Relaxation**: Agar $d[u] + w(u, v) < d[v]$, to distance $d[v]$ update ho jata hai."
+                ),
+                "theoretical_foundations": f"Leonhard Euler ne 1736 me Seven Bridges of Königsberg problem solve karke graph theory ki foundation rakhi thi.",
+                "core_formulations": (
+                    r"- **Graph Definition**: $$G = (V, E) \quad \text{where } E \subseteq V \times V$$\n"
+                    r"- **Dijkstra Relaxation Rule**: $$\text{if } d[u] + w(u, v) < d[v] \implies d[v] \leftarrow d[u] + w(u, v)$$\n"
+                    r"- **Dijkstra Complexity with Min-Heap**: $$\mathcal{O}((V + E) \log V)$$"
+                ),
+                "did_you_know": f"Edsger Dijkstra ne 1956 me bina pen-paper ke sirf 20 minute me coffee peete waqt Dijkstra algorithm design kiya tha ARMAC computer ko test karne ke liye."
+            }
+
+        # 8. Operating System
+        if any(k in t_low for k in ["operating system", "process", "thread", "deadlock", "paging", "scheduling"]):
+            return {
+                "topic": topic,
+                "category": detected_domain,
+                "difficulty_score": 7.2,
+                "difficulty_level": "Advanced",
+                "ai_evaluation": f"{topic} hardware virtualization, kernel vs user mode privileges, process lifecycle state transitions, aur concurrency synchronization ko test karta hai.",
+                "overview": (
+                    f"Ek **{topic}** computer hardware aur user programs ke beech ka master system software coordinator hai. "
+                    f"Iska primary goal CPU, physical memory (RAM), storage disks, aur peripheral I/O devices ko efficiently multiplex aur secure karna hota hai.\n\n"
+                    f"### Core Architectural Invariants\n"
+                    fr"- **Dual-Mode Execution**: Hardware-enforced protection Ring 0 (Kernel Mode) aur Ring 3 (User Mode) me code isolate karke crash hone se bachata hai.\n"
+                    fr"- **5-State Process Model**: Har program Process Control Block (PCB) me track hota hai: New $\to$ Ready $\leftrightarrow$ Running $\to$ Terminated (aur I/O wait me Blocked).\n"
+                    fr"- **Virtual Memory & Paging**: MMU hardware page tables ke through logical addresses ko physical frames me translate karta hai, providing 100% memory isolation."
+                ),
+                "theoretical_foundations": f"Dijkstra ke THE multiprogramming system (1968) aur Ken Thompson/Dennis Ritchie ke UNIX architecture par modern OS systems grounded hain.",
+                "core_formulations": (
+                    r"- **Virtual Address Translation**: $$\text{Physical Address} = (\text{Frame Number} \times \text{Page Size}) + \text{Offset}$$\n"
+                    r"- **CPU Utilization**: $$\text{Utilization} = 1 - p^n \quad (\text{where } p \text{ is I/O wait fraction, } n \text{ processes})$$"
+                ),
+                "did_you_know": f"1969 me Bell Labs me Ken Thompson ne ek discarded PDP-7 computer par pehla Unix system likha tha taaki wo Space Travel naam ka game khel sakein."
+            }
+
+        # Fallback for any other topic in Hinglish
+        base_eng = TopicContextEngine._build_topic_context_raw(clean_q, detected_domain, lang="english")
+        return {
+            "topic": topic,
+            "category": detected_domain,
+            "difficulty_score": base_eng.get("difficulty_score", 6.5),
+            "difficulty_level": base_eng.get("difficulty_level", "Intermediate"),
+            "ai_evaluation": f"{topic} ke core theoretical principles, governing formulas, aur practical engineering trade-offs ko systematically analyze karta hai.",
+            "overview": (
+                f"**{topic}** academic curriculum aur modern technology ka ek essential concept hai jo {detected_domain} me core significance rakhta hai. "
+                f"Iska primary focus efficiency badhana, operational bottlenecks door karna, aur system performance optimize karna hota hai.\n\n"
+                f"### Core Concepts & Engineering Realities\n"
+                f"- **Core Functionality**: Ye real-world problems ko solve karne ke liye structured rules aur mathematical models provide karta hai.\n"
+                f"- **Practical Significance**: Software engineering, physical systems, aur analytical frameworks me iska direct application hota hai."
+            ),
+            "theoretical_foundations": base_eng.get("theoretical_foundations", f"Rooted in core principles of {detected_domain}."),
+            "core_formulations": base_eng.get("core_formulations", r"- **Governing Formula**: $$\Phi(x) = \sum \text{Output}$$"),
+            "did_you_know": base_eng.get("did_you_know", f"{topic} ke theoretical foundations kai decades ke collaborative scientific research par based hain.")
+        }
+

@@ -55,11 +55,12 @@ async def search_endpoint(request: Request, db: Session = Depends(get_db)):
         if not isinstance(data, dict):
             data = {}
         query = data.get("query") or data.get("q") or data.get("topic") or ""
+        lang = data.get("lang") or request.query_params.get("lang") or "english"
         if not query.strip():
             query = request.query_params.get("query") or request.query_params.get("q") or ""
         if not query.strip():
             return JSONResponse(status_code=400, content={"error": "Missing query", "overview": "Please provide a valid query."})
-        result = await perform_unified_search(query, db)
+        result = await perform_unified_search(query, db, lang=lang)
         return JSONResponse(content=result.model_dump(mode='json'))
     except Exception as e:
         print(f"Search API Error: {str(e)}")

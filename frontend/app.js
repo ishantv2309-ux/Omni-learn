@@ -139,9 +139,244 @@ window.toggleTheme = toggleTheme;
 window.applyTheme = applyTheme;
 window.initTheme = initTheme;
 
+// --- Language State Management (English / Hinglish) ---
+let currentLang = localStorage.getItem("omni_lang") || "english";
+if (currentLang !== "hinglish" && currentLang !== "english") {
+    currentLang = "english";
+}
+let isTranslatingLanguage = false;
+
+function initLanguage() {
+    const saved = localStorage.getItem("omni_lang") || "english";
+    setLanguage(saved, false);
+}
+
+async function setLanguage(lang, triggerRefetch = true) {
+    const target = (lang === "hinglish") ? "hinglish" : "english";
+    currentLang = target;
+    localStorage.setItem("omni_lang", target);
+    document.documentElement.setAttribute("data-lang", target);
+    updateLanguageToggleUI(target, false);
+    updateUISectionLabels(target);
+
+    // If currently on dashboard with an active topic, re-fetch payload with localized loading state
+    const activeTopic = currentQuery || (currentSearchData && (currentSearchData.topic || currentSearchData.title || currentSearchData.query));
+    if (triggerRefetch && activeTopic && activeTopic.trim()) {
+        const dashboard = document.getElementById("dashboardScreen");
+        const isDashboardVisible = dashboard && !dashboard.classList.contains("hidden");
+        if (isDashboardVisible) {
+            console.log(`Language switched to ${target}. Triggering immediate re-fetch for: ${activeTopic}`);
+            await executeLanguageRefetch(activeTopic.trim(), target);
+        }
+    }
+}
+
+async function toggleLanguage() {
+    if (isTranslatingLanguage) return;
+    const nextLang = currentLang === "english" ? "hinglish" : "english";
+    await setLanguage(nextLang, true);
+}
+
+// Re-fetches the current topic with localized in-card & button loading indicators
+async function executeLanguageRefetch(topic, targetLang) {
+    if (isTranslatingLanguage) return;
+    isTranslatingLanguage = true;
+
+    const loadingText = targetLang === "hinglish" ? "Translating to Hinglish..." : "Switching to English...";
+
+    // 1. Show localized loading state inside button and banner
+    updateLanguageToggleUI(targetLang, true, loadingText);
+
+    const banner = document.getElementById("langLoadingBanner");
+    const bannerText = document.getElementById("langLoadingBannerText");
+    if (banner) banner.classList.remove("hidden");
+    if (bannerText) bannerText.textContent = loadingText;
+
+    const summaryText = document.getElementById("summaryText") || document.getElementById("overview-text");
+    if (summaryText) summaryText.classList.add("opacity-60", "transition-opacity");
+
+    try {
+        // 2. Fetch passing { topic: topic, query: topic, lang: targetLang }
+        const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                topic: topic,
+                query: topic,
+                lang: targetLang
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Refetch failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.query) data.query = topic;
+        if (!data.topic) data.topic = topic;
+        data.lang = targetLang;
+        currentSearchData = data;
+
+        // Cache update
+        const cacheKey = `${targetLang}_${topic.toLowerCase()}`;
+        searchResultCache.set(cacheKey, data);
+        try {
+            sessionStorage.setItem("omni_cache_v53_" + cacheKey, JSON.stringify(data));
+        } catch (_) {}
+
+        // 3. Update URL with language parameter
+        const langParam = targetLang === "hinglish" ? "&lang=hinglish" : "";
+        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(topic)}${langParam}`;
+        window.history.pushState({ query: topic, lang: targetLang }, "", newUrl);
+
+        // 4. Re-render dashboard UI
+        updateDashboardUI(data);
+
+    } catch (err) {
+        console.error("Language re-fetch failed:", err);
+    } finally {
+        isTranslatingLanguage = false;
+        if (banner) banner.classList.add("hidden");
+        if (summaryText) summaryText.classList.remove("opacity-60");
+        updateLanguageToggleUI(targetLang, false);
+    }
+}
+
+// Updates UI buttons: displays "🇮🇳 Hinglish" when in English mode and "🇬🇧 English" when in Hinglish mode
+function updateLanguageToggleUI(lang, isLoading = false, loadingText = "") {
+    // When in English mode, the button offers/displays "🇮🇳 Hinglish"
+    // When in Hinglish mode, the button offers/displays "🇬🇧 English"
+    const labelText = lang === "english" ? "🇮🇳 Hinglish" : "🇬🇧 English";
+    const buttonTitle = lang === "english" ? "Switch to Hinglish (Hindi in Roman script + English CS Terms)" : "Switch to English";
+
+    // 1. Overview Card Prominent Button next to topic title
+    const topicBtn = document.getElementById("topicLangToggleBtn");
+    const topicLabel = document.getElementById("topicLangToggleLabel");
+    const topicSpinner = document.getElementById("topicLangToggleSpinner");
+    if (topicBtn) {
+        topicBtn.disabled = isLoading;
+        topicBtn.title = isLoading ? loadingText : buttonTitle;
+        topicBtn.setAttribute("aria-label", topicBtn.title);
+        topicBtn.classList.toggle("mode-hinglish", lang === "hinglish");
+    }
+    if (topicSpinner) {
+        if (isLoading) {
+            topicSpinner.classList.remove("hidden");
+        } else {
+            topicSpinner.classList.add("hidden");
+        }
+    }
+    if (topicLabel) {
+        topicLabel.textContent = isLoading ? loadingText : labelText;
+    }
+
+    // 2. Navbar Language Button
+    const navBtn = document.getElementById("langToggleBtn");
+    const navText = document.getElementById("langToggleText");
+    const navSpinner = document.getElementById("navLangToggleSpinner");
+    if (navBtn) {
+        navBtn.disabled = isLoading;
+        navBtn.title = isLoading ? loadingText : buttonTitle;
+        navBtn.classList.toggle("mode-hinglish", lang === "hinglish");
+    }
+    if (navSpinner) {
+        if (isLoading) {
+            navSpinner.classList.remove("hidden");
+        } else {
+            navSpinner.classList.add("hidden");
+        }
+    }
+    if (navText) {
+        navText.textContent = isLoading ? loadingText : labelText;
+    }
+
+    // 3. Landing Screen Language Button
+    const landingBtn = document.getElementById("landingLangToggleBtn");
+    const landingLabel = document.getElementById("landingLangToggleLabel");
+    if (landingBtn) {
+        landingBtn.disabled = isLoading;
+        landingBtn.title = isLoading ? loadingText : buttonTitle;
+        landingBtn.classList.toggle("mode-hinglish", lang === "hinglish");
+    }
+    if (landingLabel) {
+        landingLabel.textContent = isLoading ? loadingText : labelText;
+    }
+}
+
+// Translates UI section headers dynamically based on selected language
+function updateUISectionLabels(lang) {
+    const isHinglish = (lang || "").toLowerCase() === "hinglish";
+
+    // 1. Quick Example Section Headers
+    const labelBreakdown = document.getElementById("labelBreakdownSubhead");
+    if (labelBreakdown) {
+        labelBreakdown.textContent = isHinglish ? "KAISE KAAM KARTA HAI (STEP-BY-STEP)" : "How It Works (Step-by-Step)";
+    }
+
+    const labelUseCases = document.getElementById("labelUseCasesSubhead");
+    if (labelUseCases) {
+        labelUseCases.textContent = isHinglish ? "ASLI DUNIYA MEIN KAHAN USE HOTA HAI" : "Everyday & Real-World Applications";
+    }
+
+    const labelUseCasesBadge = document.getElementById("labelUseCasesBadge");
+    if (labelUseCasesBadge) {
+        labelUseCasesBadge.textContent = isHinglish ? "Aaj Ki Tech Me Kahan Kaam Aata Hai" : "Where This Powers Modern Tech";
+    }
+
+    const labelTradeoffs = document.getElementById("labelTradeoffsSubhead");
+    if (labelTradeoffs) {
+        labelTradeoffs.textContent = isHinglish ? "FAAYDE AUR NUKSAAN" : "Advantages vs. Limitations";
+    }
+
+    const labelAdv = document.getElementById("labelAdvSubhead");
+    if (labelAdv) {
+        labelAdv.textContent = isHinglish ? "SABSE BADA FAAYDA" : "What Makes It Great";
+    }
+
+    const labelDisadv = document.getElementById("labelDisadvSubhead");
+    if (labelDisadv) {
+        labelDisadv.textContent = isHinglish ? "DHYAN RAKHNE WALI BAATEIN" : "Limitations to Keep in Mind";
+    }
+
+    const labelTakeaway = document.getElementById("labelTakeawaySubhead");
+    if (labelTakeaway) {
+        labelTakeaway.textContent = isHinglish ? "SABSE MAIN BAAT" : "Key Takeaway";
+    }
+
+    const labelScenario = document.getElementById("labelScenarioSubhead");
+    if (labelScenario) {
+        labelScenario.textContent = isHinglish ? "ASLI DUNIYA KA EXAMPLE AUR ANALOGY" : "Real-World Scenario & Analogy";
+    }
+
+    // 2. Right-Panel Cards & Badges
+    const labelRoadmap = document.getElementById("labelRoadmapHeader");
+    if (labelRoadmap) {
+        labelRoadmap.textContent = isHinglish ? "Padhai Ka Roadmap (5 Steps)" : "Topic Study Roadmap";
+    }
+
+    const labelAcademicEval = document.getElementById("labelAcademicEval");
+    if (labelAcademicEval) {
+        labelAcademicEval.textContent = isHinglish ? "Academic Evaluation (Hinglish)" : "Academic Evaluation";
+    }
+
+    const labelDidYouKnow = document.getElementById("labelDidYouKnow");
+    if (labelDidYouKnow) {
+        labelDidYouKnow.textContent = isHinglish ? "Kya Aapko Pata Tha?" : "Did You Know?";
+    }
+}
+
+window.updateUISectionLabels = updateUISectionLabels;
+window.toggleLanguage = toggleLanguage;
+window.setLanguage = setLanguage;
+window.initLanguage = initLanguage;
+window.executeLanguageRefetch = executeLanguageRefetch;
+
 // --- Init on Page Load & URL Routing ("useEffect" Hook equivalent) ---
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
+    initLanguage();
     fetchBookmarks();
     initUrlRouting();
     initSearchInputListeners();
@@ -154,10 +389,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+function clearNavSearch() {
+    const navInput = document.getElementById("navSearchInput");
+    if (navInput) {
+        navInput.value = "";
+        navInput.focus();
+    }
+    const clearBtn = document.getElementById("navSearchClearBtn");
+    if (clearBtn) clearBtn.classList.add("hidden");
+}
+window.clearNavSearch = clearNavSearch;
+
+function clearMobileNavSearch() {
+    const mobileInput = document.getElementById("mobileNavSearchInput");
+    if (mobileInput) {
+        mobileInput.value = "";
+        mobileInput.focus();
+    }
+    const clearBtn = document.getElementById("mobileNavSearchClearBtn");
+    if (clearBtn) clearBtn.classList.add("hidden");
+}
+window.clearMobileNavSearch = clearMobileNavSearch;
+
 function initSearchInputListeners() {
     const mainInput = document.getElementById("mainSearchInput");
     const navInput = document.getElementById("navSearchInput");
-    [mainInput, navInput].forEach(input => {
+    const mobileNavInput = document.getElementById("mobileNavSearchInput");
+    const navClearBtn = document.getElementById("navSearchClearBtn");
+    const mobileClearBtn = document.getElementById("mobileNavSearchClearBtn");
+
+    [mainInput, navInput, mobileNavInput].forEach(input => {
         if (input) {
             input.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") {
@@ -167,6 +428,18 @@ function initSearchInputListeners() {
             });
         }
     });
+
+    if (navInput && navClearBtn) {
+        navInput.addEventListener("input", () => {
+            navClearBtn.classList.toggle("hidden", !navInput.value.trim());
+        });
+    }
+
+    if (mobileNavInput && mobileClearBtn) {
+        mobileNavInput.addEventListener("input", () => {
+            mobileClearBtn.classList.toggle("hidden", !mobileNavInput.value.trim());
+        });
+    }
 
     // Global Escape key listener to close modals
     document.addEventListener("keydown", (e) => {
@@ -195,6 +468,10 @@ function initSearchInputListeners() {
 function initUrlRouting() {
     window.addEventListener("popstate", (event) => {
         const urlParams = new URLSearchParams(window.location.search);
+        const langFromUrl = urlParams.get("lang");
+        if (langFromUrl && (langFromUrl === "hinglish" || langFromUrl === "english")) {
+            setLanguage(langFromUrl, false);
+        }
         const queryFromUrl = urlParams.get("q") || urlParams.get("query") || urlParams.get("topic");
         if (queryFromUrl && queryFromUrl.trim()) {
             executeSearch(queryFromUrl.trim(), false);
@@ -205,9 +482,15 @@ function initUrlRouting() {
 
     // Handle cold page load with query parameter in URL (e.g. ?q=Dijkstra or ?query=Newton)
     const initialParams = new URLSearchParams(window.location.search);
+    const initialLang = initialParams.get("lang");
+    if (initialLang && (initialLang === "hinglish" || initialLang === "english")) {
+        setLanguage(initialLang, false);
+    }
     const initialQuery = initialParams.get("q") || initialParams.get("query") || initialParams.get("topic");
     if (initialQuery && initialQuery.trim()) {
         executeSearch(initialQuery.trim(), false);
+    } else {
+        showScreen("landingScreen");
     }
 }
 
@@ -392,14 +675,14 @@ function setCardsLoadingState(query) {
 }
 
 // --- Central Reactive Search Controller ---
-async function executeSearch(targetQuery, updateHistory = true) {
+async function executeSearch(targetQuery, updateHistory = true, forceRefresh = false) {
     const query = (targetQuery || "").trim();
     if (!query) return;
 
-    console.log("Executing search for:", query);
+    console.log("Executing search for:", query, `(lang: ${currentLang})`);
 
-    // Prevent re-triggering identical in-flight searches
-    if (isSearching && query === currentQuery) return;
+    // Prevent re-triggering identical in-flight searches unless forced (e.g. language toggle)
+    if (!forceRefresh && isSearching && query === currentQuery) return;
     isSearching = true;
     currentQuery = query;
 
@@ -419,8 +702,16 @@ async function executeSearch(targetQuery, updateHistory = true) {
     const noteInput = document.getElementById("noteSearchInput");
 
     if (mainInput) mainInput.value = query;
-    if (navInput) navInput.value = query;
-    if (mobileNavInput) mobileNavInput.value = query;
+    if (navInput) {
+        navInput.value = query;
+        const navClearBtn = document.getElementById("navSearchClearBtn");
+        if (navClearBtn) navClearBtn.classList.toggle("hidden", !query);
+    }
+    if (mobileNavInput) {
+        mobileNavInput.value = query;
+        const mobileClearBtn = document.getElementById("mobileNavSearchClearBtn");
+        if (mobileClearBtn) mobileClearBtn.classList.toggle("hidden", !query);
+    }
     if (noteInput) {
         noteInput.value = "";
         noteInput.placeholder = `Search inside notes (OCR)...`;
@@ -436,20 +727,21 @@ async function executeSearch(targetQuery, updateHistory = true) {
 
     // 3. Synchronize URL query parameter and browser document title
     if (updateHistory) {
-        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}`;
-        window.history.pushState({ query }, "", newUrl);
+        const langParam = currentLang === "hinglish" ? "&lang=hinglish" : "";
+        const newUrl = `${window.location.pathname}?q=${encodeURIComponent(query)}${langParam}`;
+        window.history.pushState({ query, lang: currentLang }, "", newUrl);
     }
     document.title = `${query} — OmniLearn Academic Hub`;
 
-    const cacheKey = query.toLowerCase();
+    const cacheKey = `${currentLang}_${query.toLowerCase()}`;
     currentQuery = query;
     let hasInstantRendered = false;
 
-    // 4. Check client-side instant cache for zero-latency rendering
-    let cachedData = searchResultCache.get(cacheKey);
-    if (!cachedData) {
+    // 4. Check client-side instant cache for zero-latency rendering (skip if forceRefresh)
+    let cachedData = forceRefresh ? null : searchResultCache.get(cacheKey);
+    if (!cachedData && !forceRefresh) {
         try {
-            const rawStored = sessionStorage.getItem("omni_cache_v49_" + cacheKey);
+            const rawStored = sessionStorage.getItem("omni_cache_v53_" + cacheKey);
             if (rawStored) {
                 cachedData = JSON.parse(rawStored);
                 searchResultCache.set(cacheKey, cachedData);
@@ -484,7 +776,7 @@ async function executeSearch(targetQuery, updateHistory = true) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ query })
+            body: JSON.stringify({ query, lang: currentLang })
         });
         if (!response.ok) {
             let errorMsg = "";
@@ -505,7 +797,7 @@ async function executeSearch(targetQuery, updateHistory = true) {
         currentSearchData = data;
         searchResultCache.set(cacheKey, data);
         try {
-            sessionStorage.setItem("omni_cache_v49_" + cacheKey, JSON.stringify(data));
+            sessionStorage.setItem("omni_cache_v53_" + cacheKey, JSON.stringify(data));
         } catch (_) {}
 
         // 5. Instantly and completely re-render all dashboard sections with dynamic data
@@ -601,6 +893,11 @@ function resetSearch(updateHistory = true) {
     if (navInput) navInput.value = "";
     if (mobileNavInput) mobileNavInput.value = "";
 
+    const navClearBtn = document.getElementById("navSearchClearBtn");
+    if (navClearBtn) navClearBtn.classList.add("hidden");
+    const mobileClearBtn = document.getElementById("mobileNavSearchClearBtn");
+    if (mobileClearBtn) mobileClearBtn.classList.add("hidden");
+
     const navContainer = document.getElementById("navSearchContainer");
     if (navContainer) navContainer.classList.add("hidden");
     const mobileNavContainer = document.getElementById("mobileNavSearchContainer");
@@ -613,7 +910,8 @@ function resetSearch(updateHistory = true) {
     closeYearSubjects();
 
     if (updateHistory) {
-        window.history.pushState({}, "", window.location.pathname);
+        const langParam = currentLang === "hinglish" ? "?lang=hinglish" : "";
+        window.history.pushState({}, "", window.location.pathname + langParam);
     }
     document.title = "OmniLearn - All-in-One Student Learning Hub";
 }
@@ -632,18 +930,25 @@ function showScreen(screenId) {
     });
 
     const eduBg = document.getElementById("eduBackgroundLayer");
+    const navSearchContainer = document.getElementById("navSearchContainer");
+    const mobileNavSearchContainer = document.getElementById("mobileNavSearchContainer");
+
     if (screenId === "dashboardScreen" || screenId === "loadingScreen") {
         document.body.classList.add("dashboard-active");
         if (eduBg) {
             eduBg.style.display = "none";
             eduBg.setAttribute("aria-hidden", "true");
         }
+        if (navSearchContainer) navSearchContainer.classList.remove("hidden");
+        if (mobileNavSearchContainer) mobileNavSearchContainer.classList.remove("hidden");
     } else if (screenId === "landingScreen") {
         document.body.classList.remove("dashboard-active");
         if (eduBg) {
             eduBg.style.display = "";
             eduBg.removeAttribute("aria-hidden");
         }
+        if (navSearchContainer) navSearchContainer.classList.add("hidden");
+        if (mobileNavSearchContainer) mobileNavSearchContainer.classList.add("hidden");
     }
 }
 
@@ -742,6 +1047,11 @@ function renderDashboard(data) {
         if (domainBadge) {
             domainBadge.textContent = data.category || data.domain || "Academic Curriculum";
         }
+
+        // Synchronize Language UI state with data.lang
+        const effectiveLang = (data.lang || currentLang || "english").toLowerCase();
+        updateLanguageToggleUI(effectiveLang);
+        updateUISectionLabels(effectiveLang);
         
         // Format and render concise summary/overview text
         const summaryContainer = document.getElementById("overview-text") || document.getElementById("summaryText");
@@ -965,32 +1275,35 @@ function renderDashboard(data) {
             const cf = (data.core_formulations || "").trim();
             const db = (data.detailed_breakdown || data.detailedBreakdown || "").trim();
 
-            if (!tf && !db) {
+            if (db && db.length > 50) {
                 detailedContainer.innerHTML = `
-                    <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center">
-                        <i class="fa-solid fa-circle-exclamation mr-2 text-rose-500 text-sm"></i>
-                        <span>Theoretical Foundations Unavailable: Content missing from Gemini API response.</span>
+                    <div class="detailed-breakdown-content space-y-4">
+                        ${formatSummaryMarkdown(db)}
                     </div>`;
             } else if (tf || cf) {
                 detailedContainer.innerHTML = `
                     <div class="space-y-4">
                         ${tf ? `
                             <div class="theoretical-foundations">
-                                <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center border-b border-slate-200 pb-1">
-                                    <i class="fa-solid fa-microchip text-indigo-600 mr-2 text-xs"></i>Theoretical Foundations
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center border-b border-slate-200 dark:border-slate-700 pb-1">
+                                    <i class="fa-solid fa-microchip text-indigo-600 mr-2 text-xs"></i>Theoretical Foundations & Architecture
                                 </h3>
-                                <div class="text-slate-700 text-sm leading-relaxed">${formatSummaryMarkdown(tf)}</div>
+                                <div class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">${formatSummaryMarkdown(tf)}</div>
                             </div>` : ''}
                         ${cf ? `
                             <div class="core-formulations">
-                                <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center border-b border-slate-200 pb-1">
-                                    <i class="fa-solid fa-code text-indigo-600 mr-2 text-xs"></i>Core Formulations & Algorithms
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center border-b border-slate-200 dark:border-slate-700 pb-1">
+                                    <i class="fa-solid fa-code text-indigo-600 mr-2 text-xs"></i>Step-by-Step Algorithm & Formulations
                                 </h3>
-                                <div class="text-slate-700 text-sm leading-relaxed">${formatSummaryMarkdown(cf)}</div>
+                                <div class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">${formatSummaryMarkdown(cf)}</div>
                             </div>` : ''}
                     </div>`;
             } else {
-                detailedContainer.innerHTML = formatDetailedMarkdown(db);
+                detailedContainer.innerHTML = `
+                    <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center">
+                        <i class="fa-solid fa-circle-exclamation mr-2 text-rose-500 text-sm"></i>
+                        <span>Theoretical Foundations Unavailable: Content missing from Gemini API response.</span>
+                    </div>`;
             }
         }
     } catch (dtErr) {
@@ -1454,6 +1767,9 @@ function formatRoadmapDescription(text) {
     
     // Fix corrupted LaTeX where \t was absorbed as tab: "ext{" -> "\text{"
     let formatted = text.replace(/(^|[^\\])ext\{/g, '$1\\text{');
+
+    // Remove trailing dangling colons left over from stripped math headers
+    formatted = formatted.replace(/(:\s*)+$/g, '.');
     
     // Check if there are code blocks ```lang ... ```
     formatted = formatted.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (match, lang, code) => {
@@ -1509,26 +1825,27 @@ function renderRoadmap(steps) {
         let dotColor = "border-slate-300 bg-white text-slate-400";
         let typeLabel = step.type || "Core";
         
+        const isHinglish = (window.currentSearchLang === "hinglish");
         if (step.type === "prerequisite") {
             typeBadgeColor = "glass-badge glass-badge-indigo";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-blue-500 bg-blue-50 text-blue-600";
-            typeLabel = "Prerequisite";
+            typeLabel = isHinglish ? "Zaroori Basics" : "Prerequisite";
         } else if (step.type === "core") {
             typeBadgeColor = "glass-badge glass-badge-indigo";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-indigo-500 bg-indigo-50 text-indigo-600";
-            typeLabel = "Core Principle";
+            typeLabel = isHinglish ? "Main Concept" : "Core Principle";
         } else if (step.type === "deep_dive") {
             typeBadgeColor = "glass-badge glass-badge-amber";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-amber-500 bg-amber-50 text-amber-600";
-            typeLabel = "Deep Dive";
+            typeLabel = isHinglish ? "Gehrai Se Samjhein" : "Deep Dive";
         } else if (step.type === "practice") {
             typeBadgeColor = "glass-badge glass-badge-emerald";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-teal-500 bg-teal-50 text-teal-600";
-            typeLabel = "Problem Practice";
+            typeLabel = isHinglish ? "Exam Practice" : "Problem Practice";
         } else if (step.type === "advanced") {
             typeBadgeColor = "glass-badge glass-badge-purple";
             dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-purple-500 bg-purple-50 text-purple-600";
-            typeLabel = "Advanced Scope";
+            typeLabel = isHinglish ? "Industry Scope" : "Advanced Scope";
         }
         
         const conceptTitle = step.concept || step.title || `Step ${idx + 1}`;
@@ -1588,7 +1905,9 @@ function updateRoadmapProgressDisplay(total, completed) {
     if (!progressBadge) return;
     
     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-    progressBadge.textContent = `${completed} / ${total} Done (${pct}%)`;
+    const isHinglish = (window.currentSearchLang === "hinglish");
+    const doneText = isHinglish ? "Poora Hua" : "Done";
+    progressBadge.textContent = `${completed} / ${total} ${doneText} (${pct}%)`;
     
     if (completed === total && total > 0) {
         progressBadge.className = "text-[11px] font-bold glass-badge glass-badge-emerald px-2.5 py-0.5 rounded-full";

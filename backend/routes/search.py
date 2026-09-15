@@ -20,6 +20,7 @@ class SearchQueryPayload(BaseModel):
     query: Optional[str] = None
     q: Optional[str] = None
     topic: Optional[str] = None
+    lang: Optional[str] = "english"
 
 CACHE_EXPIRATION_HOURS = 24
 
@@ -55,12 +56,16 @@ def is_non_btech_topic(topic: str) -> bool:
             return True
     return False
 
-async def perform_unified_search(target_query: str, db: Session) -> SearchResponse:
+async def perform_unified_search(target_query: str, db: Session, lang: str = "english") -> SearchResponse:
     """Core unified search execution. Fetches AI details, videos, articles, local notes, and PYQs.
-    Applies caching for high-speed queries.
+    Applies caching for high-speed queries. Supports 'english' and 'hinglish' language options.
     """
     query = target_query.strip()
     clean_query = query.lower()
+    selected_lang = (lang or "english").strip().lower()
+    if selected_lang not in ["english", "hinglish"]:
+        selected_lang = "english"
+    cache_key = f"{clean_query}__hinglish" if selected_lang == "hinglish" else clean_query
     
     if is_non_btech_topic(clean_query):
         raise HTTPException(
@@ -82,11 +87,12 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
             pyqs=[],
             notes=[],
             careers=[],
-            fun_fact="Keep your learning focused on academic coursework!"
+            fun_fact="Keep your learning focused on academic coursework!",
+            lang=selected_lang
         )
     
     # 1. Check Search Cache
-    cache_record = db.query(SearchCache).filter(SearchCache.query == clean_query).first()
+    cache_record = db.query(SearchCache).filter(SearchCache.query == cache_key).first()
     if cache_record:
         # Check if cache is still fresh and contains rich breakdown, exam frequency, and trivia
         age = datetime.datetime.utcnow() - cache_record.created_at
@@ -96,9 +102,10 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                 and cached_json.get("detailed_breakdown")
                 and cached_json.get("exam_frequency")
                 and (cached_json.get("did_you_know") or cached_json.get("fun_fact"))):
-                print(f"Serving cached search results for: '{clean_query}'")
+                print(f"Serving cached search results for: '{cache_key}'")
                 if not cached_json.get("query"):
                     cached_json["query"] = clean_query
+                cached_json["lang"] = selected_lang
                 if not cached_json.get("curated_videos") and cached_json.get("youtube_videos"):
                     cached_json["curated_videos"] = cached_json["youtube_videos"]
 
@@ -109,7 +116,8 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                     or "governs fundamental physical interactions" in raw_ov):
                     upgraded_ctx = GeminiService.build_topic_context(
                         cached_json.get("topic") or cached_json.get("title") or clean_query,
-                        cached_json.get("category") or cached_json.get("domain") or "Computer Science & Engineering"
+                        cached_json.get("category") or cached_json.get("domain") or "Computer Science & Engineering",
+                        lang=selected_lang
                     )
                     cached_json["overview"] = upgraded_ctx["overview"]
                     cached_json["summary"] = upgraded_ctx["overview"]
@@ -154,16 +162,47 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
                         db.commit()
                     except Exception:
                         db.rollback()
+
+                # Auto-repair outdated or corrupted roadmap in cache
+                cached_rm = cached_json.get("roadmap")
+                needs_rm_repair = (
+                    not cached_rm or 
+                    not isinstance(cached_rm, list) or 
+                    len(cached_rm) < 4 or 
+                    any("coordinate framework" in str(s.get("description", "")).lower() or str(s.get("description", "")).strip().endswith(":") for s in cached_rm if isinstance(s, dict))
+                )
+                if needs_rm_repair:
+                    cached_json["roadmap"] = GeminiService.build_topic_roadmap(
+                        cached_json.get("topic") or cached_json.get("title") or clean_query,
+                        clean_query,
+                        cached_json.get("category") or cached_json.get("domain") or "Academic Curriculum",
+                        lang=selected_lang
+                    )
+                    cache_record.result_json = cached_json
+                    try:
+                        db.commit()
+                        print(f"Auto-repaired cached roadmap for: '{clean_query}' (lang: {selected_lang})")
+                    except Exception:
+                        db.rollback()
+                if cache_record.result_json.get("lang") != selected_lang:
+                    from sqlalchemy.orm.attributes import flag_modified
+                    cached_json["lang"] = selected_lang
+                    cache_record.result_json = dict(cached_json)
+                    flag_modified(cache_record, "result_json")
+                    try:
+                        db.commit()
+                    except Exception:
+                        db.rollback()
                 return SearchResponse.model_validate(cached_json)
 
-    print(f"Cache miss. Performing live aggregation for: '{clean_query}'")
+    print(f"Cache miss. Performing live aggregation for: '{cache_key}' (lang: {selected_lang})")
     
     # 2. Run external API aggregations concurrently
     # Since gemini_service is synchronous, we run it in a threadpool to avoid blocking the event loop
     loop = asyncio.get_running_loop()
     
     async def get_gemini_data():
-        return await loop.run_in_executor(None, GeminiService.generate_topic_details, query)
+        return await loop.run_in_executor(None, GeminiService.generate_topic_details, query, selected_lang)
 
     async def get_youtube_data():
         try:
@@ -191,12 +230,12 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
     if isinstance(gemini_data, Exception) or not isinstance(gemini_data, dict):
         print(f"Gemini aggregation notice: {gemini_data}. Falling back to authentic academic intelligence.")
         try:
-            gemini_data = GeminiService.generate_topic_details(query)
+            gemini_data = GeminiService.generate_topic_details(query, lang=selected_lang)
         except Exception as fb_err:
             print(f"Secondary fallback triggered: {fb_err}")
             clean_q = GeminiService.clean_search_query(query) or query.strip()
             domain = GeminiService._detect_academic_domain(clean_q)
-            gemini_data = GeminiService._synthesize_academic_fallback(clean_q, domain)
+            gemini_data = GeminiService._synthesize_academic_fallback(clean_q, domain, lang=selected_lang)
         
     if isinstance(youtube_videos, Exception) or not isinstance(youtube_videos, list):
         print(f"YouTube aggregation error: {youtube_videos}")
@@ -392,7 +431,8 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         "notes_content": GeminiService.sanitize_study_notes(gemini_data.get("study_notes") or gemini_data.get("notes_content") or (note_responses[0].ocr_text if note_responses else "")),
         "exam_frequency": exam_freq_dicts,
         "examFrequency": exam_freq_list,
-        "diagram": gemini_data.get("diagram") or GeminiService.build_topic_diagram(canonical_topic, clean_query, category_name)
+        "diagram": gemini_data.get("diagram") or GeminiService.build_topic_diagram(canonical_topic, clean_query, category_name),
+        "lang": selected_lang
     }
     
     # Serialize to pydantic model for validation & formatting
@@ -404,7 +444,7 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
         cache_record.result_json = serialized_data
         cache_record.created_at = datetime.datetime.utcnow()
     else:
-        new_cache = SearchCache(query=clean_query, result_json=serialized_data)
+        new_cache = SearchCache(query=cache_key, result_json=serialized_data)
         db.add(new_cache)
         
     db.commit()
@@ -415,14 +455,15 @@ async def perform_unified_search(target_query: str, db: Session) -> SearchRespon
 async def unified_search_get(
     query: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
+    lang: Optional[str] = Query("english"),
     db: Session = Depends(get_db)
 ):
-    """GET entry point for unified search. Supports ?query=... and ?q=..."""
+    """GET entry point for unified search. Supports ?query=... and ?q=... and ?lang=..."""
     try:
         target = query if query is not None else q
         if not target or not target.strip():
             raise HTTPException(status_code=400, detail="Query parameter 'query' or 'q' is required.")
-        return await perform_unified_search(target, db)
+        return await perform_unified_search(target, db, lang=lang or "english")
     except HTTPException:
         raise
     except Exception as e:
@@ -452,6 +493,7 @@ async def unified_search_post(
         if not isinstance(data, dict):
             data = {}
         target = data.get("query") or data.get("q") or data.get("topic") or ""
+        lang = data.get("lang") or request.query_params.get("lang") or "english"
         if not target.strip():
             target = request.query_params.get("query") or request.query_params.get("q") or ""
         if not target.strip():
@@ -459,7 +501,7 @@ async def unified_search_post(
                 status_code=400,
                 content={"error": "JSON payload must include 'query' or 'q'.", "overview": "Please provide a valid query."}
             )
-        result = await perform_unified_search(target, db)
+        result = await perform_unified_search(target, db, lang=lang)
         return JSONResponse(content=result.model_dump(mode='json'))
     except Exception as e:
         print(f"Search API Error: {str(e)}")

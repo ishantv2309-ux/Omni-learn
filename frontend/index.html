@@ -134,14 +134,16 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=4.9.1">
-    <!-- Instant Theme Pre-Hydration (Prevents Flash of Wrong Theme) -->
+    <link rel="stylesheet" href="css/style.css?v=5.3.0">
+    <!-- Instant Theme & Language Pre-Hydration (Prevents Flash of Wrong Theme or Lang) -->
     <script>
       (function() {
         try {
           const t = localStorage.getItem('omni_theme') || 'dark';
           document.documentElement.setAttribute('data-theme', t);
           document.documentElement.classList.add(t);
+          const l = localStorage.getItem('omni_lang') || 'english';
+          document.documentElement.setAttribute('data-lang', l);
         } catch(e) {}
       })();
     </script>
@@ -209,17 +211,26 @@
             </div>
             
             <!-- Navbar Search Bar (Visible after search is initiated on tablet/desktop) -->
-            <div id="navSearchContainer" class="hidden sm:block flex-1 max-w-xl mx-4 md:mx-8">
-                <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative">
+            <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-3 sm:mx-6 md:mx-8">
+                <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative flex items-center">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
-                           class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-10 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700">
-                    <span class="absolute left-3 top-2.5 text-slate-300 pointer-events-none">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
+                           class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-10 pr-9 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
+                    <button type="submit" class="absolute left-3 top-2.5 text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </button>
+                    <button type="button" id="navSearchClearBtn" onclick="clearNavSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-rose-400 transition cursor-pointer" title="Clear search" aria-label="Clear">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
                 </form>
             </div>
             
             <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+                <!-- Language Toggle Button (English / Hinglish) -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="nav-control-btn topic-lang-nav-btn" title="Switch English / Hinglish Mode" aria-label="Toggle Language">
+                    <span id="navLangToggleSpinner" class="hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i></span>
+                    <span id="langToggleText" class="text-xs font-bold">🇮🇳 Hinglish</span>
+                </button>
+
                 <!-- Theme Toggle Button -->
                 <button id="themeToggleBtn" onclick="toggleTheme()" class="nav-control-btn" title="Toggle Light / Dark Mode">
                     <i id="themeToggleIcon" class="fa-solid fa-moon text-amber-300"></i>
@@ -236,13 +247,16 @@
         </div>
 
         <!-- Mobile Navbar Search Sub-Bar (Full-width, cleanly displayed on mobile < 640px when search is active) -->
-        <div id="mobileNavSearchContainer" class="hidden sm:hidden px-3.5 pb-2.5 pt-0 max-w-7xl mx-auto">
-            <form id="mobileNavSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full">
+        <div id="mobileNavSearchContainer" class="hidden px-3.5 pb-2.5 pt-0 max-w-7xl mx-auto">
+            <form id="mobileNavSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full flex items-center">
                 <input type="text" id="mobileNavSearchInput" placeholder="Search another topic..." 
-                       class="w-full bg-slate-800/80 text-white placeholder-slate-300 pl-9 pr-4 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm" autocomplete="off">
-                <span class="absolute left-3 top-2.5 text-slate-300 pointer-events-none text-xs">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
+                       class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-9 pr-8 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
+                <button type="submit" class="absolute left-3 top-2.5 text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </button>
+                <button type="button" id="mobileNavSearchClearBtn" onclick="clearMobileNavSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-rose-400 transition cursor-pointer" title="Clear search" aria-label="Clear">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
             </form>
         </div>
     </header>
@@ -291,6 +305,14 @@
                     </button>
                     <button onclick="fillAndSearch('Quantum Mechanics')" class="omni-pill omni-pill-night">
                         ⚛️ Quantum Mechanics
+                    </button>
+                </div>
+
+                <!-- Language Preference Option on Landing Deck -->
+                <div class="mt-4 flex items-center justify-center gap-2">
+                    <span class="text-xs text-slate-400 font-medium">Output Language:</span>
+                    <button type="button" id="landingLangToggleBtn" onclick="toggleLanguage()" class="topic-lang-toggle-btn" title="Click to switch language">
+                        <span id="landingLangToggleLabel">🇮🇳 Hinglish</span>
                     </button>
                 </div>
             </div>
@@ -367,7 +389,7 @@
                 <!-- AI Real-Time Overview (Left Card) -->
                 <div class="overview-card flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-start p-6">
                     <div style="display: flex; flex-direction: column; gap: 14px;">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between flex-wrap sm:flex-nowrap gap-3">
                             <div class="flex flex-wrap items-center gap-2.5">
                                 <span class="glass-badge glass-badge-indigo">
                                     <i class="fa-solid fa-sparkles mr-1.5 text-indigo-400"></i>AI Real-Time Overview
@@ -376,10 +398,23 @@
                                     Academic Domain
                                 </span>
                                 <h2 id="summaryTopicTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 capitalize tracking-tight">Topic Name</h2>
+                                <!-- Prominent Language Toggle Button Next to Topic Title -->
+                                <button type="button" id="topicLangToggleBtn" onclick="toggleLanguage()" class="topic-lang-toggle-btn ml-0.5 sm:ml-1.5" title="Switch Language (English / Hinglish)" aria-label="Toggle language mode">
+                                    <span id="topicLangToggleSpinner" class="hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i></span>
+                                    <span id="topicLangToggleLabel">🇮🇳 Hinglish</span>
+                                </button>
                             </div>
-                            <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="glass-btn-icon rounded-xl" title="Bookmark this topic">
-                                <i class="fa-regular fa-bookmark text-base"></i>
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button id="bookmarkTopicBtn" onclick="toggleTopicBookmark()" class="glass-btn-icon rounded-xl" title="Bookmark this topic">
+                                    <i class="fa-regular fa-bookmark text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Localized Language Translation Loading State Banner Inside Card -->
+                        <div id="langLoadingBanner" class="hidden lang-loading-banner p-3 rounded-xl flex items-center gap-2.5 transition-all duration-300">
+                            <div class="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent shrink-0"></div>
+                            <span id="langLoadingBannerText" class="text-xs sm:text-sm font-semibold tracking-wide">Translating to Hinglish...</span>
                         </div>
                         <div id="summaryText" data-alias="overview-text" class="overview-text text-slate-600 leading-relaxed text-sm md:text-base prose prose-slate max-w-none">
                             <div id="overview-text">Loading summary...</div>
@@ -446,14 +481,14 @@
                                 <!-- Real-World Scenario -->
                                 <div id="quickExampleScenarioBlock" class="example-scenario-box p-3.5 rounded-xl">
                                     <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead mb-1.5 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-compass text-indigo-500"></i> Real-World Scenario & Analogy
+                                        <i class="fa-solid fa-compass text-indigo-500"></i> <span id="labelScenarioSubhead">Real-World Scenario & Analogy</span>
                                     </div>
                                     <div id="quickExampleScenario" class="text-xs md:text-sm leading-relaxed example-body-text"></div>
                                 </div>
                                 <!-- Step-by-Step Breakdown -->
                                 <div id="quickExampleBreakdownBlock" class="example-breakdown-box p-3.5 rounded-xl space-y-2">
                                     <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center gap-1.5 mb-1.5">
-                                        <i class="fa-solid fa-list-check text-emerald-500"></i> How It Works (Step-by-Step)
+                                        <i class="fa-solid fa-list-check text-emerald-500"></i> <span id="labelBreakdownSubhead">How It Works (Step-by-Step)</span>
                                     </div>
                                     <div id="quickExampleBreakdown" class="text-xs md:text-sm leading-relaxed example-body-text prose prose-sm max-w-none"></div>
                                 </div>
@@ -461,9 +496,9 @@
                                 <div id="quickExampleUseCasesBlock" class="hidden space-y-2.5 pt-1">
                                     <div class="text-[11px] font-bold uppercase tracking-wider example-section-subhead flex items-center justify-between">
                                         <span class="flex items-center gap-1.5">
-                                            <i class="fa-solid fa-cubes text-blue-500"></i> Everyday & Real-World Applications
+                                            <i class="fa-solid fa-cubes text-blue-500"></i> <span id="labelUseCasesSubhead">Everyday & Real-World Applications</span>
                                         </span>
-                                        <span class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/40">
+                                        <span id="labelUseCasesBadge" class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/40">
                                             Where This Powers Modern Tech
                                         </span>
                                     </div>
@@ -472,18 +507,18 @@
                                 <!-- Advantages vs. Limitations -->
                                 <div id="quickExampleTradeoffsBlock" class="hidden p-3.5 rounded-xl example-tradeoffs-box space-y-2">
                                     <div class="text-[11px] font-bold uppercase tracking-wider example-tradeoffs-header flex items-center gap-1.5">
-                                        <i class="fa-solid fa-scale-balanced text-amber-500"></i> Advantages vs. Limitations
+                                        <i class="fa-solid fa-scale-balanced text-amber-500"></i> <span id="labelTradeoffsSubhead">Advantages vs. Limitations</span>
                                     </div>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
                                         <div id="quickExampleTradeoffsAdvBox" class="tradeoff-col-adv p-2.5 rounded-lg">
                                             <div class="font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1 text-[11px]">
-                                                <i class="fa-solid fa-circle-check"></i> What Makes It Great
+                                                <i class="fa-solid fa-circle-check"></i> <span id="labelAdvSubhead">What Makes It Great</span>
                                             </div>
                                             <div id="quickExampleTradeoffsAdvantages" class="leading-relaxed example-body-text"></div>
                                         </div>
                                         <div id="quickExampleTradeoffsDisadvBox" class="tradeoff-col-disadv p-2.5 rounded-lg">
                                             <div class="font-semibold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1 text-[11px]">
-                                                <i class="fa-solid fa-triangle-exclamation"></i> Limitations to Keep in Mind
+                                                <i class="fa-solid fa-triangle-exclamation"></i> <span id="labelDisadvSubhead">Limitations to Keep in Mind</span>
                                             </div>
                                             <div id="quickExampleTradeoffsDisadvantages" class="leading-relaxed example-body-text"></div>
                                         </div>
@@ -493,7 +528,7 @@
                                 <div id="quickExampleTakeawayBlock" class="p-3.5 rounded-xl example-takeaway-box flex items-start gap-2.5">
                                     <i class="fa-solid fa-circle-check text-indigo-500 text-base mt-0.5 shrink-0"></i>
                                     <div>
-                                        <span class="text-[11px] font-bold uppercase tracking-wider block example-takeaway-title mb-0.5">Key Takeaway</span>
+                                        <span id="labelTakeawaySubhead" class="text-[11px] font-bold uppercase tracking-wider block example-takeaway-title mb-0.5">Key Takeaway</span>
                                         <div id="quickExampleTakeaway" class="text-xs md:text-sm font-medium leading-relaxed example-takeaway-text"></div>
                                     </div>
                                 </div>
@@ -535,7 +570,7 @@
                     
                     <div class="mt-6 pt-4 border-t border-slate-100">
                         <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center">
-                            <i class="fa-solid fa-brain mr-1.5 text-indigo-500"></i>Academic Evaluation
+                            <i class="fa-solid fa-brain mr-1.5 text-indigo-500"></i><span id="labelAcademicEval">Academic Evaluation</span>
                         </span>
                         <p id="difficultyVerdict" class="text-xs text-slate-600 leading-relaxed max-h-[180px] overflow-y-auto custom-scrollbar">
                             Loading reasons...
@@ -597,7 +632,7 @@
                     <!-- Did You Know? / Fun Facts -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <h3 class="font-bold text-slate-800 pb-3 border-b border-slate-100 mb-3 flex items-center">
-                            <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>Did You Know?
+                            <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i><span id="labelDidYouKnow">Did You Know?</span>
                         </h3>
                         <div class="p-4 bg-amber-50/60 rounded-xl border border-amber-100/70 text-slate-700 text-sm leading-relaxed relative overflow-hidden">
                             <div class="absolute -right-4 -bottom-4 text-amber-100/50 text-6xl font-extrabold select-none pointer-events-none">
@@ -613,7 +648,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0 overflow-hidden">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                             <h3 class="font-bold text-slate-800 flex items-center">
-                                <i class="fa-solid fa-route text-purple-500 mr-2"></i>Topic Study Roadmap
+                                <i class="fa-solid fa-route text-purple-500 mr-2"></i><span id="labelRoadmapHeader">Topic Study Roadmap</span>
                             </h3>
                             <span id="roadmapProgressBadge" class="glass-badge glass-badge-purple">
                                 0 / 5 Done
@@ -818,8 +853,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=4.9.1"></script>
-    <script src="app.js?v=4.9.1"></script>
-    <script src="main.js?v=4.9.1"></script>
+    <script src="js/edu_canvas.js?v=5.1.0"></script>
+    <script src="app.js?v=5.3.0"></script>
+    <script src="main.js?v=5.1.0"></script>
 </body>
 </html>
