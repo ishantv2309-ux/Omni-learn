@@ -210,6 +210,45 @@
         { text: "JIT Compilation", domain: "cs" },
         { text: "Garbage Collection (Mark & Sweep)", domain: "cs" },
         { text: "Type Inference & Hindley-Milner", domain: "cs" },
+        { text: "QuickSort & Dual-Pivot", domain: "cs" },
+        { text: "MergeSort Divide & Conquer", domain: "cs" },
+        { text: "Master Theorem Complexity", domain: "cs" },
+        { text: "Kruskal's MST Algorithm", domain: "cs" },
+        { text: "Prim's Spanning Tree", domain: "cs" },
+        { text: "Tarjan's SCC Algorithm", domain: "cs" },
+        { text: "Knuth-Morris-Pratt (KMP)", domain: "cs" },
+        { text: "Rabin-Karp Rolling Hash", domain: "cs" },
+        { text: "Bloom Filter Probabilistic Set", domain: "cs" },
+        { text: "Consistent Hashing Ring", domain: "cs" },
+        { text: "LRU & LFU Cache Eviction", domain: "cs" },
+        { text: "Demand Paging & Page Fault", domain: "cs" },
+        { text: "Thrashing & Working Set Model", domain: "cs" },
+        { text: "Spinlock & Peterson's Solution", domain: "cs" },
+        { text: "Producer-Consumer Problem", domain: "cs" },
+        { text: "Dining Philosophers Sync", domain: "cs" },
+        { text: "Superscalar Instruction Issue", domain: "cs" },
+        { text: "Branch History Table & Predictor", domain: "cs" },
+        { text: "SIMD Vector Registers", domain: "cs" },
+        { text: "Microcode & Control Unit", domain: "cs" },
+        { text: "UART / SPI / I2C Buses", domain: "cs" },
+        { text: "LL(1) First & Follow Sets", domain: "cs" },
+        { text: "LR(1) Canonical Collection", domain: "cs" },
+        { text: "Recursive Descent Parsing", domain: "cs" },
+        { text: "LALR Parser Generation", domain: "cs" },
+        { text: "Static Single Assignment (SSA)", domain: "cs" },
+        { text: "Mark-Compact Collector", domain: "cs" },
+        { text: "Foreign Key Integrity", domain: "cs" },
+        { text: "Clustered B+ Index", domain: "cs" },
+        { text: "Cost-Based Query Optimization", domain: "cs" },
+        { text: "Multi-Version Concurrency (MVCC)", domain: "cs" },
+        { text: "Event Loop & Non-Blocking I/O", domain: "cs" },
+        { text: "OSI 7-Layer Model", domain: "cs" },
+        { text: "TCP Congestion Control (CUBIC)", domain: "cs" },
+        { text: "Selective Repeat Protocol", domain: "cs" },
+        { text: "HTTP/3 over QUIC", domain: "cs" },
+        { text: "Public Key Infrastructure (PKI)", domain: "cs" },
+        { text: "SHA-256 Cryptographic Hash", domain: "cs" },
+        { text: "Elliptic Curve Diffie-Hellman", domain: "cs" },
 
         // ==========================================
         // ARTIFICIAL INTELLIGENCE & MACHINE LEARNING (ai)
@@ -232,6 +271,24 @@
         { text: "Generative AI", domain: "ai" },
         { text: "Cross-Entropy Loss", domain: "ai" },
         { text: "Overfitting Regularization (Dropout)", domain: "ai" },
+        { text: "Self-Attention Query-Key-Value", domain: "ai" },
+        { text: "Multi-Head Attention Heads", domain: "ai" },
+        { text: "Transformer Positional Encoding", domain: "ai" },
+        { text: "Residual Skip Connections", domain: "ai" },
+        { text: "Batch Normalization & LayerNorm", domain: "ai" },
+        { text: "AdamW Optimizer & Weight Decay", domain: "ai" },
+        { text: "Gradient Vanishing & Explosion", domain: "ai" },
+        { text: "ReLU & GELU Activation Functions", domain: "ai" },
+        { text: "Autoencoders & Latent Space", domain: "ai" },
+        { text: "Diffusion Probabilistic Models", domain: "ai" },
+        { text: "Denoising Score Matching", domain: "ai" },
+        { text: "RLHF Alignment", domain: "ai" },
+        { text: "Deep Q-Networks (DQN)", domain: "ai" },
+        { text: "Policy Gradient Theorem", domain: "ai" },
+        { text: "Monte Carlo Tree Search (MCTS)", domain: "ai" },
+        { text: "Cosine Similarity Metric", domain: "ai" },
+        { text: "Precision, Recall & F1-Score", domain: "ai" },
+        { text: "ROC-AUC Curve Analysis", domain: "ai" },
 
         // ==========================================
         // PHYSICS & QUANTUM MECHANICS (physics)
@@ -261,6 +318,19 @@
         { text: "Superconductivity & Cooper Pairs", domain: "physics" },
         { text: "Wave-Particle Duality", domain: "physics" },
         { text: "Photon Quantization", domain: "physics" },
+        { text: "Quantum Superposition |ψ⟩", domain: "physics" },
+        { text: "EPR Paradox & Bell's Theorem", domain: "physics" },
+        { text: "Hamiltonian Mechanics & Phase Space", domain: "physics" },
+        { text: "Lagrangian Principle of Least Action", domain: "physics" },
+        { text: "Carnot Engine Thermal Efficiency", domain: "physics" },
+        { text: "Maxwell-Boltzmann Distribution", domain: "physics" },
+        { text: "Gravitational Time Dilation", domain: "physics" },
+        { text: "Lorentz Contraction & Spacetime", domain: "physics" },
+        { text: "Heisenberg Matrix Mechanics", domain: "physics" },
+        { text: "Cherenkov Radiation", domain: "physics" },
+        { text: "Semiconductor Band Gap & Fermi Level", domain: "physics" },
+        { text: "Josephson Junction & SQUIDs", domain: "physics" },
+        { text: "Higgs Boson & Symmetry Breaking", domain: "physics" },
 
         // ==========================================
         // CHEMISTRY & MOLECULAR SCIENCE (chem)
@@ -281,6 +351,14 @@
         { text: "Polymer Macromolecules", domain: "chem" },
         { text: "Periodic Table Valence", domain: "chem" },
         { text: "Thermodynamic Reversibility", domain: "chem" },
+        { text: "Molecular Orbital Theory (HOMO-LUMO)", domain: "chem" },
+        { text: "Transition State Theory & Complex", domain: "chem" },
+        { text: "Nernst Equation & Cell Potential", domain: "chem" },
+        { text: "Enzyme Kinetics (Michaelis-Menten)", domain: "chem" },
+        { text: "van der Waals London Forces", domain: "chem" },
+        { text: "Crystal Field Theory & d-Orbitals", domain: "chem" },
+        { text: "Acid-Base Dissociation Constant pKa", domain: "chem" },
+        { text: "Phase Rule & Triple Point", domain: "chem" },
 
         // ==========================================
         // MATHEMATICS & THEORETICAL FOUNDATIONS (math)
@@ -307,6 +385,18 @@
         { text: "Prime Number Theorem", domain: "math" },
         { text: "Differential Geometry", domain: "math" },
         { text: "Asymptotic Convergence", domain: "math" },
+        { text: "Singular Value Decomposition (SVD)", domain: "math" },
+        { text: "Fast Fourier Transform (FFT)", domain: "math" },
+        { text: "Laplacian Matrix & Spectral Graphs", domain: "math" },
+        { text: "Gradient Descent Optimization", domain: "math" },
+        { text: "Hessian Matrix & Curvature", domain: "math" },
+        { text: "Cauchy's Residue Theorem", domain: "math" },
+        { text: "Gram-Schmidt Orthogonalization", domain: "math" },
+        { text: "Poisson Probability Distribution", domain: "math" },
+        { text: "Central Limit Theorem", domain: "math" },
+        { text: "Monte Carlo Integration", domain: "math" },
+        { text: "Convex Optimization & KKT Conditions", domain: "math" },
+        { text: "Cayley-Hamilton Theorem", domain: "math" },
 
         // ==========================================
         // NEUROSCIENCE & COMPUTATIONAL BIOLOGY (bio)
@@ -325,7 +415,14 @@
         { text: "ATP Mitochondrial Synthase", domain: "bio" },
         { text: "Photosynthetic Electron Transport", domain: "bio" },
         { text: "Neuroplastic Memory Trace", domain: "bio" },
-        { text: "Biological Homeostasis", domain: "bio" }
+        { text: "Biological Homeostasis", domain: "bio" },
+        { text: "Hodgkin-Huxley Neuron Model", domain: "bio" },
+        { text: "Action Potential Depolarization (Na+/K+)", domain: "bio" },
+        { text: "Synaptic Vesicle Exocytosis", domain: "bio" },
+        { text: "Epigenetic DNA Methylation", domain: "bio" },
+        { text: "CRISPR Cas9 Double-Strand Break", domain: "bio" },
+        { text: "Signal Transduction Cascade", domain: "bio" },
+        { text: "ATP Synthase Rotary Motor", domain: "bio" }
     ];
 
     function initCanvas() {
@@ -360,6 +457,7 @@
     }
 
     let dpr = 1;
+    let resizeTimer = null;
     function resizeCanvas() {
         if (!canvas) return;
         dpr = window.devicePixelRatio || 1;
@@ -370,14 +468,18 @@
         if (ctx) {
             ctx.scale(dpr, dpr);
         }
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            createParticles();
+        }, 250);
     }
 
     function createParticles() {
         particles = [];
         const w = window.innerWidth;
         const h = window.innerHeight;
-        // Optimal density so that words interconnect into a full constellation web across the screen
-        const count = Math.min(85, Math.max(52, Math.floor((w * h) / 17000)));
+        // High density of words so the canvas looks rich, cool, and lively across all screens
+        const count = Math.min(195, Math.max(75, Math.floor((w * h) / 7500)));
 
         // Shuffle words bank
         const pool = [...ACADEMIC_WORDS_BANK].sort(() => 0.5 - Math.random());
@@ -386,16 +488,16 @@
             const wordObj = pool[i % pool.length];
             const depth = Math.random(); // 0 (far) to 1 (near)
             
-            // Varied font sizes, weights and clear, legible base alpha
-            const fontSize = depth > 0.75 ? 14.5 : depth > 0.4 ? 12.5 : 11;
-            const fontWeight = depth > 0.75 ? "600" : depth > 0.4 ? "500" : "400";
-            const baseAlpha = depth > 0.75 
-                ? (Math.random() * 0.18 + 0.65) 
-                : depth > 0.4 
+            // Varied font sizes, weights and clear, legible base alpha across 3 cosmic layers
+            const fontSize = depth > 0.68 ? 14 : depth > 0.35 ? 12 : 10.5;
+            const fontWeight = depth > 0.68 ? "600" : depth > 0.35 ? "500" : "400";
+            const baseAlpha = depth > 0.68 
+                ? (Math.random() * 0.15 + 0.68) 
+                : depth > 0.35 
                     ? (Math.random() * 0.15 + 0.48) 
-                    : (Math.random() * 0.12 + 0.35);
+                    : (Math.random() * 0.12 + 0.32);
 
-            const speedMultiplier = depth > 0.75 ? 0.32 : depth > 0.4 ? 0.25 : 0.18;
+            const speedMultiplier = depth > 0.68 ? 0.30 : depth > 0.35 ? 0.22 : 0.16;
             const baseVx = (Math.random() - 0.5) * speedMultiplier;
             const baseVy = (Math.random() - 0.5) * speedMultiplier;
 
@@ -468,7 +570,7 @@
                 const repulse = force * force * 5.5;
                 p.vx -= (dx / dist) * repulse;
                 p.vy -= (dy / dist) * repulse;
-                p.alpha = Math.min(0.96, p.baseAlpha + force * 0.45);
+                p.alpha = Math.min(0.98, p.baseAlpha + force * 0.45);
                 p.isHovered = true;
             } else {
                 p.alpha += (p.baseAlpha - p.alpha) * 0.05;
@@ -491,9 +593,9 @@
         }
 
         // 2. Second pass: Draw connected constellation webs and mutual word repulsion
-        const maxLineDist = 175; // Generous distance so all words stay interconnected into a web
+        const maxLineDist = 125; // Clean constellation distance connecting close neighbors
         const maxLineDistSq = maxLineDist * maxLineDist;
-        const minWordSeparation = 100; // Minimum distance before words push away from each other
+        const minWordSeparation = 75; // Minimum distance before words push away from each other
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -509,7 +611,7 @@
 
                     // Mutual repulsion between words ("tend to remove from each other when hovered")
                     if (lineDist < minWordSeparation && lineDist > 0) {
-                        const repelMultiplier = (p.isHovered || p2.isHovered) ? 2.4 : 0.6;
+                        const repelMultiplier = (p.isHovered || p2.isHovered) ? 2.8 : 0.45;
                         const sepForce = ((minWordSeparation - lineDist) / minWordSeparation) * repelMultiplier;
                         const pushX = (lineDx / lineDist) * sepForce;
                         const pushY = (lineDy / lineDist) * sepForce;
@@ -521,23 +623,23 @@
 
                     // Draw visible constellation lines between connected words
                     const factor = (1 - lineDist / maxLineDist);
-                    let lineAlpha = factor * (isDark ? 0.35 : 0.25);
+                    let lineAlpha = factor * (isDark ? 0.28 : 0.18);
                     const isPairHovered = p.isHovered || p2.isHovered;
 
                     if (isPairHovered) {
-                        lineAlpha = Math.min(0.85, lineAlpha * 2.8);
+                        lineAlpha = Math.min(0.85, lineAlpha * 2.6);
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
                         ctx.strokeStyle = isDark ? `rgba(165, 180, 252, ${lineAlpha})` : `rgba(99, 102, 241, ${lineAlpha})`;
-                        ctx.lineWidth = 1.35;
+                        ctx.lineWidth = 1.3;
                         ctx.stroke();
                     } else {
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
                         ctx.strokeStyle = `${baseLineColor}${lineAlpha})`;
-                        ctx.lineWidth = 0.85;
+                        ctx.lineWidth = 0.75;
                         ctx.stroke();
                     }
                 }
@@ -555,8 +657,8 @@
             if (p.isHovered) {
                 // Subtle glowing aura around hovered words
                 ctx.save();
-                ctx.shadowColor = isDark ? "rgba(165, 180, 252, 0.85)" : "rgba(79, 70, 229, 0.75)";
-                ctx.shadowBlur = 12;
+                ctx.shadowColor = isDark ? "rgba(165, 180, 252, 0.9)" : "rgba(79, 70, 229, 0.8)";
+                ctx.shadowBlur = 14;
                 ctx.fillStyle = isDark ? `rgba(255, 255, 255, ${p.alpha})` : `rgba(30, 27, 75, ${p.alpha})`;
                 ctx.fillText(p.text, p.x, p.y);
                 ctx.restore();
