@@ -122,13 +122,40 @@ class GeminiService:
         elif any(w in q_low for w in ["ai", "artificial intelligence", "machine learning", "ml", "deep learning", "neural network", "transformer", "regression", "classification", "nlp", "computer vision", "llm", "reinforcement learning"]):
             return "Artificial Intelligence & Data Science"
         elif any(w in q_low for w in [
+            # Data Structures & Algorithms
             "database", "normalization", "bcnf", "sql", "dbms", "dsa", "algorithm", "data structure",
             "array", "arrays", "vector", "linked list", "stack", "queue", "deque", "hash table", "hash map", "hashing",
-            "binary search", "tree", "binary tree", "bst", "avl", "red-black", "b-tree", "trie", "heap", "priority queue",
-            "graph", "dijkstra", "sorting", "bubble sort", "merge sort", "quicksort", "heap sort", "radix sort",
-            "operating system", "os", "network", "python", "java", "c++", "c programming", "programming", "code",
-            "compiler", "recursion", "dynamic programming", "greedy", "pointer", "memory management", "cache", "buffer",
-            "concurrency", "thread", "process", "deadlock", "paging", "virtual memory"
+            "binary search", "tree", "binary tree", "bst", "avl", "red-black", "b-tree", "b+ tree", "segment tree",
+            "trie", "heap", "priority queue", "min-heap", "max-heap", "graph", "dijkstra", "sorting", "bubble sort",
+            "merge sort", "quicksort", "heap sort", "radix sort", "topological sort", "floyd-warshall", "bellman-ford",
+            "knapsack", "huffman", "prim", "kruskal", "dynamic programming", "backtracking", "n-queens", "p vs np",
+            # Programming & Memory
+            "python", "java", "c++", "c programming", "programming", "code", "pointer", "pointers", "malloc", "free",
+            "recursion", "oops", "polymorphism", "inheritance",
+            # COA & Digital Logic
+            "booth", "booths", "booth's", "restoring division", "non-restoring", "alu", "datapath", "pipelining",
+            "pipeline hazard", "cache mapping", "cache coherence", "mesi", "direct memory access", "dma", "interrupt",
+            "k-map", "karnaugh", "quine-mccluskey", "logic gate", "flip-flop", "multiplexer", "mux", "demux",
+            "encoder", "decoder", "shift register", "finite state machine", "fsm", "mealy", "moore", "coa", "digital logic",
+            # Operating Systems
+            "operating system", "os", "process", "thread", "pcb", "cpu scheduling", "round robin", "critical section",
+            "peterson", "semaphore", "semaphores", "mutex", "monitor", "deadlock", "banker's algorithm", "bankers algorithm",
+            "paging", "page replacement", "lru", "segmentation", "thrashing", "disk scheduling", "inode",
+            # DBMS
+            "relational algebra", "relational calculus", "acid", "serializability", "two-phase locking", "2pl",
+            "functional dependency", "timestamp ordering", "wal", "write-ahead",
+            # Computer Networks & Security
+            "network", "networks", "osi model", "tcp", "udp", "ip addressing", "ipv4", "ipv6", "subnetting", "cidr",
+            "routing protocol", "rip", "ospf", "bgp", "csma", "sliding window", "go-back-n", "selective repeat",
+            "crc", "dns", "http", "https", "socket", "rsa", "aes", "ssl", "tls", "firewall", "3-way handshake",
+            # Theory of Computation & Compiler Design
+            "dfa", "nfa", "finite automata", "automata", "regular expression", "regular language", "pumping lemma",
+            "cfg", "context-free", "pushdown automata", "pda", "turing machine", "decidability", "halting problem",
+            "compiler", "lexical analysis", "token", "scanner", "parser", "parsing", "ll(1)", "lr(0)", "slr(1)",
+            "lalr", "syntax analysis", "three-address code", "ast", "code optimization", "register allocation",
+            # Software Engineering & AI/ML
+            "software engineering", "sdlc", "waterfall", "agile", "scrum", "uml", "software testing", "cyclomatic",
+            "machine learning", "artificial intelligence", "a* search", "minimax", "decision tree", "svm", "k-means"
         ]):
             return "Computer Science & Engineering"
         elif any(w in q_low for w in ["calculus", "integral", "derivative", "matrix", "algebra", "differential", "laplace", "eigen", "probability", "statistics", "vector space", "complex analysis", "number theory"]):
@@ -143,6 +170,189 @@ class GeminiService:
             return "Biological & Life Sciences"
         else:
             return "Academic Curriculum & Higher Education"
+
+    @staticmethod
+    def _detect_btech_cse_domain_directive(clean_q: str, detected_domain: str) -> tuple:
+        """Detects the specific B.Tech CSE curriculum module and produces the dynamic domain directive.
+        Returns: (domain_category_title, domain_type, domain_directive)
+        """
+        q_low = clean_q.lower().strip()
+
+        def _matches(terms: list) -> bool:
+            for w in terms:
+                if len(w) <= 4 or " " not in w:
+                    if re.search(r'\b' + re.escape(w) + r'\b', q_low):
+                        return True
+                else:
+                    if w in q_low:
+                        return True
+            return False
+
+        # 1. Mathematics & Discrete Structures (Module 01)
+        math_terms = [
+            "discrete math", "discrete mathematics", "propositional logic", "first-order logic", "predicate logic",
+            "truth table", "proof technique", "mathematical induction", "set theory", "equivalence relation",
+            "partial order", "poset", "lattice", "lattices", "group theory", "monoid", "semigroup", "group",
+            "ring", "field", "combinatorics", "pigeonhole", "pigeonhole principle", "inclusion-exclusion",
+            "recurrence relation", "generating function", "generating functions", "graph theory", "adjacency matrix",
+            "eulerian", "hamiltonian", "graph coloring", "chromatic number", "planarity", "planar graph",
+            "bipartite", "matching", "spanning tree", "linear algebra", "matrix", "matrices", "determinant",
+            "eigenvalue", "eigenvector", "eigenvalues", "eigenvectors", "lu decomposition", "calculus",
+            "limits", "continuity", "differentiability", "maxima", "minima", "mean value theorem",
+            "definite integration", "probability", "random variable", "random variables", "bayes theorem",
+            "bayes' theorem", "poisson distribution", "normal distribution", "exponential distribution",
+            "uniform distribution", "conditional probability"
+        ]
+        if _matches(math_terms):
+            cat_title = "Computer Science & Engineering: Mathematics & Discrete Structures"
+            domain_type = "math_discrete"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: MATHEMATICS & DISCRETE STRUCTURES\n"
+                "- Provide formal mathematical definitions, axioms, and set-theoretic notations.\n"
+                "- Recurrence relations, generating functions, or matrix linear transformations with step-by-step algebraic derivations ($$...$$).\n"
+                "- Graph theory representations (adjacency matrix, degree sequence, Eulerian/Hamiltonian paths, planar graph formula, tree traversals).\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a step-by-step numeric walkthrough with truth tables, matrix determinants/eigenvalues, or probability calculations."
+            )
+            return cat_title, domain_type, directive
+
+        # 2. Hardware/Architecture (COA / Digital Logic - Module 02)
+        coa_digital_terms = [
+            "booth", "booth's", "restoring", "non-restoring", "alu", "datapath", "register",
+            "addressing mode", "addressing modes", "accumulator", "control unit", "hardwired", "microprogrammed",
+            "pipelining", "pipeline", "pipeline hazard", "structural hazard", "data hazard", "control hazard",
+            "branch penalty", "cache mapping", "direct mapping", "set-associative", "associative mapping",
+            "cache replacement", "cache coherence", "mesi", "write-through", "write-back",
+            "virtual memory", "dma", "direct memory access", "interrupt", "interrupts", "polling",
+            "ieee 754", "floating point", "number system", "bcd", "k-map", "k-maps", "karnaugh",
+            "quine-mccluskey", "boolean algebra", "logic gate", "logic gates", "adder", "subtractor",
+            "multiplexer", "mux", "demux", "encoder", "decoder", "latch", "flip-flop", "flip flop",
+            "jk flip-flop", "d flip-flop", "sr flip-flop", "t flip-flop", "shift register", "counter",
+            "ripple counter", "synchronous counter", "finite state machine", "fsm", "mealy", "moore",
+            "coa", "computer architecture", "digital logic", "microprocessor"
+        ]
+        if _matches(coa_digital_terms):
+            cat_title = "Computer Science & Engineering: Hardware & Systems Architecture (COA / Digital Logic)"
+            domain_type = "hardware_architecture"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: HARDWARE & SYSTEMS ARCHITECTURE (COA / DIGITAL LOGIC)\n"
+                "- Explicitly document register states (e.g., AC, DR, PC, IR, AR, TR, QR, BR, SC, Qn+1, ALU flags) and bit-width constraints (e.g., 16-bit, 32-bit, 64-bit).\n"
+                "- Detail bit-level operations (2's complement arithmetic, sign extension, bitwise masking/shifts) and control signals (T0, T1, T2..., clock pulses, Read/Write lines, bus transfers).\n"
+                "- Provide bus and datapath execution cycle breakdowns (Fetch, Decode, Effective Address, Execute, Writeback cycles; or Pipeline hazard stalls/forwarding).\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a complete step-by-step cycle-by-cycle register state transition table with concrete binary or decimal numbers."
+            )
+            return cat_title, domain_type, directive
+
+        # 3. Theory of Computation & Compiler Design (Module 04)
+        toc_compiler_terms = [
+            "dfa", "nfa", "finite automata", "automata", "regular expression", "regular expressions",
+            "regular language", "regular languages", "pumping lemma", "cfg", "context free grammar",
+            "context-free grammar", "context-free", "pushdown automata", "pda", "chomsky", "chomsky normal form",
+            "turing machine", "turing machines", "decidability", "undecidability", "halting problem", "rice's theorem",
+            "post correspondence", "pcp", "compiler", "compiler design", "lexical analysis", "token", "tokens",
+            "scanner", "parser", "parsers", "parsing", "ll(1)", "lr(0)", "slr(1)", "lalr(1)", "clr(1)",
+            "syntax analysis", "syntax directed", "sdt", "intermediate code", "three address code",
+            "three-address code", "abstract syntax tree", "code optimization", "basic block", "basic blocks",
+            "dead code", "register allocation", "first and follow", "derivation tree", "ambiguity", "toc"
+        ]
+        if _matches(toc_compiler_terms):
+            cat_title = "Computer Science & Engineering: Theory of Computation & Compiler Design (TOC & Compilers)"
+            domain_type = "theory"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: THEORY OF COMPUTATION & COMPILER DESIGN\n"
+                "- Provide formal mathematical definitions: 5-tuple / 7-tuple automata definition (Q, Sigma, delta, q0, F) or Context-Free Grammar 4-tuple (V, Sigma, R, S).\n"
+                "- Provide automata state transition tables, grammar productions, and step-by-step mathematical proofs (e.g., Pumping Lemma contradiction proof, Chomsky Normal Form conversion, or Undecidability reductions).\n"
+                "- For Compilers: Document Lexical/Syntax tokens, FIRST/FOLLOW sets, parsing tables (LL(1) or LR item sets/ACTION-GOTO), Three-Address Code (TAC), or basic block DAG.\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a step-by-step string acceptance / parse stack trace table showing Input Tape, Stack, and State transitions."
+            )
+            return cat_title, domain_type, directive
+
+        # 4. Systems (Operating Systems, DBMS, Computer Networks - Modules 05, 06, 07)
+        systems_terms = [
+            "operating system", "os", "process", "thread", "threads", "pcb", "process control block",
+            "cpu scheduling", "fcfs", "sjf", "srtf", "round robin", "multilevel queue", "critical section",
+            "peterson", "peterson's solution", "semaphore", "semaphores", "mutex", "monitor", "monitors",
+            "producer consumer", "producer-consumer", "readers writers", "readers-writers", "dining philosophers",
+            "deadlock", "deadlocks", "resource allocation graph", "banker's algorithm", "bankers algorithm",
+            "paging", "page replacement", "segmentation", "lru", "fifo page", "optimal page", "thrashing",
+            "disk scheduling", "sstf", "scan", "c-scan", "inode", "file system", "database", "dbms",
+            "sql", "normalization", "bcnf", "1nf", "2nf", "3nf", "4nf", "functional dependency",
+            "functional dependencies", "relational algebra", "relational calculus", "acid", "acid properties",
+            "serializability", "two-phase locking", "2pl", "timestamp ordering", "recovery system",
+            "wal", "write ahead log", "b-tree", "b+ tree", "computer network", "computer networks", "networks",
+            "osi model", "tcp", "udp", "ip addressing", "ipv4", "ipv6", "subnetting", "cidr", "routing protocol",
+            "distance vector", "link state", "rip", "ospf", "bgp", "csma", "csma/cd", "csma/ca", "sliding window",
+            "go-back-n", "selective repeat", "crc", "cyclic redundancy", "dns", "http", "https", "socket",
+            "rsa", "aes", "ssl", "tls", "firewall", "congestion control", "flow control", "3-way handshake",
+            "three-way handshake"
+        ]
+        if _matches(systems_terms):
+            cat_title = "Computer Science & Engineering: Systems (OS, DBMS, Networks)"
+            domain_type = "systems"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: SYSTEMS (OPERATING SYSTEMS, DBMS, COMPUTER NETWORKS)\n"
+                "- Document system architecture diagrams / execution flows (User vs Kernel space, Buffer Pool vs Disk, or OSI/TCP-IP layered stack).\n"
+                "- Document explicit state transition models (e.g. Process lifecycle: New -> Ready -> Running -> Waiting -> Terminated; Transaction states: Active -> Partially Committed -> Committed; TCP 3-way handshake state machine).\n"
+                "- Specify communication protocols, frame/packet headers, and concurrency & memory management mechanics (Semaphores, Mutex, Monitors, 2PL, Banker's Algorithm, Page Tables, TLB, Inodes).\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a step-by-step execution trace table (e.g., Gantt chart CPU scheduling table, Page frame reference string hits/faults, Banker's resource allocation matrix, Subnetting table, or Serialization schedule)."
+            )
+            return cat_title, domain_type, directive
+
+        # 5. Software Engineering & AI/ML (Module 08)
+        ai_se_terms = [
+            "software engineering", "sdlc", "waterfall", "agile", "scrum", "uml", "use case", "class diagram",
+            "sequence diagram", "software testing", "black-box", "white-box", "unit testing", "cyclomatic complexity",
+            "cyclomatic", "microservices", "rest api", "machine learning", "artificial intelligence", "search strategy",
+            "a* search", "a*", "minimax", "alpha-beta", "linear regression", "logistic regression", "decision tree",
+            "decision trees", "svm", "k-means", "pca", "neural network", "deep learning", "cloud computing",
+            "docker", "kubernetes"
+        ]
+        if _matches(ai_se_terms):
+            cat_title = "Computer Science & Engineering: Applied Engineering, AI/ML & Cloud"
+            domain_type = "applied_ai_se"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: APPLIED ENGINEERING, AI/ML & CLOUD\n"
+                "- Architectural & workflow execution models (SDLC phases, UML sequence/class models, Neural Network layer topology, A* search space).\n"
+                "- Formal mathematical objective/loss formulas (MSE, Cross-Entropy, Gradient Descent update rule, Heuristic evaluation f(n) = g(n) + h(n)).\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a step-by-step trace table (e.g., A* priority queue expansion, Decision Tree Information Gain, or Test matrix / Cyclomatic complexity)."
+            )
+            return cat_title, domain_type, directive
+
+        # 6. Algorithms & Data Structures (Programming, Linear/Non-Linear DS, DAA - Modules 03, 04)
+        dsa_terms = [
+            "dsa", "algorithm", "data structure", "array", "arrays", "vector", "linked list",
+            "singly linked", "doubly linked", "circular linked", "stack", "queue", "deque", "priority queue",
+            "infix to postfix", "tree", "binary tree", "bst", "avl", "red-black", "red black",
+            "segment tree", "heap", "min-heap", "max-heap", "heapify", "trie", "hash table", "hash map",
+            "hashing", "collision resolution", "chaining", "open addressing", "big-o", "big o",
+            "asymptotic", "master theorem", "recursion tree", "divide and conquer", "merge sort",
+            "quicksort", "quick sort", "binary search", "greedy", "knapsack", "huffman", "prim",
+            "kruskal", "dynamic programming", "lcs", "matrix chain", "bellman-ford", "backtracking",
+            "n-queens", "subset sum", "graph algorithm", "bfs", "dfs", "dijkstra", "floyd-warshall",
+            "topological sort", "strongly connected", "p vs np", "np-complete", "sorting", "searching",
+            "pointers", "dynamic memory allocation", "malloc", "free", "struct", "recursion"
+        ]
+        if _matches(dsa_terms):
+            cat_title = "Computer Science & Engineering: Algorithms & Data Structures"
+            domain_type = "algorithms_ds"
+            directive = (
+                "DYNAMIC DOMAIN CONTEXTUALIZATION: ALGORITHMS & DATA STRUCTURES\n"
+                "- State exact Big-O Time Complexities (Worst, Average, Best) and Auxiliary Space Complexity in LaTeX ($...$). Provide recurrence relation T(n) where applicable.\n"
+                "- State core structural and algorithmic invariants (e.g., BST ordering, AVL balance factor in {-1,0,1}, Red-Black coloring, heap invariants).\n"
+                "- Provide idiomatic, clean code implementation snippet (C++/Java/Python) with syntax formatting and boundary safety checks.\n"
+                "- MANDATORY WORKED TRACE TABLE: Include a step-by-step numeric trace table showing array states, node pointer mutations, or recursive call stack states with concrete elements."
+            )
+            return cat_title, domain_type, directive
+
+        # General Academic / CS Default
+        cat_title = f"Computer Science & Engineering: {detected_domain}"
+        domain_type = "general_cse"
+        directive = (
+            "DYNAMIC DOMAIN CONTEXTUALIZATION: COMPUTER SCIENCE & ENGINEERING\n"
+            "- Provide rigorous mathematical/algorithmic definitions, time/space bounds, and structural invariants.\n"
+            "- Specify the underlying hardware or system execution model (registers, memory layout, protocol layers).\n"
+            "- MANDATORY WORKED TRACE TABLE: Include a complete step-by-step trace table with concrete inputs and intermediate states."
+        )
+        return cat_title, domain_type, directive
 
     @staticmethod
     def map_topic_to_careers(query: str) -> List[Dict[str, Any]]:
@@ -1828,17 +2038,18 @@ class GeminiService:
             raise RuntimeError("Gemini API key is not configured. Real LLM generation requires GEMINI_API_KEY.")
 
         detected_domain = GeminiService._detect_academic_domain(clean_q)
+        cse_category, domain_type, domain_directive = GeminiService._detect_btech_cse_domain_directive(clean_q, detected_domain)
         is_hinglish = (lang or "").strip().lower() == "hinglish"
 
         if is_hinglish:
             language_mandate = (
-                "7. LANGUAGE MANDATE - FULL NATURAL HINGLISH EXPLANATION MODE:\n"
-                "   - You MUST write ALL explanations, analysis, and walkthrough fields in NATURAL, CONVERSATIONAL HINGLISH (Hindi written in Roman/English script mixed with standard English Computer Science & Engineering terms):\n"
+                "3. LANGUAGE SWITCHING MANDATE - FULL NATURAL HINGLISH EXPLANATION MODE:\n"
+                "   - You MUST write ALL explanations, analysis, descriptions, and walkthrough fields in NATURAL, CONVERSATIONAL HINGLISH (Hindi written in Roman/English script mixed with standard English Computer Science & Engineering terms):\n"
                 "     * 'overview': Natural conversational Hinglish summary explaining the core concept, formal definitions, and invariants.\n"
                 "     * 'ai_evaluation': Technical complexity evaluation, semester exam significance, and GATE focus in Hinglish.\n"
-                "     * 'theoretical_foundations': Hardware / memory model, register architecture, and theoretical foundations in Hinglish.\n"
+                "     * 'theoretical_foundations': Architectural diagram, execution flow, hardware / memory model, and theoretical foundations in Hinglish.\n"
                 "     * 'core_formulations': Step-by-step algorithm, state transitions, and complexity bounds in Hinglish.\n"
-                "     * 'detailed_breakdown': Complete exam-ready breakdown with all 6 structured sections (Core Concept & Invariants, Hardware Registers & Architecture, Step-by-Step Procedure, Worked Numerical Trace Table with real numbers, Advantages/Comparisons, and University/GATE Exam Questions) written in natural conversational Hinglish!\n"
+                "     * 'detailed_breakdown': Complete exam-ready breakdown with all 7 structured sections (Overview & Technical Invariants, Architectural Flow & Hardware Registers, Step-by-Step Procedure, Worked Numerical Trace Table with real numbers, Implementation / Code Snippet / Grammar, Pros & Cons, and University/GATE Exam Questions) written in natural conversational Hinglish!\n"
                 "     * In 'quick_example':\n"
                 "       - 'title': Relatable, catchy Hinglish title.\n"
                 "       - 'badge': 'Worked Numerical Trace (Hinglish)'.\n"
@@ -1848,64 +2059,64 @@ class GeminiService:
                 "       - 'tradeoffs': BOTH 'advantages' (faayde) and 'disadvantages' (nuksaan / limitations) MUST be written in natural Hinglish.\n"
                 "       - 'takeaway': The key takeaway ('Sabse Main Baat') MUST be written in natural Hinglish.\n"
                 "     * 'did_you_know': Academic or historical trivia written in Hinglish.\n"
-                "   - KEEP ALL CORE TECHNICAL TERMS, REGISTER NAMES, AND SYMBOLS STRICTLY IN ENGLISH: e.g., 'AC', 'QR', 'BR', 'Qn+1', 'SC', 'ALU', 'Multiplicand', 'Multiplier', 'Arithmetic Shift Right (ASR)', 'Two\\'s Complement', 'Array', 'Pointer', 'Memory Address', 'Time Complexity', 'Space Complexity', 'Big-O', 'Cache', 'Paging', 'Page Fault', 'LRU', 'Hit Ratio', 'Binary Tree', 'Stack', 'Queue', 'Linked List', 'Hash Table', 'Graph', 'CPU', 'Operating System', 'Thread', 'Algorithm', 'Base Address', 'Sizeof', 'Force', 'Inertia', 'Friction', 'Acceleration'. Do NOT translate technical terms into obscure pure Hindi (e.g. use 'Inertia', NOT 'Jadatva'; use 'Friction', NOT 'Gharshan'; use 'Array', NOT 'Krambaddh Suchi').\n"
+                "   - KEEP ALL CORE TECHNICAL TERMS, REGISTER NAMES, MATHEMATICAL SYMBOLS, AND PROTOCOLS STRICTLY IN ENGLISH: e.g., 'register', 'semaphore', 'mutex', 'time complexity', 'space complexity', 'Big-O', 'pointer', 'heap', 'stack', 'AC', 'DR', 'PC', 'IR', 'AR', 'TR', 'QR', 'BR', 'SC', 'Qn+1', 'ALU', 'DFA', 'NFA', 'CFG', 'PDA', 'Turing Machine', 'Paging', 'Page Fault', 'LRU', 'FIFO', 'Hit Ratio', 'Binary Tree', 'BST', 'AVL', 'Red-Black Tree', 'B-Tree', 'B+ Tree', 'Hash Table', 'Graph', 'Dijkstra', 'CPU', 'Operating System', 'Thread', 'Process', 'Deadlock', 'Banker\'s Algorithm', '2PL', 'ACID', 'SQL', 'OSI Model', 'TCP/IP', '3-Way Handshake', 'Subnetting', 'CRC', 'RSA', 'AES', 'REST API', 'Docker', 'Kubernetes'. Do NOT translate technical terms into obscure Hindi.\n"
                 "   - Output format MUST be 100% valid JSON matching the exact schema below.\n\n"
             )
         else:
             language_mandate = (
-                "7. LANGUAGE MANDATE: Provide all explanations, overviews, specifications, trace tables, trade-offs, and exam questions in standard, clear, authoritative academic English tailored for B.Tech CSE and GATE examinations.\n\n"
+                "3. LANGUAGE SWITCHING MANDATE: Provide all explanations, overviews, specifications, trace tables, code snippets, trade-offs, and exam questions in standard, clear, authoritative academic English tailored for B.Tech CSE and GATE examinations.\n\n"
             )
 
         # STRICT LLM Prompt mandating university exam depth, genuine formulas, register models, trace tables
         prompt = (
-            f"You are a distinguished University Professor and Senior Academic Evaluator for B.Tech Computer Science & Engineering and GATE examinations.\n"
-            f"Evaluate and synthesize the syllabus topic: \"{clean_q}\" (Academic Discipline: \"{detected_domain}\").\n\n"
-            f"GOAL: Deliver a complete, exhaustive, and exam-ready technical breakdown tailored for university semester finals and competitive exams (B.Tech CSE / GATE) instead of a generic summary.\n\n"
-            f"CRITICAL SYSTEM DIRECTIVES:\n"
-            f"1. TOPIC DEPTH & RIGOR (B.TECH CSE / GATE EXAM STANDARD):\n"
-            f"   - Provide full technical specifications, exact formulas, recurrence relations, and asymptotic bounds (Big-O, Big-Omega, Big-Theta) in LaTeX math delimiters ($...$ for inline, $$...$$ for standalone block equations).\n"
-            f"   - For Computer Organization & Architecture, Operating Systems, and Hardware topics (e.g., Booth's Algorithm, Cache Mapping, Paging, Virtual Memory, Pipeline Hazards, Interrupt Handling), explicitly document the HARDWARE / MEMORY MODEL: register setup (e.g., AC, QR, BR, Qn+1, SC), bit-width constraints, bus/datapath architecture, and exact step-by-step state transitions.\n"
-            f"   - For Algorithms & Data Structures, specify structural invariants, pointer layouts, recurrence trees, and exact computational complexity bounds.\n"
-            f"2. MANDATORY STRUCTURED SECTIONS:\n"
-            f"   - 'overview': CORE CONCEPT & INVARIANTS — Formal definitions, mathematical/architectural foundations, fundamental invariants, and syllabus role. NO boilerplate intros like 'In the context of...'. Directly define {clean_q} with academic precision.\n"
-            f"   - 'theoretical_foundations': HARDWARE / MEMORY MODEL & ARCHITECTURAL FOUNDATION — Register setup (e.g., AC, QR, BR, Qn+1, SC), bit-width constraints, memory layout, cache hierarchy, or mathematical invariant proofs with LaTeX formatting.\n"
-            f"   - 'core_formulations': STEP-BY-STEP ALGORITHM / PROCEDURE & COMPLEXITY BOUNDS — Sequential execution steps with exact conditional transitions (e.g., bit pairs: 01 -> Add BR to AC & Arithmetic Shift Right, 10 -> Subtract BR from AC & Arithmetic Shift Right, 00/11 -> Arithmetic Shift Right only), recurrence relations, and exact Time and Space complexities ($O(n)$, $O(\\log n)$, etc.).\n"
-            f"   - 'detailed_breakdown': COMPLETE EXAM-READY BREAKDOWN in GFM Markdown with clear sections:\n"
-            f"     ### 1. Core Concept & Invariants\n"
-            f"     ### 2. Hardware / Memory Model (Registers & Architecture)\n"
-            f"     ### 3. Step-by-Step Algorithm & State Transitions\n"
-            f"     ### 4. Worked Numerical Example & Complete Trace Table (MANDATORY: Must include a complete Markdown trace table with concrete numbers, e.g. multiplying -5 x +7 showing Step/Cycle, Operation, AC, QR, Qn+1, SC, and Explanation; or tracing page references for LRU; or tracing BST insertions step-by-step with state transitions)\n"
-            f"     ### 5. Advantages, Trade-offs & Comparisons (What makes it fast/efficient vs traditional alternatives, e.g. Booth's vs standard shift-add multiplication)\n"
-            f"     ### 6. Common University Exam / GATE / Interview Questions (Top 2-3 frequently asked exam/GATE questions with concise model answers and traps)\n"
+            f"ROLE: You are a Principal Computer Science Professor and Senior Systems Architect evaluating B.Tech CSE and Software Engineering students preparing for university semester exams and competitive technical interviews (GATE / Tier-1 Software Engineering).\n"
+            f"AUDIENCE: B.Tech CSE / Software Engineering students preparing for university exams and technical interviews.\n"
+            f"TASK: When given ANY CS topic, generate an exhaustive, mathematically sound, and actionable breakdown.\n"
+            f"Syllabus Topic to evaluate: \"{clean_q}\" (Subject Category: \"{cse_category}\").\n\n"
+            f"EXHAUSTIVE PROMPT DIRECTIVES:\n"
+            f"1. DYNAMIC DOMAIN CONTEXTUALIZATION ({domain_type.upper()}):\n"
+            f"   {domain_directive}\n\n"
+            f"2. STRUCTURE & COMPLETENESS (EXAM-READY OUTPUT MANDATE):\n"
+            f"   - 'overview': OVERVIEW & TECHNICAL INVARIANTS — Formal academic definition, mathematical/architectural foundations, fundamental invariants (Time/Space Complexity in Big-O: worst, average, best case; recurrence relations), and syllabus role. NO boilerplate intros like 'In the context of...'. Directly define {clean_q} with textbook precision.\n"
+            f"   - 'theoretical_foundations': ARCHITECTURAL DIAGRAM / EXECUTION FLOW & HARDWARE/MEMORY MODEL — Explicit register setup (e.g., AC, DR, PC, IR, AR, TR, QR, BR, SC, Qn+1), memory model (Heap vs Stack, Pointers, Memory Alignment), or automata/protocol state diagram with clear text or Mermaid architecture flow.\n"
+            f"   - 'core_formulations': STEP-BY-STEP PROCEDURAL ALGORITHM & STATE SHIFT RULES — Explicit sequential rules for every state shift, state transitions, asymptotic computational bounds (Big-O, Omega, Theta in LaTeX $...$), or recurrence equations.\n"
+            f"   - 'detailed_breakdown': EXHAUSTIVE EXAM-READY BREAKDOWN in GFM Markdown with clear sections:\n"
+            f"     ### 1. Overview & Technical Invariants\n"
+            f"     ### 2. Architectural Diagram & Execution Flow (Hardware/Memory/State Model)\n"
+            f"     ### 3. Step-by-Step Procedural Algorithm & State Transitions\n"
+            f"     ### 4. Worked Numerical / Trace Walkthrough Example (MANDATORY: Must include a complete Markdown trace table with concrete numbers, cycles, array indices, or state shifts)\n"
+            f"     ### 5. Implementation / Code Snippet / Formal Automata or Grammar (Complete, idiomatic C++/Java/Python snippet or formal grammar/automata transition table with boundary safety checks)\n"
+            f"     ### 6. Pros, Cons & Real-World Applications (Performance advantages, hardware/memory overhead, trade-offs vs alternatives, and 3 practical industry applications)\n"
+            f"     ### 7. Top University Exam / GATE Questions (Top 2-3 frequently asked exam/GATE questions with concise model answers and critical traps/edge cases to avoid)\n"
             f"   - 'quick_example':\n"
-            f"     * 'title': Concrete Numerical Problem or Real-Life Systems Application Title\n"
-            f"     * 'badge': 'Worked Numerical Trace | B.Tech & GATE Exam Walkthrough'\n"
-            f"     * 'scenario': Concrete problem statement (e.g., 'Multiply Multiplicand M = -5 (1011) and Multiplier Q = +7 (0111) using 4-bit Booth Multiplier') or practical operational setup\n"
-            f"     * 'breakdown': 3-step sequential execution breakdown of the numerical trace or algorithm\n"
-            f"     * 'use_cases': 3 realistic production/hardware/systems applications\n"
-            f"     * 'tradeoffs': 'advantages' (performance gains) and 'disadvantages' (hardware overhead or corner cases)\n"
+            f"     * 'title': Concrete Numerical Problem or Systems Scenario Title\n"
+            f"     * 'badge': 'Worked Numerical Trace | B.Tech CSE & GATE Exam Walkthrough'\n"
+            f"     * 'scenario': Concrete problem statement with specific numbers, register contents, or practical engineering setup\n"
+            f"     * 'breakdown': 3-step sequential execution trace of the numerical walkthrough\n"
+            f"     * 'use_cases': 3 realistic production/hardware/systems applications with 'title', 'impact', and 'description'\n"
+            f"     * 'tradeoffs': 'advantages' (pros/efficiency gains) and 'disadvantages' (cons/limitations)\n"
             f"     * 'takeaway': Golden rule or exam formula to remember\n"
             f"   - 'ai_evaluation': 2-3 sentence technical complexity evaluation, GATE exam weightage, and critical edge cases\n"
-            f"   - 'did_you_know': Authentic historical discovery or architectural milestone\n"
-            f"3. STRICT JSON OUTPUT MANDATE:\n"
-            f"   - Return ONLY a raw valid JSON object. Do NOT wrap the JSON in markdown code fences (like ```json ... ```). Zero text before or after the JSON.\n"
+            f"   - 'did_you_know': Authentic historical discovery or architectural milestone\n\n"
+            f"{language_mandate}"
+            f"4. STRICT JSON FORMATTING MANDATE:\n"
+            f"   - Return ONLY a raw valid JSON object matching our exact OmniLearn schema. Do NOT wrap the JSON in markdown code fences (like ```json ... ```). Zero text before or after the JSON.\n"
             f"   - In JSON strings, ensure any LaTeX backslashes are double-escaped (e.g. \\\\alpha, \\\\frac, \\\\Theta, \\\\mathcal{{O}}).\n"
             f"   - All quotes inside string values must be escaped.\n\n"
-            f"{language_mandate}"
             f"REQUIRED JSON SCHEMA:\n"
             f"{{\n"
             f"  \"topic\": \"{GeminiService.clean_title_casing(clean_q.title())}\",\n"
-            f"  \"category\": \"{detected_domain}\",\n"
+            f"  \"category\": \"{cse_category}\",\n"
             f"  \"difficulty_score\": 7.5,\n"
             f"  \"difficulty_level\": \"Advanced\",\n"
             f"  \"ai_evaluation\": \"2-3 sentence technical evaluation, GATE weightage, and complexity traps...\",\n"
             f"  \"overview\": \"Formal academic definition, core concept, invariants, and syllabus importance without boilerplate...\",\n"
-            f"  \"theoretical_foundations\": \"Hardware/memory model, register architecture (e.g. AC, QR, BR, Qn+1, SC), bit-widths, and architectural foundations...\",\n"
-            f"  \"core_formulations\": \"Step-by-step sequential algorithm, state transitions (e.g. 01 -> Add & Shift, 10 -> Subtract & Shift), explicit formulas, and time/space complexity...\",\n"
-            f"  \"detailed_breakdown\": \"Exhaustive Markdown lecture breakdown containing: ### 1. Core Concept & Invariants\\n\\n### 2. Hardware / Memory Model (Registers & Architecture)\\n\\n### 3. Step-by-Step Algorithm & State Transitions\\n\\n### 4. Worked Numerical Example & Complete Trace Table\\n| Step | Operation | AC | QR | Qn+1 | SC | Description |\\n|---|---|---|---|---|---|---|\\n...\\n\\n### 5. Advantages, Trade-offs & Comparisons\\n\\n### 6. Common University Exam / GATE / Interview Questions\\n...\",\n"
+            f"  \"theoretical_foundations\": \"Hardware/memory model, register architecture (e.g. AC, QR, BR, Qn+1, SC), bit-widths, or automata/protocol architecture flow...\",\n"
+            f"  \"core_formulations\": \"Step-by-step sequential algorithm, explicit rules for state transitions, explicit formulas, and time/space complexity...\",\n"
+            f"  \"detailed_breakdown\": \"Exhaustive Markdown lecture breakdown containing: ### 1. Overview & Technical Invariants\\n\\n### 2. Architectural Diagram & Execution Flow\\n\\n### 3. Step-by-Step Procedural Algorithm & State Transitions\\n\\n### 4. Worked Numerical / Trace Walkthrough Example\\n| Step / Cycle | State / Operation | Inputs | Intermediate Registers / Pointers | Output / Result | Explanation |\\n|---|---|---|---|---|---|\\n...\\n\\n### 5. Implementation / Code Snippet\\n```cpp\\n...\\n```\\n\\n### 6. Pros, Cons & Real-World Applications\\n...\\n\\n### 7. Top University Exam / GATE Questions\\n...\",\n"
             f"  \"quick_example\": {{\n"
             f"    \"title\": \"Concrete Numerical Walkthrough or Real-Life Problem Title\",\n"
-            f"    \"badge\": \"Worked Numerical Trace | B.Tech & GATE Exam Walkthrough\",\n"
+            f"    \"badge\": \"Worked Numerical Trace | B.Tech CSE & GATE Exam Walkthrough\",\n"
             f"    \"scenario\": \"Concrete problem statement with specific numbers or real-life engineering setup...\",\n"
             f"    \"breakdown\": \"1. **Step 1**: ...\\n2. **Step 2**: ...\\n3. **Step 3**: ...\",\n"
             f"    \"use_cases\": [\n"

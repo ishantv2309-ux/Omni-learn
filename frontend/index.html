@@ -134,7 +134,7 @@
         }
     </style>
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="css/style.css?v=5.3.0">
+    <link rel="stylesheet" href="css/style.css?v=5.8.0">
     <!-- Instant Theme & Language Pre-Hydration (Prevents Flash of Wrong Theme or Lang) -->
     <script>
       (function() {
@@ -212,14 +212,16 @@
             
             <!-- Navbar Search Bar (Visible after search is initiated on tablet/desktop) -->
             <div id="navSearchContainer" class="hidden flex-1 max-w-xl mx-3 sm:mx-6 md:mx-8">
-                <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative flex items-center">
+                <form id="navSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative flex items-center w-full">
                     <input type="text" id="navSearchInput" placeholder="Search another topic (e.g. Newton's Laws)..." 
-                           class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-10 pr-9 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
-                    <button type="submit" class="absolute left-3 top-2.5 text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
+                           class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-10 pr-10 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
+                    <button type="submit" class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
                         <i class="fa-solid fa-magnifying-glass text-xs"></i>
                     </button>
-                    <button type="button" id="navSearchClearBtn" onclick="clearNavSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-rose-400 transition cursor-pointer" title="Clear search" aria-label="Clear">
-                        <i class="fa-solid fa-xmark text-xs"></i>
+                    <button type="button" id="navSearchClearBtn" onclick="clearNavSearch()" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-rose-500 transition cursor-pointer" title="Clear search" aria-label="Clear">
+                        <span class="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </span>
                     </button>
                 </form>
             </div>
@@ -250,12 +252,14 @@
         <div id="mobileNavSearchContainer" class="hidden px-3.5 pb-2.5 pt-0 max-w-7xl mx-auto">
             <form id="mobileNavSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full flex items-center">
                 <input type="text" id="mobileNavSearchInput" placeholder="Search another topic..." 
-                       class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-9 pr-8 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
-                <button type="submit" class="absolute left-3 top-2.5 text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
+                       class="w-full bg-slate-800/80 text-white placeholder-slate-400 pl-10 pr-10 py-2 rounded-xl focus:outline-none transition border border-slate-700 text-sm shadow-sm" autocomplete="off">
+                <button type="submit" class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-indigo-400 transition cursor-pointer" title="Search topic" aria-label="Search">
                     <i class="fa-solid fa-magnifying-glass text-xs"></i>
                 </button>
-                <button type="button" id="mobileNavSearchClearBtn" onclick="clearMobileNavSearch()" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-rose-400 transition cursor-pointer" title="Clear search" aria-label="Clear">
-                    <i class="fa-solid fa-xmark text-xs"></i>
+                <button type="button" id="mobileNavSearchClearBtn" onclick="clearMobileNavSearch()" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-rose-500 transition cursor-pointer" title="Clear search" aria-label="Clear">
+                    <span class="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </span>
                 </button>
             </form>
         </div>
@@ -277,7 +281,7 @@
                 <form id="mainSearchForm" onsubmit="event.preventDefault(); handleSearch(event);" class="relative w-full shadow-lg rounded-2xl search-form-wrapper group">
                     <input type="text" id="mainSearchInput" placeholder="" 
                            class="w-full pl-10 sm:pl-14 pr-24 sm:pr-32 py-3.5 sm:py-4.5 rounded-2xl text-sm sm:text-lg transition font-medium" autocomplete="off">
-                    <span class="absolute left-3.5 sm:left-5 top-3.5 sm:top-4.5 text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 sm:pl-5 flex items-center text-indigo-400/80 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
                         <i class="fa-solid fa-magnifying-glass text-base sm:text-xl"></i>
                     </span>
                     <div class="absolute right-2 top-2 bottom-2 sm:right-2.5 sm:top-2.5 sm:bottom-2.5 flex items-center">
@@ -645,7 +649,7 @@
                     </div>
 
                     <!-- AI Study Roadmap -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0 overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 transition-colors duration-200 min-w-0">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                             <h3 class="font-bold text-slate-800 flex items-center">
                                 <i class="fa-solid fa-route text-purple-500 mr-2"></i><span id="labelRoadmapHeader">Topic Study Roadmap</span>
@@ -654,7 +658,7 @@
                                 0 / 5 Done
                             </span>
                         </div>
-                        <div id="roadmapTimeline" class="space-y-4 relative border-l-2 border-indigo-100 ml-3 pl-4 min-w-0 max-w-full">
+                        <div id="roadmapTimeline" class="relative min-w-0 max-w-full">
                             <!-- Timeline steps with interactive checkboxes -->
                         </div>
                     </div>
@@ -734,7 +738,7 @@
                     <div class="relative mb-3">
                         <input type="text" id="modalTextSearchInput" oninput="highlightModalText()" placeholder="Search terms inside notes..." 
                                class="w-full bg-slate-800/80 pl-8 pr-3 py-2 rounded-xl text-xs border border-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
-                        <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-xs pointer-events-none">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </span>
                     </div>
@@ -853,8 +857,8 @@
     </div>
 
     <!-- Frontend logic javascript -->
-    <script src="js/edu_canvas.js?v=5.1.0"></script>
-    <script src="app.js?v=5.3.0"></script>
-    <script src="main.js?v=5.1.0"></script>
+    <script src="js/edu_canvas.js?v=5.8.0"></script>
+    <script src="app.js?v=5.8.0"></script>
+    <script src="main.js?v=5.8.0"></script>
 </body>
 </html>

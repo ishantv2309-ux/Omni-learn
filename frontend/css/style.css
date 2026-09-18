@@ -1348,7 +1348,12 @@ html.light .footer-omni {
 
 #roadmapTimeline {
     max-width: 100% !important;
-    overflow: hidden !important;
+    position: relative !important;
+}
+
+.roadmap-step-item {
+    position: relative;
+    max-width: 100%;
 }
 
 .roadmap-step-card {
@@ -1482,6 +1487,58 @@ html.light #navSearchContainer button:hover,
 html[data-theme="light"] #mobileNavSearchContainer button:hover,
 html.light #mobileNavSearchContainer button:hover {
     color: #4F46E5 !important;
+}
+
+/* Precise Vertical Centering for Navbar Search & Cross Icons */
+#navSearchForm,
+#mobileNavSearchForm {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#navSearchForm button[type="submit"],
+#mobileNavSearchForm button[type="submit"] {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 0.875rem;
+    background: transparent;
+    border: none;
+    line-height: 1;
+}
+
+#navSearchClearBtn,
+#mobileNavSearchClearBtn {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 0.625rem;
+    background: transparent;
+    border: none;
+    line-height: 1;
+}
+
+#navSearchClearBtn.hidden,
+#mobileNavSearchClearBtn.hidden {
+    display: none !important;
+}
+
+#navSearchClearBtn:hover,
+#mobileNavSearchClearBtn:hover,
+html[data-theme="light"] #navSearchClearBtn:hover,
+html.light #navSearchClearBtn:hover,
+html[data-theme="light"] #mobileNavSearchClearBtn:hover,
+html.light #mobileNavSearchClearBtn:hover {
+    color: #EF4444 !important;
 }
 
 /* High-Contrast Light Mode Badges (Fixes washed out pastels) */
@@ -2251,6 +2308,9 @@ html.light .tradeoff-col-disadv {
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 #eduConstellationCanvas {
@@ -2258,10 +2318,10 @@ html.light .tradeoff-col-disadv {
     inset: 0;
     width: 100%;
     height: 100%;
-    pointer-events: auto;
+    pointer-events: none;
 }
 
-/* Stacking Context Hierarchy: Header (Sticky 100) > Main (Relative 1) > Background Canvas (0) */
+/* Stacking Context Hierarchy: Header (Sticky 100) > Main (Relative 10) > Background Canvas (0) */
 header.navbar-omni {
     position: sticky !important;
     top: 0 !important;
@@ -2270,18 +2330,7 @@ header.navbar-omni {
 
 main {
     position: relative !important;
-    z-index: 1 !important;
-}
-
-/* Completely hide floating canvas words & background layer whenever dashboard or loading is active */
-body.dashboard-active #eduBackgroundLayer,
-body:has(#dashboardScreen:not(.hidden)) #eduBackgroundLayer,
-body:has(#loadingScreen:not(.hidden)) #eduBackgroundLayer,
-#dashboardScreen:not(.hidden) ~ #eduBackgroundLayer {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+    z-index: 10 !important;
 }
 
 /* Educational Panel Styling (Glassmorphism & Theme Support) */
@@ -3092,8 +3141,8 @@ table {
 
     /* Timeline Roadmap */
     #roadmapTimeline {
-        margin-left: 0.5rem !important;
-        padding-left: 0.75rem !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
     }
 
     /* 9. Fullscreen Mobile Technical Document Reader Modal */

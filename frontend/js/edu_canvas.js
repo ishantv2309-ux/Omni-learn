@@ -38,13 +38,13 @@
             aura2: "rgba(236, 72, 153, 0.3)"
         },
         {
-            domain: "⚖️ Law, Ethics & Jurisprudence",
-            title: "Damnum Sine Injuria & Due Process",
-            formula: "$$\\text{Damnum} \\neq \\text{Injuria} \\quad \\Big| \\quad \\textit{Audi alteram partem}$$",
-            searchQuery: "Damnum Sine Injuria",
-            insight: "Actual financial or material loss without the violation of an authorized legal right provides no ground for damages; and every individual has the natural right to be heard.",
-            aura1: "rgba(244, 63, 94, 0.35)",
-            aura2: "rgba(245, 158, 11, 0.3)"
+            domain: "🖥️ Computer Systems & Architecture",
+            title: "Von Neumann Bottleneck & Amdahl's Law",
+            formula: "$$S_{\\text{latency}}(s) = \\frac{1}{(1 - p) + \\frac{p}{s}} \\quad \\Big| \\quad \\text{Clock Cycles} = \\text{IC} \\times \\text{CPI}$$",
+            searchQuery: "Computer Architecture",
+            insight: "Throughput between CPU and memory forms a fundamental latency barrier; speedup from parallelization is governed strictly by the workload's serial fraction.",
+            aura1: "rgba(245, 158, 11, 0.35)",
+            aura2: "rgba(239, 68, 68, 0.3)"
         },
         {
             domain: "🧪 Chemistry & Thermodynamics",
@@ -79,98 +79,253 @@
     let mouse = { x: -9999, y: -9999, radius: 170 };
     let animationFrameId = null;
 
-    // Rich Academic & Intellectual Words across multiple disciplines
+    // Extensive, High-Yield Computer Science & Science Terms Bank
     const ACADEMIC_WORDS_BANK = [
-        // Computer Science & AI
+        // ==========================================
+        // COMPUTER SCIENCE: DATA STRUCTURES & ALGORITHMS (cs)
+        // ==========================================
         { text: "Algorithm", domain: "cs" },
-        { text: "Neural Networks", domain: "cs" },
-        { text: "Recursion", domain: "cs" },
-        { text: "Complexity", domain: "cs" },
-        { text: "Turing Machine", domain: "cs" },
-        { text: "Data Structures", domain: "cs" },
-        { text: "Cryptography", domain: "cs" },
+        { text: "Red-Black Tree", domain: "cs" },
+        { text: "AVL Tree Rotations", domain: "cs" },
+        { text: "Dijkstra's Algorithm", domain: "cs" },
+        { text: "Dynamic Programming", domain: "cs" },
+        { text: "B+ Tree Index", domain: "cs" },
+        { text: "Trie", domain: "cs" },
+        { text: "Binary Search Tree", domain: "cs" },
+        { text: "Min & Max Heap", domain: "cs" },
+        { text: "Hash Table & Buckets", domain: "cs" },
+        { text: "Recursion & Call Stack", domain: "cs" },
+        { text: "Big-O Notation O(n log n)", domain: "cs" },
+        { text: "Amortized Analysis", domain: "cs" },
+        { text: "Divide & Conquer", domain: "cs" },
+        { text: "Topological Sort", domain: "cs" },
+        { text: "Breadth-First Search", domain: "cs" },
+        { text: "Depth-First Search", domain: "cs" },
         { text: "Graph Theory", domain: "cs" },
-        { text: "Heuristics", domain: "cs" },
-        { text: "P vs NP", domain: "cs" },
-        { text: "O(n log n)", domain: "cs" },
-        { text: "Quantum Gate", domain: "cs" },
-        { text: "Compiler", domain: "cs" },
-        { text: "Binary Tree", domain: "cs" },
-        { text: "Asymptote", domain: "cs" },
+        { text: "Bit Manipulation", domain: "cs" },
+        { text: "Greedy Strategy", domain: "cs" },
+        { text: "Floyd-Warshall", domain: "cs" },
+        { text: "Bellman-Ford", domain: "cs" },
+        { text: "A* Pathfinding", domain: "cs" },
+        { text: "Disjoint Set (Union-Find)", domain: "cs" },
+        { text: "Sliding Window", domain: "cs" },
+        { text: "Two Pointers", domain: "cs" },
+        { text: "Segment Tree", domain: "cs" },
+        { text: "Fenwick Tree", domain: "cs" },
+
+        // ==========================================
+        // COMPUTER SCIENCE: SYSTEMS & ARCHITECTURE (cs)
+        // ==========================================
+        { text: "Von Neumann Architecture", domain: "cs" },
+        { text: "RISC-V Instruction Set", domain: "cs" },
+        { text: "CPU Pipelining", domain: "cs" },
+        { text: "Branch Prediction", domain: "cs" },
+        { text: "L1 / L2 / L3 Cache Hierarchy", domain: "cs" },
+        { text: "Translation Lookaside Buffer (TLB)", domain: "cs" },
+        { text: "ALU & Register File", domain: "cs" },
+        { text: "Accumulator (AC)", domain: "cs" },
+        { text: "Direct Memory Access (DMA)", domain: "cs" },
+        { text: "Instruction Cycle (Fetch-Decode-Execute)", domain: "cs" },
+        { text: "System Bus & Datapath", domain: "cs" },
+        { text: "Interrupt Vector Table", domain: "cs" },
+        { text: "Assembly & Opcode", domain: "cs" },
+        { text: "Booth's Multiplier", domain: "cs" },
+
+        // ==========================================
+        // COMPUTER SCIENCE: OPERATING SYSTEMS & CONCURRENCY (cs)
+        // ==========================================
+        { text: "Operating System Kernel", domain: "cs" },
+        { text: "Counting Semaphore", domain: "cs" },
+        { text: "Mutual Exclusion (Mutex)", domain: "cs" },
+        { text: "Deadlock (Coffman Conditions)", domain: "cs" },
+        { text: "Virtual Memory Paging", domain: "cs" },
+        { text: "LRU Page Replacement", domain: "cs" },
+        { text: "Context Switch", domain: "cs" },
+        { text: "Process Scheduling (Round Robin)", domain: "cs" },
+        { text: "Thread Concurrency", domain: "cs" },
+        { text: "System Call (Syscall)", domain: "cs" },
+        { text: "Banker's Safety Algorithm", domain: "cs" },
+        { text: "Fork & Exec", domain: "cs" },
+        { text: "Inter-Process Comm (IPC)", domain: "cs" },
+        { text: "Stack vs Heap Allocation", domain: "cs" },
+        { text: "Belady's Anomaly", domain: "cs" },
+
+        // ==========================================
+        // COMPUTER SCIENCE: THEORY OF COMPUTATION & AUTOMATA (cs)
+        // ==========================================
+        { text: "Turing Machine", domain: "cs" },
+        { text: "Halting Problem", domain: "cs" },
+        { text: "P vs NP Problem", domain: "cs" },
+        { text: "NP-Completeness (Cook-Levin)", domain: "cs" },
+        { text: "Deterministic Finite Automaton (DFA)", domain: "cs" },
+        { text: "Non-Deterministic Automaton (NFA)", domain: "cs" },
+        { text: "Pushdown Automaton (PDA)", domain: "cs" },
+        { text: "Context-Free Grammar (CFG)", domain: "cs" },
+        { text: "Chomsky Hierarchy", domain: "cs" },
+        { text: "Lambda Calculus", domain: "cs" },
+        { text: "Pumping Lemma", domain: "cs" },
+        { text: "Turing Completeness", domain: "cs" },
+        { text: "Church-Turing Thesis", domain: "cs" },
+
+        // ==========================================
+        // COMPUTER SCIENCE: DATABASES & DISTRIBUTED SYSTEMS (cs)
+        // ==========================================
+        { text: "ACID Transactions", domain: "cs" },
+        { text: "Two-Phase Locking (2PL)", domain: "cs" },
+        { text: "CAP Theorem (Brewer)", domain: "cs" },
+        { text: "Raft Consensus Protocol", domain: "cs" },
+        { text: "Paxos Agreement", domain: "cs" },
+        { text: "BCNF Normalization", domain: "cs" },
+        { text: "Write-Ahead Logging (WAL)", domain: "cs" },
+        { text: "Sharding & Partitioning", domain: "cs" },
+        { text: "Distributed MapReduce", domain: "cs" },
+        { text: "Distributed Hash Table (DHT)", domain: "cs" },
+        { text: "Database Indexing", domain: "cs" },
+
+        // ==========================================
+        // COMPUTER SCIENCE: NETWORKS & CRYPTOGRAPHY (cs)
+        // ==========================================
+        { text: "TCP/IP Protocol Stack", domain: "cs" },
+        { text: "TCP 3-Way Handshake (SYN-ACK)", domain: "cs" },
+        { text: "Packet Routing & BGP", domain: "cs" },
+        { text: "Subnetting & CIDR /24", domain: "cs" },
+        { text: "DNS Resolution", domain: "cs" },
+        { text: "TLS/SSL Cryptographic Handshake", domain: "cs" },
+        { text: "Diffie-Hellman Key Exchange", domain: "cs" },
+        { text: "RSA Asymmetric Encryption", domain: "cs" },
+        { text: "Zero-Knowledge Proofs", domain: "cs" },
+        { text: "Elliptic Curve Cryptography", domain: "cs" },
+        { text: "AES-256 Symmetric Cipher", domain: "cs" },
+        { text: "WebSocket Full-Duplex", domain: "cs" },
         { text: "Cybernetics", domain: "cs" },
 
-        // Physics & Cosmology
-        { text: "Thermodynamics", domain: "physics" },
-        { text: "Superposition", domain: "physics" },
-        { text: "Electromagnetism", domain: "physics" },
+        // ==========================================
+        // COMPUTER SCIENCE: COMPILERS & RUNTIMES (cs)
+        // ==========================================
+        { text: "Compiler Architecture", domain: "cs" },
+        { text: "Lexical & Syntax Analysis", domain: "cs" },
+        { text: "Abstract Syntax Tree (AST)", domain: "cs" },
+        { text: "LLVM Intermediate Representation", domain: "cs" },
+        { text: "Bytecode Virtual Machine", domain: "cs" },
+        { text: "JIT Compilation", domain: "cs" },
+        { text: "Garbage Collection (Mark & Sweep)", domain: "cs" },
+        { text: "Type Inference & Hindley-Milner", domain: "cs" },
+
+        // ==========================================
+        // ARTIFICIAL INTELLIGENCE & MACHINE LEARNING (ai)
+        // ==========================================
+        { text: "Deep Neural Networks", domain: "ai" },
+        { text: "Backpropagation Algorithm", domain: "ai" },
+        { text: "Transformer Attention Head", domain: "ai" },
+        { text: "Self-Attention Mechanism", domain: "ai" },
+        { text: "Stochastic Gradient Descent", domain: "ai" },
+        { text: "Convolutional Neural Network", domain: "ai" },
+        { text: "Recurrent NN & LSTM", domain: "ai" },
+        { text: "Loss Function Optimization", domain: "ai" },
+        { text: "Reinforcement Learning (Q-Learning)", domain: "ai" },
+        { text: "Markov Decision Process (MDP)", domain: "ai" },
+        { text: "Latent Representation Space", domain: "ai" },
+        { text: "Vector Embeddings", domain: "ai" },
+        { text: "Support Vector Machines (SVM)", domain: "ai" },
+        { text: "Principal Component Analysis (PCA)", domain: "ai" },
+        { text: "Softmax Probability", domain: "ai" },
+        { text: "Generative AI", domain: "ai" },
+        { text: "Cross-Entropy Loss", domain: "ai" },
+        { text: "Overfitting Regularization (Dropout)", domain: "ai" },
+
+        // ==========================================
+        // PHYSICS & QUANTUM MECHANICS (physics)
+        // ==========================================
+        { text: "Quantum Mechanics", domain: "physics" },
+        { text: "Quantum Superposition", domain: "physics" },
+        { text: "Quantum Entanglement", domain: "physics" },
+        { text: "Thermodynamics & Second Law", domain: "physics" },
+        { text: "Schrödinger Wavefunction Ψ", domain: "physics" },
         { text: "General Relativity", domain: "physics" },
-        { text: "Entropy", domain: "physics" },
-        { text: "Wavefunction", domain: "physics" },
-        { text: "E = mc²", domain: "physics" },
-        { text: "Spacetime", domain: "physics" },
-        { text: "Kinematics", domain: "physics" },
-        { text: "Gravitation", domain: "physics" },
-        { text: "Photon", domain: "physics" },
-        { text: "Schrödinger", domain: "physics" },
-        { text: "F = ma", domain: "physics" },
-        { text: "Astrophysics", domain: "physics" },
-        { text: "Optics", domain: "physics" },
+        { text: "Special Relativity", domain: "physics" },
+        { text: "Maxwell's Field Equations", domain: "physics" },
+        { text: "Planck's Constant h", domain: "physics" },
+        { text: "Cosmological Redshift", domain: "physics" },
+        { text: "Statistical Entropy ΔS", domain: "physics" },
+        { text: "Black Hole Event Horizon", domain: "physics" },
+        { text: "Lorentz Invariance", domain: "physics" },
+        { text: "Spacetime Metric Tensor", domain: "physics" },
+        { text: "Photoelectric Effect", domain: "physics" },
+        { text: "Quantum Tunneling", domain: "physics" },
+        { text: "Bose-Einstein Condensate", domain: "physics" },
+        { text: "Conservation of Momentum", domain: "physics" },
+        { text: "Newtonian Kinematics", domain: "physics" },
+        { text: "Electromagnetic Spectrum", domain: "physics" },
+        { text: "Mass-Energy Equivalence E=mc²", domain: "physics" },
+        { text: "Dark Matter & Energy", domain: "physics" },
+        { text: "Superconductivity & Cooper Pairs", domain: "physics" },
+        { text: "Wave-Particle Duality", domain: "physics" },
+        { text: "Photon Quantization", domain: "physics" },
 
-        // Mathematics & Calculus
-        { text: "Calculus", domain: "math" },
-        { text: "Linear Algebra", domain: "math" },
-        { text: "Differential Eq", domain: "math" },
-        { text: "Integration", domain: "math" },
-        { text: "Eigenvalue", domain: "math" },
-        { text: "Topology", domain: "math" },
-        { text: "Vector Space", domain: "math" },
-        { text: "Probability", domain: "math" },
-        { text: "∫ f(x)dx", domain: "math" },
-        { text: "e^(iπ) + 1 = 0", domain: "math" },
-        { text: "Riemann Sum", domain: "math" },
-        { text: "Convergence", domain: "math" },
-        { text: "Stochastic", domain: "math" },
-        { text: "Isomorphism", domain: "math" },
-        { text: "Fourier Transform", domain: "math" },
+        // ==========================================
+        // CHEMISTRY & MOLECULAR SCIENCE (chem)
+        // ==========================================
+        { text: "Gibbs Free Energy ΔG", domain: "chem" },
+        { text: "Chemical Equilibrium", domain: "chem" },
+        { text: "Covalent & Ionic Bonds", domain: "chem" },
+        { text: "Le Chatelier's Principle", domain: "chem" },
+        { text: "Reaction Enthalpy ΔH", domain: "chem" },
+        { text: "Arrhenius Activation Energy", domain: "chem" },
+        { text: "Atomic Orbital Hybridization (sp³)", domain: "chem" },
+        { text: "Endothermic & Exothermic", domain: "chem" },
+        { text: "Stoichiometry & Mole Fraction", domain: "chem" },
+        { text: "Electronegativity (Pauling Scale)", domain: "chem" },
+        { text: "NMR & Mass Spectroscopy", domain: "chem" },
+        { text: "Redox Oxidation-Reduction", domain: "chem" },
+        { text: "Heterogeneous Catalysis", domain: "chem" },
+        { text: "Polymer Macromolecules", domain: "chem" },
+        { text: "Periodic Table Valence", domain: "chem" },
+        { text: "Thermodynamic Reversibility", domain: "chem" },
 
-        // Biology, Neuroscience & Chemistry
-        { text: "Neuroscience", domain: "bio" },
-        { text: "Synapse", domain: "bio" },
-        { text: "Photosynthesis", domain: "bio" },
-        { text: "Metabolism", domain: "bio" },
-        { text: "Molecular Genetics", domain: "bio" },
-        { text: "Cellular", domain: "bio" },
-        { text: "DNA Helix", domain: "bio" },
-        { text: "RNA Polymerase", domain: "bio" },
-        { text: "Neuroplasticity", domain: "bio" },
-        { text: "Equilibrium", domain: "bio" },
-        { text: "Homeostasis", domain: "bio" },
-        { text: "Catalyst", domain: "bio" },
-        { text: "Gibbs Energy", domain: "bio" },
-        { text: "ATP Synthase", domain: "bio" },
+        // ==========================================
+        // MATHEMATICS & THEORETICAL FOUNDATIONS (math)
+        // ==========================================
+        { text: "Multivariable Calculus", domain: "math" },
+        { text: "Linear Algebra & Vector Spaces", domain: "math" },
+        { text: "Ordinary Differential Equations", domain: "math" },
+        { text: "Continuous Fourier Transform", domain: "math" },
+        { text: "Laplace Transform", domain: "math" },
+        { text: "Riemann Zeta Function", domain: "math" },
+        { text: "Euler's Identity e^(iπ) + 1 = 0", domain: "math" },
+        { text: "Taylor Series Expansion", domain: "math" },
+        { text: "Cauchy-Schwarz Inequality", domain: "math" },
+        { text: "Eigenvalues & Eigenvectors", domain: "math" },
+        { text: "Algebraic Topology", domain: "math" },
+        { text: "Stochastic Itô Calculus", domain: "math" },
+        { text: "Boolean Algebra & De Morgan", domain: "math" },
+        { text: "Definite Integral ∫ f(x)dx", domain: "math" },
+        { text: "Gaussian Probability Density", domain: "math" },
+        { text: "Matrix Inversion & Determinant", domain: "math" },
+        { text: "Markov Chain Transitions", domain: "math" },
+        { text: "Bayesian Posterior Inference", domain: "math" },
+        { text: "Abstract Group Theory", domain: "math" },
+        { text: "Prime Number Theorem", domain: "math" },
+        { text: "Differential Geometry", domain: "math" },
+        { text: "Asymptotic Convergence", domain: "math" },
 
-        // Jurisprudence, Philosophy & Social Sciences
-        { text: "Jurisprudence", domain: "law" },
-        { text: "Epistemology", domain: "law" },
-        { text: "Due Process", domain: "law" },
-        { text: "Damnum Sine Injuria", domain: "law" },
-        { text: "Dialectic", domain: "law" },
-        { text: "Axiom", domain: "law" },
-        { text: "Empirical", domain: "law" },
-        { text: "Aequitas", domain: "law" },
-        { text: "Hermeneutics", domain: "law" },
-        { text: "Audi Alteram", domain: "law" },
-        { text: "Cognition", domain: "law" },
-
-        // Intellectual Inquiry & Method
-        { text: "Synthesis", domain: "inquiry" },
-        { text: "Hypothesis", domain: "inquiry" },
-        { text: "Theorem", domain: "inquiry" },
-        { text: "Discovery", domain: "inquiry" },
-        { text: "Inquiry", domain: "inquiry" },
-        { text: "Pedagogy", domain: "inquiry" },
-        { text: "Analysis", domain: "inquiry" },
-        { text: "Paradigm Shift", domain: "inquiry" }
+        // ==========================================
+        // NEUROSCIENCE & COMPUTATIONAL BIOLOGY (bio)
+        // ==========================================
+        { text: "Computational Neuroscience", domain: "bio" },
+        { text: "Synaptic Plasticity (LTP)", domain: "bio" },
+        { text: "Neuronal Action Potential", domain: "bio" },
+        { text: "CRISPR-Cas9 Gene Editing", domain: "bio" },
+        { text: "Molecular Central Dogma", domain: "bio" },
+        { text: "DNA & RNA Nucleotides", domain: "bio" },
+        { text: "Axon Myelination & Dendrite", domain: "bio" },
+        { text: "Hebbian Synaptic Learning", domain: "bio" },
+        { text: "Cellular Automata", domain: "bio" },
+        { text: "Gene Expression & Transcription", domain: "bio" },
+        { text: "Protein Tertiary Folding", domain: "bio" },
+        { text: "ATP Mitochondrial Synthase", domain: "bio" },
+        { text: "Photosynthetic Electron Transport", domain: "bio" },
+        { text: "Neuroplastic Memory Trace", domain: "bio" },
+        { text: "Biological Homeostasis", domain: "bio" }
     ];
 
     function initCanvas() {
@@ -185,6 +340,16 @@
             mouse.y = e.clientY;
         });
         window.addEventListener("mouseleave", () => {
+            mouse.x = -9999;
+            mouse.y = -9999;
+        });
+        window.addEventListener("touchmove", (e) => {
+            if (e.touches && e.touches[0]) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        }, { passive: true });
+        window.addEventListener("touchend", () => {
             mouse.x = -9999;
             mouse.y = -9999;
         });
@@ -211,8 +376,8 @@
         particles = [];
         const w = window.innerWidth;
         const h = window.innerHeight;
-        // Balanced, ambient density of academic words for an elegant background without visual clutter
-        const count = Math.min(22, Math.max(10, Math.floor((w * h) / 45000)));
+        // Optimal density so that words interconnect into a full constellation web across the screen
+        const count = Math.min(85, Math.max(52, Math.floor((w * h) / 17000)));
 
         // Shuffle words bank
         const pool = [...ACADEMIC_WORDS_BANK].sort(() => 0.5 - Math.random());
@@ -221,29 +386,34 @@
             const wordObj = pool[i % pool.length];
             const depth = Math.random(); // 0 (far) to 1 (near)
             
-            // Varied font sizes, weights and base alpha based on depth
-            const fontSize = depth > 0.75 ? 13.5 : depth > 0.4 ? 12 : 11;
+            // Varied font sizes, weights and clear, legible base alpha
+            const fontSize = depth > 0.75 ? 14.5 : depth > 0.4 ? 12.5 : 11;
             const fontWeight = depth > 0.75 ? "600" : depth > 0.4 ? "500" : "400";
             const baseAlpha = depth > 0.75 
-                ? (Math.random() * 0.08 + 0.18) 
+                ? (Math.random() * 0.18 + 0.65) 
                 : depth > 0.4 
-                    ? (Math.random() * 0.06 + 0.12) 
-                    : (Math.random() * 0.05 + 0.08);
+                    ? (Math.random() * 0.15 + 0.48) 
+                    : (Math.random() * 0.12 + 0.35);
 
-            const speedMultiplier = depth > 0.75 ? 0.22 : depth > 0.4 ? 0.16 : 0.12;
+            const speedMultiplier = depth > 0.75 ? 0.32 : depth > 0.4 ? 0.25 : 0.18;
+            const baseVx = (Math.random() - 0.5) * speedMultiplier;
+            const baseVy = (Math.random() - 0.5) * speedMultiplier;
 
             particles.push({
                 x: Math.random() * w,
                 y: Math.random() * h,
-                vx: (Math.random() - 0.5) * speedMultiplier,
-                vy: (Math.random() - 0.5) * speedMultiplier,
+                vx: baseVx,
+                vy: baseVy,
+                baseVx: baseVx,
+                baseVy: baseVy,
                 text: wordObj.text,
                 domain: wordObj.domain,
                 size: fontSize,
                 weight: fontWeight,
                 depth: depth,
                 alpha: baseAlpha,
-                baseAlpha: baseAlpha
+                baseAlpha: baseAlpha,
+                isHovered: false
             });
         }
     }
@@ -251,20 +421,22 @@
     function getWordColor(domain, isDark, alpha) {
         if (isDark) {
             switch (domain) {
-                case "physics": return `rgba(134, 168, 207, ${alpha})`;  // Serene Periwinkle
-                case "cs":      return `rgba(165, 180, 252, ${alpha})`;  // Soft Indigo
-                case "math":    return `rgba(195, 142, 180, ${alpha})`;  // Orchid Rose
-                case "bio":     return `rgba(110, 231, 183, ${alpha})`;  // Pale Mint
-                case "law":     return `rgba(225, 203, 215, ${alpha})`;  // Lavender Blush
-                default:        return `rgba(148, 163, 184, ${alpha})`;  // Slate Silver
+                case "cs":      return `rgba(165, 180, 252, ${alpha})`;  // Soft Indigo / Terminal Blue
+                case "ai":      return `rgba(244, 114, 182, ${alpha})`;  // Pink / Neon Magenta
+                case "physics": return `rgba(147, 197, 253, ${alpha})`;  // Cosmic Blue
+                case "chem":    return `rgba(103, 232, 249, ${alpha})`;  // Electric Cyan
+                case "math":    return `rgba(196, 181, 253, ${alpha})`;  // Light Purple
+                case "bio":     return `rgba(110, 231, 183, ${alpha})`;  // Luminous Mint
+                default:        return `rgba(203, 213, 225, ${alpha})`;  // Slate 300
             }
         } else {
             switch (domain) {
-                case "physics": return `rgba(38, 66, 90, ${alpha})`;     // Prussian Blue
                 case "cs":      return `rgba(67, 56, 202, ${alpha})`;    // Deep Indigo
-                case "math":    return `rgba(140, 75, 120, ${alpha})`;   // Deep Rose
+                case "ai":      return `rgba(190, 24, 93, ${alpha})`;    // Deep Magenta
+                case "physics": return `rgba(29, 78, 216, ${alpha})`;    // Deep Blue
+                case "chem":    return `rgba(14, 116, 144, ${alpha})`;   // Deep Cyan
+                case "math":    return `rgba(126, 34, 206, ${alpha})`;   // Deep Purple
                 case "bio":     return `rgba(15, 118, 110, ${alpha})`;   // Deep Teal
-                case "law":     return `rgba(90, 50, 80, ${alpha})`;     // Plum Slate
                 default:        return `rgba(51, 65, 85, ${alpha})`;     // Slate Navy
             }
         }
@@ -273,92 +445,124 @@
     function animateCanvas() {
         if (!canvas || !ctx) return;
 
-        // Completely pause and clear canvas if dashboard is currently active
-        const isDashboardActive = document.body.classList.contains("dashboard-active") || 
-            (document.getElementById("dashboardScreen") && !document.getElementById("dashboardScreen").classList.contains("hidden"));
-        
-        if (isDashboardActive) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            animationFrameId = requestAnimationFrame(animateCanvas);
-            return;
-        }
-
         const w = window.innerWidth;
         const h = window.innerHeight;
 
         ctx.clearRect(0, 0, w, h);
 
         const isDark = (document.documentElement.getAttribute("data-theme") || "dark") === "dark";
-        const baseLineColor = isDark ? "rgba(134, 168, 207, " : "rgba(79, 70, 229, ";
+        const baseLineColor = isDark ? "rgba(147, 197, 253, " : "rgba(79, 70, 229, ";
 
-        // Update and draw particles
+        // 1. First pass: Handle mouse interaction, damping, and border wrapping
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
 
-            // Move
+            // Mouse proximity repulsion physics
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < mouse.radius && dist > 1) {
+                const force = (mouse.radius - dist) / mouse.radius;
+                // Responsive repulsive impulse: pushes word away from cursor
+                const repulse = force * force * 5.5;
+                p.vx -= (dx / dist) * repulse;
+                p.vy -= (dy / dist) * repulse;
+                p.alpha = Math.min(0.96, p.baseAlpha + force * 0.45);
+                p.isHovered = true;
+            } else {
+                p.alpha += (p.baseAlpha - p.alpha) * 0.05;
+                p.isHovered = false;
+            }
+
+            // Smooth damping back towards natural drift
+            p.vx = p.vx * 0.92 + p.baseVx * 0.08;
+            p.vy = p.vy * 0.92 + p.baseVy * 0.08;
+
+            // Move particle
             p.x += p.vx;
             p.y += p.vy;
 
             // Soft wrap around edges
-            if (p.x < -60) p.x = w + 60;
-            if (p.x > w + 60) p.x = -60;
-            if (p.y < -30) p.y = h + 30;
-            if (p.y > h + 30) p.y = -30;
+            if (p.x < -70) p.x = w + 70;
+            if (p.x > w + 70) p.x = -70;
+            if (p.y < -35) p.y = h + 35;
+            if (p.y > h + 35) p.y = -35;
+        }
 
-            // Mouse proximity gentle interaction
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            let isHovered = false;
+        // 2. Second pass: Draw connected constellation webs and mutual word repulsion
+        const maxLineDist = 175; // Generous distance so all words stay interconnected into a web
+        const maxLineDistSq = maxLineDist * maxLineDist;
+        const minWordSeparation = 100; // Minimum distance before words push away from each other
 
-            if (dist < mouse.radius && dist > 1) {
-                const force = (mouse.radius - dist) / mouse.radius;
-                p.x -= (dx / dist) * force * 1.8;
-                p.y -= (dy / dist) * force * 1.8;
-                p.alpha = Math.min(0.92, p.baseAlpha + force * 0.55);
-                isHovered = true;
-            } else {
-                p.alpha += (p.baseAlpha - p.alpha) * 0.05;
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+
+            for (let j = i + 1; j < particles.length; j++) {
+                const p2 = particles[j];
+                const lineDx = p.x - p2.x;
+                const lineDy = p.y - p2.y;
+                const distSq = lineDx * lineDx + lineDy * lineDy;
+
+                if (distSq < maxLineDistSq) {
+                    const lineDist = Math.sqrt(distSq);
+
+                    // Mutual repulsion between words ("tend to remove from each other when hovered")
+                    if (lineDist < minWordSeparation && lineDist > 0) {
+                        const repelMultiplier = (p.isHovered || p2.isHovered) ? 2.4 : 0.6;
+                        const sepForce = ((minWordSeparation - lineDist) / minWordSeparation) * repelMultiplier;
+                        const pushX = (lineDx / lineDist) * sepForce;
+                        const pushY = (lineDy / lineDist) * sepForce;
+                        p.vx += pushX;
+                        p.vy += pushY;
+                        p2.vx -= pushX;
+                        p2.vy -= pushY;
+                    }
+
+                    // Draw visible constellation lines between connected words
+                    const factor = (1 - lineDist / maxLineDist);
+                    let lineAlpha = factor * (isDark ? 0.35 : 0.25);
+                    const isPairHovered = p.isHovered || p2.isHovered;
+
+                    if (isPairHovered) {
+                        lineAlpha = Math.min(0.85, lineAlpha * 2.8);
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = isDark ? `rgba(165, 180, 252, ${lineAlpha})` : `rgba(99, 102, 241, ${lineAlpha})`;
+                        ctx.lineWidth = 1.35;
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `${baseLineColor}${lineAlpha})`;
+                        ctx.lineWidth = 0.85;
+                        ctx.stroke();
+                    }
+                }
             }
+        }
 
-            // Draw Word
+        // 3. Third pass: Draw all word labels on top of the constellation webs
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+
             ctx.font = `${p.weight} ${p.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
-            if (isHovered) {
+            if (p.isHovered) {
                 // Subtle glowing aura around hovered words
                 ctx.save();
-                ctx.shadowColor = isDark ? "rgba(195, 142, 180, 0.7)" : "rgba(79, 70, 229, 0.6)";
-                ctx.shadowBlur = 10;
+                ctx.shadowColor = isDark ? "rgba(165, 180, 252, 0.85)" : "rgba(79, 70, 229, 0.75)";
+                ctx.shadowBlur = 12;
                 ctx.fillStyle = isDark ? `rgba(255, 255, 255, ${p.alpha})` : `rgba(30, 27, 75, ${p.alpha})`;
                 ctx.fillText(p.text, p.x, p.y);
                 ctx.restore();
             } else {
                 ctx.fillStyle = getWordColor(p.domain, isDark, p.alpha);
                 ctx.fillText(p.text, p.x, p.y);
-            }
-
-            // Connect nearby word nodes with subtle constellation webs
-            const maxLineDist = 120;
-            for (let j = i + 1; j < particles.length; j++) {
-                const p2 = particles[j];
-                const lineDx = p.x - p2.x;
-                const lineDy = p.y - p2.y;
-                const lineDist = Math.sqrt(lineDx * lineDx + lineDy * lineDy);
-
-                if (lineDist < maxLineDist) {
-                    const factor = (1 - lineDist / maxLineDist);
-                    let lineAlpha = factor * (isDark ? 0.12 : 0.07);
-                    if (isHovered) lineAlpha *= 2.2;
-
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = `${baseLineColor}${lineAlpha})`;
-                    ctx.lineWidth = isHovered ? 1.0 : 0.65;
-                    ctx.stroke();
-                }
             }
         }
 
@@ -531,8 +735,7 @@
     window.toggleEduRotation = toggleEduRotation;
     window.exploreCurrentEduConcept = exploreCurrentEduConcept;
 
-    // Initialize on DOMContentLoaded
-    document.addEventListener("DOMContentLoaded", () => {
+    function initEduCanvasApp() {
         // Ensure main search input placeholder is completely empty
         const mainInput = document.getElementById("mainSearchInput");
         if (mainInput) {
@@ -550,5 +753,11 @@
             panel.addEventListener("mouseenter", () => { isPaused = true; });
             panel.addEventListener("mouseleave", () => { isPaused = false; });
         }
-    });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initEduCanvasApp);
+    } else {
+        initEduCanvasApp();
+    }
 })();

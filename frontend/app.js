@@ -661,9 +661,18 @@ function setCardsLoadingState(query) {
     if (roadmapTimeline) {
         roadmapTimeline.innerHTML = `
             <div class="animate-pulse space-y-3">
-                <div class="h-12 bg-slate-100 rounded-lg"></div>
-                <div class="h-12 bg-slate-100 rounded-lg"></div>
-                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 mt-1"></div>
+                    <div class="flex-1 h-20 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 mt-1"></div>
+                    <div class="flex-1 h-20 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 mt-1"></div>
+                    <div class="flex-1 h-20 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                </div>
             </div>`;
     }
 
@@ -929,24 +938,15 @@ function showScreen(screenId) {
         }
     });
 
-    const eduBg = document.getElementById("eduBackgroundLayer");
     const navSearchContainer = document.getElementById("navSearchContainer");
     const mobileNavSearchContainer = document.getElementById("mobileNavSearchContainer");
 
     if (screenId === "dashboardScreen" || screenId === "loadingScreen") {
         document.body.classList.add("dashboard-active");
-        if (eduBg) {
-            eduBg.style.display = "none";
-            eduBg.setAttribute("aria-hidden", "true");
-        }
         if (navSearchContainer) navSearchContainer.classList.remove("hidden");
         if (mobileNavSearchContainer) mobileNavSearchContainer.classList.remove("hidden");
     } else if (screenId === "landingScreen") {
         document.body.classList.remove("dashboard-active");
-        if (eduBg) {
-            eduBg.style.display = "";
-            eduBg.removeAttribute("aria-hidden");
-        }
         if (navSearchContainer) navSearchContainer.classList.add("hidden");
         if (mobileNavSearchContainer) mobileNavSearchContainer.classList.add("hidden");
     }
@@ -1797,7 +1797,7 @@ function renderRoadmap(steps) {
     container.innerHTML = "";
     
     if (!steps || !Array.isArray(steps) || steps.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">No roadmap steps calculated.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">No roadmap steps calculated.</p>`;
         if (progressBadge) progressBadge.textContent = "0 Steps";
         return;
     }
@@ -1815,61 +1815,84 @@ function renderRoadmap(steps) {
     
     updateRoadmapProgressDisplay(steps.length, completedSet.size);
     
+    const isHinglish = (window.currentSearchLang === "hinglish");
+
     steps.forEach((step, idx) => {
         if (!step) return;
         const isDone = completedSet.has(idx);
-        const stepEl = document.createElement("div");
-        stepEl.className = `relative mb-4 last:mb-0 transition-all duration-200 min-w-0 max-w-full ${isDone ? 'opacity-65' : ''}`;
+        const isLast = (idx === steps.length - 1);
         
         let typeBadgeColor = "glass-badge glass-badge-indigo";
-        let dotColor = "border-slate-300 bg-white text-slate-400";
+        let dotStyle = "border-indigo-400 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/60 dark:text-indigo-300";
         let typeLabel = step.type || "Core";
         
-        const isHinglish = (window.currentSearchLang === "hinglish");
         if (step.type === "prerequisite") {
             typeBadgeColor = "glass-badge glass-badge-indigo";
-            dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-blue-500 bg-blue-50 text-blue-600";
+            dotStyle = isDone 
+                ? "border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20" 
+                : "border-indigo-400 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/60 dark:text-indigo-300";
             typeLabel = isHinglish ? "Zaroori Basics" : "Prerequisite";
         } else if (step.type === "core") {
             typeBadgeColor = "glass-badge glass-badge-indigo";
-            dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-indigo-500 bg-indigo-50 text-indigo-600";
+            dotStyle = isDone 
+                ? "border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20" 
+                : "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300";
             typeLabel = isHinglish ? "Main Concept" : "Core Principle";
         } else if (step.type === "deep_dive") {
             typeBadgeColor = "glass-badge glass-badge-amber";
-            dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-amber-500 bg-amber-50 text-amber-600";
+            dotStyle = isDone 
+                ? "border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20" 
+                : "border-amber-500 bg-amber-50 text-amber-700 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-300";
             typeLabel = isHinglish ? "Gehrai Se Samjhein" : "Deep Dive";
         } else if (step.type === "practice") {
             typeBadgeColor = "glass-badge glass-badge-emerald";
-            dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-teal-500 bg-teal-50 text-teal-600";
+            dotStyle = isDone 
+                ? "border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20" 
+                : "border-teal-500 bg-teal-50 text-teal-700 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-300";
             typeLabel = isHinglish ? "Exam Practice" : "Problem Practice";
         } else if (step.type === "advanced") {
             typeBadgeColor = "glass-badge glass-badge-purple";
-            dotColor = isDone ? "border-emerald-500 bg-emerald-500 text-white" : "border-purple-500 bg-purple-50 text-purple-600";
+            dotStyle = isDone 
+                ? "border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20" 
+                : "border-purple-500 bg-purple-50 text-purple-700 dark:border-purple-400 dark:bg-purple-950/60 dark:text-purple-300";
             typeLabel = isHinglish ? "Industry Scope" : "Advanced Scope";
         }
         
         const conceptTitle = step.concept || step.title || `Step ${idx + 1}`;
         const descText = step.description || step.summary || "";
+        const lineColor = isDone ? "bg-emerald-400 dark:bg-emerald-500" : "bg-slate-200 dark:bg-slate-700";
+        
+        const stepEl = document.createElement("div");
+        stepEl.className = "roadmap-step-item flex items-start gap-3 sm:gap-3.5 relative min-w-0 max-w-full";
         
         stepEl.innerHTML = `
-            <span class="absolute -left-[23px] top-1 rounded-full border-2 ${dotColor} w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-sm cursor-pointer" onclick="toggleRoadmapStep(${idx})">
-                ${isDone ? '<i class="fa-solid fa-check text-[9px]"></i>' : (idx + 1)}
-            </span>
-            <div class="roadmap-step-card bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 transition shadow-xs min-w-0 max-w-full overflow-hidden">
+            <!-- Left Timeline Milestone Track -->
+            <div class="flex flex-col items-center self-stretch shrink-0 relative pt-1" style="width: 28px;">
+                <button type="button" onclick="toggleRoadmapStep(${idx})" 
+                        class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-bold transition-all duration-200 shadow-xs cursor-pointer ${dotStyle} hover:scale-105 active:scale-95 shrink-0 z-10"
+                        title="${isDone ? (isHinglish ? 'Poora ho gaya (Click to undo)' : 'Done (Click to undo)') : (isHinglish ? 'Step poora karein' : 'Mark step as done')}">
+                    ${isDone ? '<i class="fa-solid fa-check text-[10px]"></i>' : (idx + 1)}
+                </button>
+                ${!isLast ? `<div class="w-0.5 flex-1 ${lineColor} my-1 transition-colors duration-200"></div>` : ''}
+            </div>
+
+            <!-- Right Step Content Card -->
+            <div class="roadmap-step-card flex-1 min-w-0 bg-slate-50/90 hover:bg-slate-100/90 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3 sm:p-3.5 transition-all duration-200 shadow-xs ${isLast ? 'mb-0' : 'mb-3.5'} ${isDone ? 'opacity-75' : ''}">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center space-x-2 min-w-0">
                         <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleRoadmapStep(${idx})" 
-                               class="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer h-3.5 w-3.5 border-slate-300 shrink-0">
-                        <span class="text-[10px] font-bold uppercase tracking-wider ${typeBadgeColor} px-1.5 py-0.5 rounded truncate">
+                               class="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer h-3.5 w-3.5 border-slate-300 dark:border-slate-600 dark:bg-slate-700 shrink-0"
+                               title="${isDone ? 'Mark as incomplete' : 'Mark as complete'}">
+                        <span class="text-[10px] font-bold uppercase tracking-wider ${typeBadgeColor} px-2 py-0.5 rounded-md truncate">
                             ${typeLabel}
                         </span>
                     </div>
-                    <span class="text-[10px] text-slate-500 font-medium flex items-center shrink-0">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center shrink-0">
                         <i class="fa-regular fa-clock mr-1 text-slate-400"></i>${step.estimated_time || "2-3 hrs"}
                     </span>
                 </div>
-                <h4 class="font-bold text-xs text-slate-800 mt-2 break-words ${isDone ? 'line-through text-slate-500' : ''}">${escapeHtml(conceptTitle)}</h4>
-                <div class="roadmap-desc text-xs text-slate-600 mt-1.5 leading-relaxed break-words overflow-x-auto custom-scrollbar max-w-full min-w-0">
+                <h4 class="font-bold text-xs sm:text-[13px] text-slate-800 dark:text-slate-100 mt-2 break-words leading-snug ${isDone ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${escapeHtml(conceptTitle)}</h4>
+                <div class="roadmap-desc text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed break-words overflow-x-auto custom-scrollbar max-w-full min-w-0">
                     ${formatRoadmapDescription(descText)}
                 </div>
             </div>
