@@ -478,8 +478,8 @@
         particles = [];
         const w = window.innerWidth;
         const h = window.innerHeight;
-        // High density of words so the canvas looks rich, cool, and lively across all screens
-        const count = Math.min(195, Math.max(75, Math.floor((w * h) / 7500)));
+        // Refined, clean density: 36 words on desktop, scaled gracefully across viewports
+        const count = Math.min(36, Math.max(16, Math.floor((w * h) / 48000)));
 
         // Shuffle words bank
         const pool = [...ACADEMIC_WORDS_BANK].sort(() => 0.5 - Math.random());
@@ -488,22 +488,31 @@
             const wordObj = pool[i % pool.length];
             const depth = Math.random(); // 0 (far) to 1 (near)
             
-            // Varied font sizes, weights and clear, legible base alpha across 3 cosmic layers
-            const fontSize = depth > 0.68 ? 14 : depth > 0.35 ? 12 : 10.5;
-            const fontWeight = depth > 0.68 ? "600" : depth > 0.35 ? "500" : "400";
-            const baseAlpha = depth > 0.68 
-                ? (Math.random() * 0.15 + 0.68) 
+            // Varied font sizes, weights and tasteful ambient alpha
+            const fontSize = depth > 0.65 ? 12.5 : depth > 0.35 ? 11.5 : 10.5;
+            const fontWeight = depth > 0.65 ? "500" : "400";
+            const baseAlpha = depth > 0.65 
+                ? (Math.random() * 0.12 + 0.46) 
                 : depth > 0.35 
-                    ? (Math.random() * 0.15 + 0.48) 
-                    : (Math.random() * 0.12 + 0.32);
+                    ? (Math.random() * 0.10 + 0.30) 
+                    : (Math.random() * 0.08 + 0.18);
 
-            const speedMultiplier = depth > 0.68 ? 0.30 : depth > 0.35 ? 0.22 : 0.16;
+            const speedMultiplier = depth > 0.65 ? 0.22 : depth > 0.35 ? 0.18 : 0.14;
             const baseVx = (Math.random() - 0.5) * speedMultiplier;
             const baseVy = (Math.random() - 0.5) * speedMultiplier;
 
+            // Spawn distributed across screen, avoiding central hero core
+            let px = Math.random() * w;
+            let py = Math.random() * h;
+            if (px > w * 0.32 && px < w * 0.68 && py > h * 0.15 && py < h * 0.45) {
+                px = Math.random() > 0.5 ? px + w * 0.25 : px - w * 0.25;
+                if (px < 30) px = 30 + Math.random() * 80;
+                if (px > w - 30) px = w - 30 - Math.random() * 80;
+            }
+
             particles.push({
-                x: Math.random() * w,
-                y: Math.random() * h,
+                x: px,
+                y: py,
                 vx: baseVx,
                 vy: baseVy,
                 baseVx: baseVx,
@@ -555,7 +564,7 @@
         const isDark = (document.documentElement.getAttribute("data-theme") || "dark") === "dark";
         const baseLineColor = isDark ? "rgba(147, 197, 253, " : "rgba(79, 70, 229, ";
 
-        // 1. First pass: Handle mouse interaction, damping, and border wrapping
+        // 1. First pass: Handle mouse interaction, damping, central clearance, and border wrapping
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
 
@@ -570,11 +579,21 @@
                 const repulse = force * force * 5.5;
                 p.vx -= (dx / dist) * repulse;
                 p.vy -= (dy / dist) * repulse;
-                p.alpha = Math.min(0.98, p.baseAlpha + force * 0.45);
+                p.alpha = Math.min(0.92, p.baseAlpha + force * 0.40);
                 p.isHovered = true;
             } else {
                 p.alpha += (p.baseAlpha - p.alpha) * 0.05;
                 p.isHovered = false;
+            }
+
+            // Soft drift away from the central hero brand area (so words don't cover OmniLearn logo/search)
+            const cDx = p.x - (w * 0.5);
+            const cDy = p.y - (h * 0.28);
+            const heroClearanceX = Math.min(w * 0.28, 280);
+            const heroClearanceY = Math.min(h * 0.20, 180);
+            if (Math.abs(cDx) < heroClearanceX && Math.abs(cDy) < heroClearanceY) {
+                p.vx += (cDx >= 0 ? 0.14 : -0.14);
+                p.vy += (cDy >= 0 ? 0.12 : -0.12);
             }
 
             // Smooth damping back towards natural drift
@@ -593,9 +612,9 @@
         }
 
         // 2. Second pass: Draw connected constellation webs and mutual word repulsion
-        const maxLineDist = 125; // Clean constellation distance connecting close neighbors
+        const maxLineDist = 160; // Clean, delicate constellation links
         const maxLineDistSq = maxLineDist * maxLineDist;
-        const minWordSeparation = 75; // Minimum distance before words push away from each other
+        const minWordSeparation = 130; // Generous distance so words never clump or collide
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -611,7 +630,7 @@
 
                     // Mutual repulsion between words ("tend to remove from each other when hovered")
                     if (lineDist < minWordSeparation && lineDist > 0) {
-                        const repelMultiplier = (p.isHovered || p2.isHovered) ? 2.8 : 0.45;
+                        const repelMultiplier = (p.isHovered || p2.isHovered) ? 3.0 : 0.6;
                         const sepForce = ((minWordSeparation - lineDist) / minWordSeparation) * repelMultiplier;
                         const pushX = (lineDx / lineDist) * sepForce;
                         const pushY = (lineDy / lineDist) * sepForce;
@@ -623,23 +642,23 @@
 
                     // Draw visible constellation lines between connected words
                     const factor = (1 - lineDist / maxLineDist);
-                    let lineAlpha = factor * (isDark ? 0.28 : 0.18);
+                    let lineAlpha = factor * (isDark ? 0.18 : 0.12);
                     const isPairHovered = p.isHovered || p2.isHovered;
 
                     if (isPairHovered) {
-                        lineAlpha = Math.min(0.85, lineAlpha * 2.6);
+                        lineAlpha = Math.min(0.75, lineAlpha * 2.5);
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
                         ctx.strokeStyle = isDark ? `rgba(165, 180, 252, ${lineAlpha})` : `rgba(99, 102, 241, ${lineAlpha})`;
-                        ctx.lineWidth = 1.3;
+                        ctx.lineWidth = 1.1;
                         ctx.stroke();
                     } else {
                         ctx.beginPath();
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(p2.x, p2.y);
                         ctx.strokeStyle = `${baseLineColor}${lineAlpha})`;
-                        ctx.lineWidth = 0.75;
+                        ctx.lineWidth = 0.65;
                         ctx.stroke();
                     }
                 }
